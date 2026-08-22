@@ -9,3 +9,4 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server Backend aktif di http://localhost:${PORT}`);
 });
+
