@@ -1,7 +1,8 @@
-const dotenv = require("dotenv");
-const { Pool } = require("pg");
-const path = require("path")
-dotenv.config({ path: path.join(__dirname, "..", "..", ".env") });
+import dotenv from "dotenv";
+import pg from "pg";
+
+const { Pool } = pg;
+dotenv.config();
 
 const POSTGRES_HOST = process.env.DB_HOST;
 const POSTGRES_USER = process.env.DB_USER;
@@ -34,4 +35,4 @@ const pool = new Pool({
 //   console.error("Error tak terduga di cilent database", err.message)
 // })
 
-module.exports = pool
+export default pool

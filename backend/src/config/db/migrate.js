@@ -1,8 +1,12 @@
-const pool = require("./connection.js")
-const fs = require("fs")
-const path = require("path")
-const dotenv = require("dotenv")
-dotenv.config({ path: path.join(__dirname, "..", "..", ".env") });
+import pool from "./connection.js"
+import fs from "node:fs"
+import path from "node:path"
+import dotenv from "dotenv"
+import { fileURLToPath } from "node:url"
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config();
 
 const files = [path.join(__dirname, "sql", "schema.sql")]
 
