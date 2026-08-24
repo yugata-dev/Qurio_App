@@ -31,7 +31,7 @@ export const getSessions = async (req, res) => {
         res.status(200).json({ success: true, data: result.rows })
     } catch (error) {
         console.log("Error Database:", error);
-        res.status(500).json({ success: false, error: "Sesi gagal ditemukan!!" })
+        res.status(500).json({ success: false, error: "Sesi gagal dimuat!!" })
     }
 }
 
