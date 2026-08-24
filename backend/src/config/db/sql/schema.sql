@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     teacher_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title VARCHAR(200) NOT NULL,
-    access_code VARCHAR(10) NOT NULL UNIQUE,
+    access_code VARCHAR(6) NOT NULL UNIQUE,
     STATUS VARCHAR(20) DEFAULT 'active' CHECK (STATUS IN ('active', 'ended')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     ended_at TIMESTAMP

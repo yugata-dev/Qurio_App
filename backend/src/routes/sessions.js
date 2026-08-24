@@ -1,6 +1,5 @@
 import express from "express"
 import { createSession, getSessions, getSession, updateSession } from "../controllers/controllersSessions.js"
-
 const router = express.Router()
 
 // create session baru
