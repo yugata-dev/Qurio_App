@@ -47,9 +47,16 @@ CREATE TABLE IF NOT EXISTS responses (
     student_id UUID REFERENCES users(id) ON DELETE CASCADE,
     participant_name VARCHAR(100),
     answer TEXT,
-    option_id UUID REFERENCES poll_options(id) ON DELETE
-    SET
-        NULL,
-        is_correct BOOLEAN,
-        submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    option_id UUID REFERENCES poll_options(id) ON DELETE SET NULL,
+    is_correct BOOLEAN,
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Cegah siswa yang login mengisi jawaban lebih dari sekali pada poll yang sama
+CREATE UNIQUE INDEX IF NOT EXISTS unique_response_per_student
+    ON responses (poll_id, student_id)
+    WHERE student_id IS NOT NULL;
+
+-- Percepat pencarian data berdasarkan poll
+CREATE INDEX IF NOT EXISTS idx_responses_poll ON responses (poll_id);
+CREATE INDEX IF NOT EXISTS idx_poll_options_poll ON poll_options (poll_id);
