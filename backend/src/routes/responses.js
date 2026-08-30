@@ -6,7 +6,7 @@ const router = express.Router()
 // peserta submit response
 router.post("/polls/:pollId/responses", createResponse)
 
-// get semua responses untuk poll
+// get semua responses untuk poll (guru)
 router.get("/polls/:pollId/responses", getResponses)
 
 export default router
