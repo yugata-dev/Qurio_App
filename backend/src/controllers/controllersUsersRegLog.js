@@ -8,6 +8,9 @@ const VALID_ROLES = ["guru", "siswa"]
 // POST /api/users/register — daftar akun baru (guru/siswa)
 export const usersReg = async (req, res) => {
     const { name, role, email, password } = req.body
+    console.log("Email:", email, "Type:", typeof email)
+    console.log("Validator result:", EmailValidator.isEmail(email))
+    console.log("Register attempt:", { name, email, password, role })
 
     // Validasi input
     if (!name || !email || !password) {
@@ -108,3 +111,4 @@ export const usersLog = async (req, res) => {
         res.status(500).json({ success: false, error: "Server Down" })
     }
 }
+
