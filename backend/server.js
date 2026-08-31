@@ -14,7 +14,7 @@ import usersRegLogRouter from "./src/routes/usersRegLog.js"
 dotenv.config({ quiet: true })
 
 const app = express()
-const PORT = process.env.SERVER_PORT || 5000
+const PORT = process.env.SERVER_PORT || process.env.PORT || 5000
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000"
 
 // =====================
@@ -46,6 +46,9 @@ app.use("/api/sessions", sessionsRouter)
 app.use("/api/polls", pollsRouter)
 app.use("/api/responses", responsesRouter)
 app.use("/api/users", usersRegLogRouter)
+app.use("/api/test", (req, res) => {
+    res.send("Test")
+})
 
 // 404 untuk endpoint yang tidak dikenal
 app.use((req, res) => {
