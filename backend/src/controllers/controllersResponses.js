@@ -55,8 +55,8 @@ export const createResponse = async (req, res) => {
 
         if (pollResult.rows.length === 0) {
             return res.status(400).json({
-                success: false, 
-                message: "Soal belum dipublikasikan atau tidak ditemukan!" 
+                success: false,
+                message: "Soal belum dipublikasikan atau tidak ditemukan!"
             })
         }
 
@@ -65,8 +65,8 @@ export const createResponse = async (req, res) => {
         // Step 2: Validasi input dasar dari peserta
         if (!participant_name) {
             return res.status(400).json({
-                success: false, 
-                message: "Nama peserta wajib diisi!" 
+                success: false,
+                message: "Nama peserta wajib diisi!"
             })
         }
 
@@ -74,8 +74,8 @@ export const createResponse = async (req, res) => {
         if (poll.type === "polling" || poll.type === "quiz") {
             if (!option_id) {
                 return res.status(400).json({
-                    success: false, 
-                    message: "Opsi jawaban wajib dipilih!" 
+                    success: false,
+                    message: "Opsi jawaban wajib dipilih!"
                 })
             }
         }
@@ -93,8 +93,8 @@ export const createResponse = async (req, res) => {
 
             if (optionResult.rows.length === 0) {
                 return res.status(400).json({
-                    success: false, 
-                    message: "Opsi jawaban tidak valid untuk soal ini!" 
+                    success: false,
+                    message: "Opsi jawaban tidak valid untuk soal ini!"
                 })
             }
 
@@ -110,8 +110,8 @@ export const createResponse = async (req, res) => {
 
             if (duplicateResult.rows.length > 0) {
                 return res.status(409).json({
-                    success: false, 
-                    message: "Kamu sudah menjawab soal ini!" 
+                    success: false,
+                    message: "Kamu sudah menjawab soal ini!"
                 })
             }
         }
@@ -139,14 +139,14 @@ export const createResponse = async (req, res) => {
         // Jika error kode 23505, berarti constraint unik di database tertrigger
         if (error.code === "23505") {
             return res.status(409).json({
-                success: false, 
-                message: "Kamu sudah menjawab soal ini!" 
+                success: false,
+                message: "Kamu sudah menjawab soal ini!"
             })
         }
 
         return res.status(500).json({
-            success: false, 
-            message: "Jawaban gagal dikirim!" 
+            success: false,
+            message: "Jawaban gagal dikirim!"
         })
     }
 }
