@@ -7,7 +7,7 @@ const router = express.Router()
 // create session baru (guru)
 router.post("/", teacherLimit, createSession)
 
-// list semua session
+// list semua sessionnp
 router.get("/", getSessions)
 
 // get detail 1 session

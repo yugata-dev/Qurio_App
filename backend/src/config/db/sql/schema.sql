@@ -47,16 +47,46 @@ CREATE TABLE IF NOT EXISTS responses (
     student_id UUID REFERENCES users(id) ON DELETE CASCADE,
     participant_name VARCHAR(100),
     answer TEXT,
-    option_id UUID REFERENCES poll_options(id) ON DELETE SET NULL,
-    is_correct BOOLEAN,
-    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    option_id UUID REFERENCES poll_options(id) ON DELETE
+    SET
+        NULL,
+        is_correct BOOLEAN,
+        submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 6. TABLE QUESTIONS (Q&A kelas)
+CREATE TABLE IF NOT EXISTS questions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id UUID NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    student_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    student_name VARCHAR(100) NOT NULL,
+    text TEXT NOT NULL,
+    upvotes INT DEFAULT 0,
+    answered BOOLEAN DEFAULT FALSE,
+    answer TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    answered_at TIMESTAMP
+);
+
+-- 7. TABLE QUESTION_VOTES (mencegah upvote ganda siswa pada pertanyaan yang sama)
+CREATE TABLE IF NOT EXISTS question_votes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    question_id UUID NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+    student_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (question_id, student_id)
 );
 
 -- Cegah siswa yang login mengisi jawaban lebih dari sekali pada poll yang sama
-CREATE UNIQUE INDEX IF NOT EXISTS unique_response_per_student
-    ON responses (poll_id, student_id)
-    WHERE student_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS unique_response_per_student ON responses (poll_id, student_id)
+WHERE
+    student_id IS NOT NULL;
 
 -- Percepat pencarian data berdasarkan poll
 CREATE INDEX IF NOT EXISTS idx_responses_poll ON responses (poll_id);
+
 CREATE INDEX IF NOT EXISTS idx_poll_options_poll ON poll_options (poll_id);
+
+CREATE INDEX IF NOT EXISTS idx_questions_session ON questions (session_id);
+
+CREATE INDEX IF NOT EXISTS idx_question_votes_question ON question_votes (question_id);
