@@ -9,6 +9,8 @@ import morgan from "morgan"
 import sessionsRouter from "./src/routes/sessions.js"
 import pollsRouter from "./src/routes/polls.js"
 import responsesRouter from "./src/routes/responses.js"
+import questionsRouter from "./src/routes/questions.js"
+import wordcloudRouter from "./src/routes/wordcloud.js"
 import usersRegLogRouter from "./src/routes/usersRegLog.js"
 
 dotenv.config({ quiet: true })
@@ -24,7 +26,7 @@ const httpServer = createServer(app)
 const io = new Server(httpServer, {
     cors: {
         origin: FRONTEND_URL,
-        methods: ["GET", "POST", "PUT", "DELETE"]
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE"]
     }
 })
 
@@ -45,6 +47,8 @@ app.use(morgan("dev"))
 app.use("/api/sessions", sessionsRouter)
 app.use("/api/polls", pollsRouter)
 app.use("/api/responses", responsesRouter)
+app.use("/api/questions", questionsRouter)
+app.use("/api/wordcloud", wordcloudRouter)
 app.use("/api/users", usersRegLogRouter)
 app.use("/api/test", (req, res) => {
     res.send("Test")
