@@ -59,8 +59,16 @@ export const usersReg = async (req, res) => {
         if (error.code === "23505") {
             return res.status(409).json({ success: false, message: "Nama atau email sudah terdaftar" })
         }
-        console.error("Register error:", error.message)
-        res.status(500).json({ success: false, error: "Pendaftaran gagal, silakan coba lagi" })
+        console.error("Register error detail:", error)
+
+        const errorMessage = error instanceof Error && error.message
+            ? error.message
+            : error?.code || "Pendaftaran gagal, silakan coba lagi"
+        const message = process.env.NODE_ENV === "production"
+            ? "Pendaftaran gagal, silakan coba lagi"
+            : errorMessage
+
+        return res.status(500).json({ success: false, message })
     }
 }
 
