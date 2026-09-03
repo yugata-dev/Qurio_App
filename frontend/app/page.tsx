@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { SubmitEvent, useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -44,8 +44,8 @@ const featureCards = [
 
 function Logo() {
   return (
-    <a className="logo" href="#top" aria-label="Levin beranda">
-      <img src="/logo-levin.jpg" alt="" />
+    <a className="logo" href="#top" aria-label="Qurio beranda">
+      <img src="/qurio_ramping.png" alt="" />
       {/* <span className=""></span> */}
     </a>
   );
@@ -94,7 +94,7 @@ function HeroSlider() {
 
 function AccessForm() {
   const [message, setMessage] = useState("");
-  function submit(event: FormEvent<HTMLFormElement>) {
+  function submit(event: SubmitEvent<HTMLFormElement>): void {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const code = String(data.get("code") || "").trim();
@@ -143,7 +143,7 @@ function AccessForm() {
       />
 
       <button
-        className="w-full inline-flex items-center justify-center gap-3 rounded-[15px] px-6 py-3 border-0 font-extrabold text-base cursor-pointer transition-all duration-200 hover:-translate-y-0.5 bg-[#12b886] text-white shadow-[0_12px_25px_rgba(18,184,134,0.2)]"
+        className="w-full inline-flex items-center justify-center gap-3 rounded-[15px] px-6 py-3 border-0 font-extrabold text-base cursor-pointer transition-all duration-200 hover:-translate-y-0.5 bg-sky-500 text-white shadow-[0_12px_25px_rgba(14,165,233,0.2)]"
         type="submit"
       >
         Gabung Sesi Sekarang <span aria-hidden="true">→</span>
@@ -174,7 +174,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
   }
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center p-0 items-end sm:p-6 sm:items-center bg-[rgba(16,26,49,0.62)] backdrop-blur-[8px]"
+      className="fixed inset-0 z-50 grid place-items-center p-0 items-end sm:p-6 sm:items-center bg-[rgba(16,26,49,0.62)] backdrop-blur-sm"
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
@@ -189,7 +189,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
         {/* Modal Head */}
         <div className="flex items-start justify-between mb-6">
           <div>
-            <span className="block text-[#5146e8] text-[13px] tracking-[0.12em] font-extrabold mb-2">
+            <span className="block text-brand-purple text-[13px] tracking-[0.12em] font-extrabold mb-2">
               LIVE SANDBOX
             </span>
             <h2 id="demo-title" className="mt-0 text-[32px] tracking-[-0.04em]">
@@ -217,7 +217,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
             className={cn(
               "py-[11px] px-2 border-0 rounded-[9px] bg-transparent text-[#73839a] text-xs font-extrabold cursor-pointer",
               view === "student" &&
-                "bg-white text-[#5146e8] shadow-[0_2px_7px_rgba(30,44,70,0.1)]",
+                "bg-white text-brand-purple shadow-[0_2px_7px_rgba(30,44,70,0.1)]",
             )}
             onClick={() => setView("student")}
           >
@@ -229,7 +229,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
             className={cn(
               "py-[11px] px-2 border-0 rounded-[9px] bg-transparent text-[#73839a] text-xs font-extrabold cursor-pointer",
               view === "teacher" &&
-                "bg-white text-[#5146e8] shadow-[0_2px_7px_rgba(30,44,70,0.1)]",
+                "bg-white text-brand-purple shadow-[0_2px_7px_rgba(30,44,70,0.1)]",
             )}
             onClick={() => setView("teacher")}
           >
@@ -242,18 +242,18 @@ function DemoModal({ onClose }: { onClose: () => void }) {
           {/* Student Panel */}
           <article
             className={cn(
-              "hidden sm:block min-h-0 sm:min-h-[420px] overflow-hidden border border-[#dce5ef] rounded-[18px] bg-white shadow-[0_12px_25px_rgba(30,44,70,0.08)]",
+              "hidden sm:block min-h-0 sm:min-h-105 overflow-hidden border border-[#dce5ef] rounded-[18px] bg-white shadow-[0_12px_25px_rgba(30,44,70,0.08)]",
               view === "student" && "block",
             )}
           >
             <div className="flex items-center justify-between gap-2.5 px-[19px] py-[17px] border-b border-[#e7edf4] text-[#27354d] text-sm">
               <b>Student Mobile View</b>
-              <span className="text-white bg-[#12b886] px-2 py-1 rounded text-[10px] font-extrabold">
+              <span className="text-white bg-sky-500 px-2 py-1 rounded text-[10px] font-extrabold">
                 ● LIVE
               </span>
             </div>
-            <div className="max-w-[280px] mx-auto my-[25px] px-[17px] py-[25px] border-[7px] border-[#19253a] rounded-[29px] bg-white shadow-[0_16px_25px_rgba(21,34,56,0.16)]">
-              <span className="block text-[#5146e8] text-center text-[9px] font-extrabold tracking-[0.1em] mb-[15px]">
+            <div className="max-w-70 mx-auto my-[25px] px-[17px] py-[25px] border-[7px] border-[#19253a] rounded-[29px] bg-white shadow-[0_16px_25px_rgba(21,34,56,0.16)]">
+              <span className="block text-brand-purple text-center text-[9px] font-extrabold tracking-[0.1em] mb-[15px]">
                 PERTANYAAN 4/10
               </span>
               <h3 className="mt-0 text-[#27354d] text-center text-[17px] leading-[1.4] mb-[35px]">
@@ -269,7 +269,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
                   className={cn(
                     "flex items-center gap-3 mt-2.5 p-3 border border-[#e5ebf3] rounded-xl text-[#40516b] text-[13px] font-bold",
                     letter === "B" &&
-                      "border-2 border-[#5146e8] text-[#5146e8] bg-[#f0f1ff]",
+                      "border-2 border-brand-purple text-brand-purple bg-[#f0f1ff]",
                   )}
                   onClick={chooseAnswer}
                   key={letter}
@@ -277,7 +277,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
                   <b
                     className={cn(
                       "grid place-items-center w-[27px] h-[27px] rounded-[7px] bg-[#f3f6fa] text-[#697993]",
-                      letter === "B" && "text-white bg-[#5146e8]",
+                      letter === "B" && "text-white bg-brand-purple",
                     )}
                   >
                     {letter}
@@ -291,7 +291,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
           {/* Teacher Panel */}
           <article
             className={cn(
-              "hidden sm:block min-h-0 sm:min-h-[420px] overflow-hidden border border-[#dce5ef] rounded-[18px] bg-white shadow-[0_12px_25px_rgba(30,44,70,0.08)]",
+              "hidden sm:block min-h-0 sm:min-h-105 overflow-hidden border border-[#dce5ef] rounded-[18px] bg-white shadow-[0_12px_25px_rgba(30,44,70,0.08)]",
               view === "teacher" && "block",
             )}
           >
@@ -304,7 +304,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
             <div className="m-[18px] sm:m-[25px] p-5 rounded-[14px] bg-[#f8fbff]">
               <div className="flex justify-between gap-3 text-[#27354d] text-sm font-extrabold">
                 <span>Analitik Kelas · Fisika 101</span>
-                <strong className="text-[#12b886] text-[11px]">
+                <strong className="text-sky-500 text-[11px]">
                   Jawaban live
                 </strong>
               </div>
@@ -313,28 +313,28 @@ function DemoModal({ onClose }: { onClose: () => void }) {
               <div className="flex items-end justify-around h-[230px] px-[18px] pt-[25px] border-b border-[#dce5ef]">
                 <div className="flex h-full flex-col items-center justify-end gap-2 text-[#657894] text-[10px]">
                   <span
-                    className="block w-[38px] min-h-[24px] rounded-t-[7px] bg-[#5146e8]"
+                    className="block w-[38px] min-h-6 rounded-t-[7px] bg-brand-purple"
                     style={{ height: "72%" }}
                   />
                   <b>Gravitasi</b>
                 </div>
                 <div className="flex h-full flex-col items-center justify-end gap-2 text-[#657894] text-[10px]">
                   <span
-                    className="block w-[38px] min-h-[24px] rounded-t-[7px] bg-[#12b886]"
+                    className="block w-[38px] min-h-6 rounded-t-[7px] bg-sky-500"
                     style={{ height: "54%" }}
                   />
                   <b>Energi</b>
                 </div>
                 <div className="flex h-full flex-col items-center justify-end gap-2 text-[#657894] text-[10px]">
                   <span
-                    className="block w-[38px] min-h-[24px] rounded-t-[7px] bg-[#7c88ef]"
+                    className="block w-[38px] min-h-6 rounded-t-[7px] bg-[#7c88ef]"
                     style={{ height: "38%" }}
                   />
                   <b>Gaya</b>
                 </div>
                 <div className="flex h-full flex-col items-center justify-end gap-2 text-[#657894] text-[10px]">
                   <span
-                    className="block w-[38px] min-h-[24px] rounded-t-[7px] bg-[#aebbd0]"
+                    className="block w-[38px] min-h-6 rounded-t-[7px] bg-[#aebbd0]"
                     style={{ height: "25%" }}
                   />
                   <b>Massa</b>
@@ -344,12 +344,10 @@ function DemoModal({ onClose }: { onClose: () => void }) {
               {/* Result */}
               <div className="flex flex-col sm:flex-row justify-between gap-4 pt-3.5 border-t border-[#e5ebf3] text-[#566983] text-[11px]">
                 <span>
-                  <b className="text-[#5146e8] text-[17px]">72%</b> menjawab
+                  <b className="text-brand-purple text-[17px]">72%</b> menjawab
                   benar
                 </span>
-                <span className="text-[#12b886]">
-                  AI membaca pola pemahaman
-                </span>
+                <span className="text-sky-500">AI membaca pola pemahaman</span>
               </div>
             </div>
           </article>
@@ -358,7 +356,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
         {/* Toast */}
         {toast && (
           <div
-            className="fixed left-1/2 bottom-[88px] sm:bottom-[28px] z-[60] -translate-x-1/2 w-[calc(100%-32px)] sm:w-auto px-[18px] py-[13px] rounded-xl bg-[#12b886] text-white shadow-[0_12px_25px_rgba(18,184,134,0.28)] text-[13px] font-extrabold text-center sm:text-left whitespace-normal sm:whitespace-nowrap"
+            className="fixed left-1/2 bottom-[88px] sm:bottom-7 z-60 -translate-x-1/2 w-[calc(100%-32px)] sm:w-auto px-[18px] py-[13px] rounded-xl bg-sky-500 text-white shadow-[0_12px_25px_rgba(14,165,233,0.28)] text-[13px] font-extrabold text-center sm:text-left whitespace-normal sm:whitespace-nowrap"
             role="status"
           >
             Response Sent! Switching to Teacher View...
@@ -367,7 +365,7 @@ function DemoModal({ onClose }: { onClose: () => void }) {
 
         {/* Mobile Primary CTA */}
         <a
-          className="flex sm:hidden sticky bottom-0 items-center justify-center gap-2 mt-[18px] p-3.5 rounded-[13px] bg-[#12b886] text-white text-sm font-extrabold shadow-[0_8px_16px_rgba(18,184,134,0.22)]"
+          className="flex sm:hidden sticky bottom-0 items-center justify-center gap-2 mt-[18px] p-3.5 rounded-[13px] bg-sky-500 text-white text-sm font-extrabold shadow-[0_8px_16px_rgba(14,165,233,0.22)]"
           href="#cta"
           onClick={onClose}
         >
@@ -388,9 +386,9 @@ export default function App() {
   const [demoOpen, setDemoOpen] = useState(false);
   return (
     <main id="top">
-      <header className="sm:h-20 h-17.5 bg-white border-b border-(--line)">
+      <header className="sticky top-0 z-40 sm:h-20 h-17.5 bg-white/70 backdrop-blur-sm border-b border-(--line)">
         {/* <div className="sm:w-[max(100%-32px,640px)] h-full w-full flex items-center justify-between gap-8"> */}
-        <div className="w-full max-w-160 px-4 sm:px-0 h-full flex items-center justify-between gap-8">
+        <div className="w-full px-4 sm:px-0 h-full flex items-center justify-between gap-8">
           <Logo />
           <nav
             aria-label="Navigasi utama"
@@ -433,20 +431,20 @@ export default function App() {
       </section>
       <section
         className="w-full overflow-hidden border-y border-[#dfe7f1] bg-brand-bg-light group"
-        aria-label="Levin key highlights"
+        aria-label="Qurio key highlights"
       >
-        <div className="flex w-max animate-[liven-marquee-scroll_34s_linear_infinite] motion-reduce:[animation-play-state:paused] group-hover:[animation-play-state:paused]">
-          <div className="flex items-center gap-7 px-7 py-[17px] whitespace-nowrap text-[#263651] text-base font-bold">
-            <span>⚡ Levin: Transparansi Kemampuan Intelektual Murid</span>
-            <b className="text-emerald-500 text-lg">✦</b>
+        <div className="flex w-max animate-[qurio-marquee-scroll_34s_linear_infinite] motion-reduce:[animation-play-state:paused] group-hover:[animation-play-state:paused]">
+          <div className="flex items-center gap-7 px-7 py-[17px] whitespace-nowrap text-brand-text-dark text-base font-bold">
+            <span>⚡ Qurio: Transparansi Kemampuan Intelektual Murid</span>
+            <b className="text-sky-500 text-lg">✦</b>
             <span>Tanpa Download Aplikasi &amp; Tanpa Login Siswa</span>
-            <b className="text-emerald-500 text-lg">⚡</b>
+            <b className="text-sky-500 text-lg">⚡</b>
             <span>Analisis Pemahaman Berbasis AI Real-Time</span>
-            <b className="text-emerald-500 text-lg">✦</b>
+            <b className="text-sky-500 text-lg">✦</b>
             <span>
               Kuis Interaktif, Word Cloud &amp; Q&amp;A dalam Satu Tempat
             </span>
-            <b className="text-emerald-500 text-lg">⚡</b>
+            <b className="text-sky-500 text-lg">⚡</b>
             <span>WebSocket Super Cepat (0.1s Response)</span>
           </div>
 
@@ -454,16 +452,16 @@ export default function App() {
             className="flex items-center gap-7 px-7 py-[17px] whitespace-nowrap text-brand-text-dark text-base font-bold"
             aria-hidden="true"
           >
-            <span>⚡ Levin: Transparansi Kemampuan Intelektual Murid</span>
-            <b className="text-emerald-500 text-lg">✦</b>
+            <span>⚡ Qurio: Transparansi Kemampuan Intelektual Murid</span>
+            <b className="text-sky-500 text-lg">✦</b>
             <span>Tanpa Download Aplikasi &amp; Tanpa Login Siswa</span>
-            <b className="text-emerald-500 text-lg">⚡</b>
+            <b className="text-sky-500 text-lg">⚡</b>
             <span>Analisis Pemahaman Berbasis AI Real-Time</span>
-            <b className="text-emerald-500 text-lg">✦</b>
+            <b className="text-sky-500 text-lg">✦</b>
             <span>
               Kuis Interaktif, Word Cloud &amp; Q&amp;A dalam Satu Tempat
             </span>
-            <b className="text-emerald-500 text-lg">⚡</b>
+            <b className="text-sky-500 text-lg">⚡</b>
             <span>WebSocket Super Cepat (0.1s Response)</span>
           </div>
         </div>
@@ -487,14 +485,14 @@ export default function App() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {featureCards.map(([icon, title, copy]) => (
               <article
-                className="p-7 min-h-68 border border-[#e5ebf3] rounded-[24px] bg-[#f8fafc] shadow-[0_14px_28px_rgba(30,44,70,0.07)]"
+                className="p-7 min-h-68 border border-[#e5ebf3] rounded-6 bg-[#f8fafc] shadow-[0_14px_28px_rgba(30,44,70,0.07)]"
                 key={title}
               >
                 <span className="grid place-items-center w-16 h-16 mb-9 rounded-[15px] bg-white text-brand-purple shadow-[0_5px_12px_#e8edf4] text-[27px]">
                   {icon}
                 </span>
                 <h3 className="mt-0 text-[23px] mb-5">{title}</h3>
-                <p className="mt-0 text-[#50627d] leading-[1.6] text-[16px]">
+                <p className="mt-0 text-[#50627d] leading-[1.6] text-4">
                   {copy}
                 </p>
               </article>
@@ -516,7 +514,7 @@ export default function App() {
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <article className="p-7 border border-[#e5ebf3] rounded-[24px] bg-white shadow-[0_14px_28px_rgba(30,44,70,0.07)]">
+            <article className="p-7 border border-[#e5ebf3] rounded-6 bg-white shadow-[0_14px_28px_rgba(30,44,70,0.07)]">
               <span className="block mb-5 text-brand-purple text-[11px] font-extrabold tracking-[0.12em]">
                 01
               </span>
@@ -535,20 +533,20 @@ export default function App() {
                 <small className="text-[#c4cede]">Diskusi</small>
               </div>
             </article>
-            <article className="p-[28px] border border-[#e5ebf3] rounded-[24px] bg-white shadow-[0_14px_28px_rgba(30,44,70,0.07)]">
-              <span className="block mb-[19px] text-[#12b886] text-[11px] font-extrabold tracking-[0.12em]">
+            <article className="p-7 border border-[#e5ebf3] rounded-6 bg-white shadow-[0_14px_28px_rgba(30,44,70,0.07)]">
+              <span className="block mb-[19px] text-sky-500 text-[11px] font-extrabold tracking-[0.12em]">
                 02
               </span>
               <h3 className="mt-0 mb-[10px] text-[22px]">
                 Tanya Jawab (Q&amp;A)
               </h3>
-              <p className="mt-0 min-h-[52px] text-[#50627d] leading-[1.5] text-[15px]">
+              <p className="mt-0 min-h-13 text-[#50627d] leading-[1.5] text-[15px]">
                 Papan diskusi termoderasi agar semua pertanyaan terdengar.
               </p>
 
               {/* Pertanyaan 1 */}
-              <div className="flex gap-[16px] mt-[15px] p-[16px] border-2 border-[#edf1f6] rounded-[15px] text-[#40516b] font-bold items-center">
-                <span className="grid place-items-center flex-none w-[40px] h-[40px] rounded-full text-[#5146e8] bg-[#dfe4ff] font-extrabold">
+              <div className="flex gap-4 mt-[15px] p-4 border-2 border-[#edf1f6] rounded-[15px] text-[#40516b] font-bold items-center">
+                <span className="grid place-items-center flex-none w-10 h-10 rounded-full text-brand-purple bg-[#dfe4ff] font-extrabold">
                   AJ
                 </span>
                 <div>
@@ -562,8 +560,8 @@ export default function App() {
               </div>
 
               {/* Pertanyaan 2 */}
-              <div className="flex gap-[16px] mt-[15px] p-[16px] border-2 border-[#edf1f6] rounded-[15px] text-[#40516b] font-bold items-center">
-                <span className="grid place-items-center flex-none w-[40px] h-[40px] rounded-full text-[#079d70] bg-[#dffbef] font-extrabold">
+              <div className="flex gap-4 mt-[15px] p-4 border-2 border-[#edf1f6] rounded-[15px] text-[#40516b] font-bold items-center">
+                <span className="grid place-items-center flex-none w-10 h-10 rounded-full text-[#079d70] bg-[#dffbef] font-extrabold">
                   RN
                 </span>
                 <div>
@@ -577,11 +575,11 @@ export default function App() {
               </div>
             </article>
             <article className="p-7 border border-slate-200 rounded-3xl bg-white shadow-lg">
-              <span className="block mb-5 text-indigo-600 text-xs font-extrabold tracking-widest">
+              <span className="block mb-5 text-blue-600 text-xs font-extrabold tracking-widest">
                 03
               </span>
               <h3 className="mt-0 mb-2.5 text-2xl">Kuis (Quiz)</h3>
-              <p className="mt-0 min-h-[52px] text-slate-600 leading-normal text-[15px]">
+              <p className="mt-0 min-h-13 text-slate-600 leading-normal text-[15px]">
                 Evaluasi kognitif interaktif dengan leaderboard instan.
               </p>
 
@@ -601,12 +599,12 @@ export default function App() {
                   <span>Venus</span>
                 </div>
 
-                <div className="flex items-center gap-2 mt-2 p-2 border border-indigo-600 rounded-lg text-indigo-600 bg-indigo-50 text-xs">
-                  <i className="grid place-items-center w-6 h-6 rounded-md bg-indigo-600 text-white not-italic font-extrabold">
+                <div className="flex items-center gap-2 mt-2 p-2 border border-blue-600 rounded-lg text-blue-600 bg-blue-50 text-xs">
+                  <i className="grid place-items-center w-6 h-6 rounded-md bg-blue-600 text-white not-italic font-extrabold">
                     B
                   </i>
                   <span>Mars</span>
-                  <strong className="ml-auto text-emerald-500 text-[10px]">
+                  <strong className="ml-auto text-sky-500 text-[10px]">
                     #1
                   </strong>
                 </div>
@@ -622,7 +620,7 @@ export default function App() {
               <span className="student-avatar">N</span>
               <span>
                 <b>Siswa Kelas X</b>
-                <small>Pengguna Levin</small>
+                <small>Pengguna Qurio</small>
               </span>
             </div>
             <div className="stars" aria-label="5 dari 5 bintang">
@@ -633,22 +631,22 @@ export default function App() {
               jauh lebih hidup dan tidak membosankan!”
             </blockquote>
             <span className="quote-accent">
-              — Siswa Kelas X (Pengguna Levin)
+              — Siswa Kelas X (Pengguna Qurio)
             </span>
           </div>
         </div>
       </section> */}
-      <section className="pt-[100px] pb-[120px] text-white bg-[#111a2e]">
+      <section className="pt-25 pb-30 text-(--ink) bg-[#f8fafc]">
         {/* Perbaikan: hapus titik di depan className */}
-        <div className="w-full max-w-[1216px] mx-auto px-6">
+        <div className="w-full max-w-304 mx-auto px-6">
           <div className="text-center mb-[78px]">
-            <span className="block text-[#12b886] text-[13px] tracking-[0.12em] font-extrabold mb-[25px]">
+            <span className="block text-sky-500 text-[13px] tracking-[0.12em] font-extrabold mb-[25px]">
               MULAI DALAM HITUNGAN DETIK
             </span>
-            <h2 className="mt-0 text-white text-[38px] tracking-[-0.04em] mb-4">
+            <h2 className="mt-0 text-(--ink) text-[38px] tracking-[-0.04em] mb-4">
               Mulai Live dalam 3 Langkah Mudah
             </h2>
-            <p className="mt-0 text-[#9cacbf] text-lg leading-normal">
+            <p className="mt-0 text-[#536682] text-lg leading-normal">
               Dari nol hingga analitik kelas aktif. Tidak perlu keahlian teknis.
             </p>
           </div>
@@ -673,19 +671,19 @@ export default function App() {
               ],
             ].map(([num, title, copy]) => (
               <article
-                className="relative py-10 px-[34px] text-center border border-[#30405a] rounded-[28px] bg-[#172239] after:content-[''] after:absolute after:top-1/2 after:left-full after:w-12 after:border-t-2 after:border-[#3936a5] after:hidden md:after:block"
+                className="relative py-10 px-[34px] text-center border border-[#e5ebf3] rounded-7 bg-white shadow-[0_14px_28px_rgba(30,44,70,0.07)] after:content-[''] after:absolute after:top-1/2 after:left-full after:w-12 after:border-t-2 after:border-blue-200 after:hidden md:after:block"
                 key={num}
               >
                 <span
                   className={cn(
-                    "grid place-items-center w-16 h-16 mx-auto mb-[30px] rounded-[17px] bg-[#5146e8] text-white text-2xl font-extrabold shadow-[0_10px_17px_rgba(81,70,232,0.28)]",
-                    num === "2" && "bg-[#12b886]",
+                    "grid place-items-center w-16 h-16 mx-auto mb-[30px] rounded-[17px] bg-brand-purple text-white text-2xl font-extrabold shadow-[0_10px_17px_rgba(37,99,235,0.24)]",
+                    num === "2" && "bg-sky-500",
                   )}
                 >
                   {num}
                 </span>
                 <h3 className="mt-0 text-[19px]">{title}</h3>
-                <p className="mt-0 text-[#9cacbf] leading-normal">{copy}</p>
+                <p className="mt-0 text-[#536682] leading-normal">{copy}</p>
               </article>
             ))}
           </div>
@@ -693,12 +691,12 @@ export default function App() {
       </section>
       <section
         id="cta"
-        className="pt-28 pb-32 text-center bg-gradient-to-b from-indigo-50 to-transparent"
+        className="pt-28 pb-32 text-center bg-linear-to-b from-indigo-50 to-transparent"
       >
-        <div className="w-full max-w-[1216px] mx-auto px-6">
+        <div className="w-full max-w-304 mx-auto px-6">
           <h2 className="mt-0 text-3xl tracking-tighter mb-6">
             Buat kelas Anda{" "}
-            <em className="not-italic text-indigo-600 underline decoration-indigo-200 decoration-8 underline-offset-8">
+            <em className="not-italic text-blue-600 underline decoration-blue-200 decoration-8 underline-offset-8">
               lebih transparan.
             </em>
           </h2>
@@ -709,7 +707,7 @@ export default function App() {
 
           <div className="flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-6 mt-9">
             <a
-              className="inline-flex items-center justify-center gap-2.5 rounded-2xl px-6 py-4 border-0 font-extrabold text-base cursor-pointer transition-all duration-200 hover:-translate-y-0.5 bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+              className="inline-flex items-center justify-center gap-2.5 rounded-2xl px-6 py-4 border-0 font-extrabold text-base cursor-pointer transition-all duration-200 hover:-translate-y-0.5 bg-sky-500 text-white shadow-lg shadow-sky-500/20"
               href="#access"
             >
               Mulai Analisis Kelas Gratis
@@ -727,9 +725,11 @@ export default function App() {
         </div>
       </section>
       <footer className="pt-[70px] pb-9 border-t border-slate-200 bg-slate-50">
-        <div className="w-full max-w-[1216px] mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-10">
+        <div className="w-full max-w-304 mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-10">
           <div className="col-span-2 md:col-span-1">
-            <Logo />
+            <div className="w-20">
+              <Logo />
+            </div>
             <p className="mt-6 text-slate-500 leading-relaxed">
               Platform analitik kelas yang membantu guru
               <br /> memahami setiap suara dan pola belajar.
@@ -767,9 +767,9 @@ export default function App() {
           ))}
         </div>
 
-        <div className="w-full max-w-[1216px] mx-auto px-6 flex flex-col sm:flex-row justify-between gap-5 pt-9 mt-14 border-t border-slate-200 text-slate-400 text-xs">
+        <div className="w-full max-w-304 mx-auto px-6 flex flex-col sm:flex-row justify-between gap-5 pt-9 mt-14 border-t border-slate-200 text-slate-400 text-xs">
           <span>
-            © 2026 Levin Interaction Inc. Hak cipta dilindungi undang-undang.
+            © 2026 Qurio Interaction Inc. Hak cipta dilindungi undang-undang.
           </span>
           <span>Ketentuan Layanan　 Kebijakan Privasi　 Pengaturan Cookie</span>
         </div>
