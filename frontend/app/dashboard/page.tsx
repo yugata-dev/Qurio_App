@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext"
 
 
 function DashboardPage() {
-    const { logout } = useAuth()
+    const { logout, user } = useAuth()
     return (
         <section>
             <button onClick={logout} className="px-4 py-2 bg-black text-white rounded-lg font-bold">
@@ -15,14 +15,16 @@ function DashboardPage() {
             </button>
             <div className="flex flex-col items-center justify-center min-h-screen gap-4">
                 <h1 className="text-2xl font-bold">Selamat Datang di Qurio App</h1>
-                <div className="flex gap-4">
-                    <Link
-                        href="/createsessions"
-                        className="px-4 py-2 bg-black text-white rounded-lg font-bold"
-                    >
-                        Buat Sesi
-                    </Link>
-                </div>
+                {
+                    user?.role.toLowerCase() !== "siswa" && (<div className="flex gap-4">
+                        <Link
+                            href="/createsessions"
+                            className="px-4 py-2 bg-black text-white rounded-lg font-bold"
+                        >
+                            Buat Sesi
+                        </Link>
+                    </div>)
+                }
             </div>
         </section>
     )

@@ -71,4 +71,5 @@ const fetchUserRegister = async (name: string, email: string, password: string, 
     }
 }
 
+
 export { fetchUserLogin, fetchUserRegister }

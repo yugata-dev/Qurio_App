@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, ReactNode, useState, useContext, useEffect } from "react"
+import Cookies from "js-cookie"
 
 interface User {
     id: string;
@@ -53,6 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (tokenData)
             localStorage.setItem("token", tokenData)
         localStorage.setItem("user", JSON.stringify(userData))
+        Cookies.set("token", tokenData, { expires: 1 })
+        Cookies.set("role", userData.role, { expires: 1 })
     }
 
     const logout = () => {
@@ -61,6 +64,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAutheticated(false)
         localStorage.removeItem("token")
         localStorage.removeItem("user")
+        Cookies.remove("token")
+        Cookies.remove("role")
     }
     const value = {
         user,

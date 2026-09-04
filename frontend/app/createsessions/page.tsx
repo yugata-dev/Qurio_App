@@ -13,8 +13,15 @@ interface Question {
 }
 
 function CreateSessionsPage() {
+    const [inputAppears, setInputAppears] = useState<boolean>(true)
+
     const handleSelectOption = (optionId: string) => {
         console.log("user memilih:", optionId)
+    }
+
+    const handleAppears = (e: React.MouseEvent, status: boolean) => {
+        e.stopPropagation
+        setInputAppears(status)
     }
 
     const questions: Question = {
@@ -27,6 +34,8 @@ function CreateSessionsPage() {
             { id: "D", text: "test4" }
         ]
     }
+
+    console.log(inputAppears)
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen gap-4">
@@ -62,17 +71,24 @@ function CreateSessionsPage() {
                     <div className="grid grid-cols-2 gap-4 w-full border-2 border-amber-600 mx-auto p-4 ">
                         {
                             questions.option?.map((options) => (
-                                <div className="p-2 gap-2 justify-between flex border-2 border-amber-600">
-                                    <label htmlFor=""  >{options.id} <span>{options.text}</span> </label>
+                                <div key={options.id} className="p-2 gap-2 justify-between flex border-2 border-amber-600">
+                                    <label htmlFor=""> <span className="bg-amber-300 p-1 rounded-lg font-extrabold">{options.id}</span> <span className="font-bold">{options.text}</span> </label>
                                     <input type="radio" />
                                 </div>
                             ))
                         }
                     </div>
                     <div>
-                        <button className="flex justify-start m-4 text-blue-500 font-extrabold">
+                        <button type="button" className="flex justify-start m-4 text-blue-500 font-extrabold" onClick={(e) => handleAppears(e, false)} >
                             + Tambah Opsi
                         </button>
+                        {
+                            inputAppears ? null :
+                                <div>
+                                    <label htmlFor="" className="p-2">SOAL:</label>
+                                    <input type="text" className="rounded border border-gray-txt bg-white p-2 text-black" />
+                                </div>
+                        }
                     </div>
                 </form>
             </div>
