@@ -98,12 +98,6 @@ export const usersLog = async (req, res) => {
             return res.status(401).json({ success: false, message: "Email atau password salah" })
         }
 
-        if (user.role !== role) {
-            return res.status(403).json({
-                message: `Login gagal! Akun Anda terdaftar sebagai ${user.role}, bukan ${requestRole}.`
-            });
-        }
-
         const token = generateCode({
             id: user.id,
             role: user.role,
