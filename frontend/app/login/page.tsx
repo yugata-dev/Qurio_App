@@ -1,20 +1,28 @@
 "use client"
 import { fetchUserLogin } from "@/lib/api"
 import { useForm } from "react-hook-form"
-import { useState } from "react" // 1. Tambahkan useState untuk error server
-import { useRouter } from "next/navigation" // 2. Tambahkan useRouter untuk redirect
+import { useEffect, useState } from "react" // 1. Tambahkan useState untuk error server
+import { useRouter } from "next/navigation" // 2. Tambahkan useRouter untuk redirect"
+import { useAuth } from "@/context/AuthContext"
 
 interface FormLogin {
     email: string
     password: string
     role: string
+    token: string
 }
 
 function LoginPage() {
     const router = useRouter()
+    const { login, isAutheticated } = useAuth()
     const [serverError, setServerError] = useState<string | null>(null) // State error dari backend
-
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormLogin>()
+
+    useEffect(() => {
+        if (isAutheticated) {
+            router.push("/dashboard")
+        }
+    }, [isAutheticated, router])
 
     const onSubmit = async (data: FormLogin) => {
         setServerError(null) // Reset error server setiap kali submit
@@ -22,11 +30,18 @@ function LoginPage() {
             const response = await fetchUserLogin(
                 data.email,
                 data.password,
-                data.role
+                data.role,
+                data.token
             )
 
-            console.log("login berhasil", response)
+            if (response.success && response.data) {
+                const dataUser = response.data.user
+                const dataToken = response.data.token
 
+                login(dataUser, dataToken)
+
+                alert("Login berhasil..")
+            }
             // Simpan token (jika ada) dan redirect ke dashboard
             router.push("/dashboard")
         } catch (error: any) {

@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, ReactNode, useState } from "react"
+import { createContext, ReactNode, useState, useContext, useEffect } from "react"
 
 interface User {
     id: string;
@@ -19,10 +19,32 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null)
     const [token, setToken] = useState<string | null>(null)
     const [isAutheticated, setIsAutheticated] = useState<boolean>(false)
+    const [isLoading, setIsLoading] = useState<boolean>(true)
+
+    useEffect(() => {
+        const storedToken = localStorage.getItem("token")
+        const storedUser = localStorage.getItem("user")
+
+        if (storedToken) {
+            try {
+                setToken(storedToken)
+                setIsAutheticated(true)
+
+                if (storedUser) {
+                    setUser(JSON.parse(storedUser))
+                }
+            } catch (error) {
+                console.error("gagal memuat login:", error)
+                localStorage.removeItem("token")
+            }
+        }
+
+        setIsLoading(false)
+    }, [])
 
     const login = (userData: User, tokenData: string) => {
         setUser(userData)
@@ -30,6 +52,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
         setIsAutheticated(true)
         if (tokenData)
             localStorage.setItem("token", tokenData)
+        localStorage.setItem("user", JSON.stringify(userData))
     }
 
     const logout = () => {
@@ -37,6 +60,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
         setToken(null)
         setIsAutheticated(false)
         localStorage.removeItem("token")
+        localStorage.removeItem("user")
     }
     const value = {
         user,
@@ -46,6 +70,12 @@ function AuthProvider({ children }: { children: ReactNode }) {
         logout
     }
 
+    if (isLoading) {
+        return (
+            <div style={{ padding: "20px", textRendering: "optimizeLegibility" }}>Sedang memuat...</div>
+        )
+    }
+
     return (
         <AuthContext.Provider value={value}>
             {children}
@@ -53,4 +83,11 @@ function AuthProvider({ children }: { children: ReactNode }) {
     )
 }
 
-export default AuthContext
+export const useAuth = () => {
+    const context = useContext(AuthContext)
+    if (context === undefined) {
+        throw new Error("useAuth harus digunakan didalam AuthProvider")
+    }
+
+    return context
+}

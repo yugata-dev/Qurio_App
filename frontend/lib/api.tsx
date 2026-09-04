@@ -1,5 +1,3 @@
-"use client"
-
 interface loginUser {
     success: boolean
     data: {
@@ -16,15 +14,25 @@ interface registerUser {
     }
 }
 
+interface User {
+    id: string;
+    name: string;
+    role: string;
+    email: string
+}
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
-const fetchUserLogin = async (email: string, password: string, role: string): Promise<loginUser> => {
+const fetchUserLogin = async (email: string, password: string, role: string, token: string): Promise<loginUser> => {
+
     try {
         const response = await fetch(`${API_URL}/users/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, role, password })
+            body: JSON.stringify({ email, role, password, token })
         })
+
+
 
         if (!response.ok) {
             const errorData = await response.json();

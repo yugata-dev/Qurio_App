@@ -1,24 +1,30 @@
+"use client"
 import Link from "next/link"
+import { useAuth } from "@/context/AuthContext"
+
+
 
 function DashboardPage() {
+    const { logout } = useAuth()
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-            <h1 className="text-2xl font-bold">Selamat Datang di Qurio App</h1>
-            <div className="flex gap-4">
-                <Link
-                    href="/register"
-                    className="px-4 py-2 bg-black text-white rounded-lg font-bold"
-                >
-                    Ke Halaman Register
+        <section>
+            <button onClick={logout} className="px-4 py-2 bg-black text-white rounded-lg font-bold">
+                <Link href="/">
+                    Logout
                 </Link>
-                <Link
-                    href="/login"
-                    className="px-4 py-2 border-2 border-black rounded-lg font-bold"
-                >
-                    Ke Halaman Login
-                </Link>
+            </button>
+            <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+                <h1 className="text-2xl font-bold">Selamat Datang di Qurio App</h1>
+                <div className="flex gap-4">
+                    <Link
+                        href="/createsessions"
+                        className="px-4 py-2 bg-black text-white rounded-lg font-bold"
+                    >
+                        Buat Sesi
+                    </Link>
+                </div>
             </div>
-        </div>
+        </section>
     )
 }
 
