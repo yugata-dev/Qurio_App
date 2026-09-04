@@ -1,5 +1,20 @@
 "use client"
 import { useState } from "react"
+import { createPolls } from "@/lib/api"
+import { useAuth } from "@/context/AuthContext"
+
+interface pollOption {
+    option_text: string
+    is_correct: boolean
+    option_order: number
+}
+
+interface formPolls {
+    type: string
+    question: string
+    option: pollOption[]
+    sessionId: string
+}
 
 interface AnswerOption {
     id: string
@@ -13,10 +28,26 @@ interface Question {
 }
 
 function CreateSessionsPage() {
+    const { user } = useAuth()
     const [inputAppears, setInputAppears] = useState<boolean>(true)
 
-    const handleSelectOption = (optionId: string) => {
-        console.log("user memilih:", optionId)
+    const onSubmitPolls = async (dataPolls: formPolls) => {
+        if (!user) return alert("Anda harus login terlebih dahulu...")
+        try {
+            const response = await createPolls(
+                dataPolls.type,
+                dataPolls.question,
+                dataPolls.option,
+                dataPolls.sessionId
+            )
+            if (response.success) {
+                alert("Soal yang Guru, berhasil terkirim secara live!")
+            }
+
+            console.log("hasil data:", response)
+        } catch (error: any) {
+            console.error("login error:", error)
+        }
     }
 
     const handleAppears = (e: React.MouseEvent, status: boolean) => {
@@ -44,20 +75,6 @@ function CreateSessionsPage() {
                 <form className="text-gray-400 flex flex-col">
                     <div>
                         <label className="font-bold" >TIPE :</label>
-                        <select className="m-1 border-2 border-black rounded-[5px] p-1" name="" id="">
-                            <option value="">Pilih Tipe Soal</option>
-                            <option value="quiz">Quiz</option>
-                            <option value="wordcloud">Wordcloud</option>
-                            <option value="qa">Tanya Jawab</option>
-                        </select>
-                        <label className="font-bold" >JAM :</label>
-                        <select className="m-1 border-2 border-black rounded-[5px] p-1" name="" id="">
-                            <option value="">Pilih Tipe Soal</option>
-                            <option value="quiz">Quiz</option>
-                            <option value="wordcloud">Wordcloud</option>
-                            <option value="qa">Tanya Jawab</option>
-                        </select>
-                        <label className="font-bold" >POIN :</label>
                         <select className="m-1 border-2 border-black rounded-[5px] p-1" name="" id="">
                             <option value="">Pilih Tipe Soal</option>
                             <option value="quiz">Quiz</option>

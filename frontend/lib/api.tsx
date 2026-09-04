@@ -14,11 +14,37 @@ interface registerUser {
     }
 }
 
+interface pollOptions {
+    id: string
+    poll_id: string
+    option_text: string
+    is_correct: boolean
+    option_order: number
+}
+
+interface Polls {
+    success: boolean
+    data: {
+        poll: {
+            id: string, sessionId: string, type: "quiz" | "qa" | "wordcloud", question: string,
+            status: 'draft' | 'published' | 'closed', created_at: string, published_at: string, closed_at: string
+            option?: pollOptions[]
+        }
+    }
+}
+
+
 interface User {
     id: string;
     name: string;
     role: string;
     email: string
+}
+
+interface PollOptionInput {
+    option_text: string;
+    is_correct: boolean;
+    option_order: number;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -71,5 +97,29 @@ const fetchUserRegister = async (name: string, email: string, password: string, 
     }
 }
 
+const createPolls = async (type: string, question: string, option: PollOptionInput[], sessionId: string): Promise<Polls> => {
+    try {
+        const response = await fetch(`${API_URL}/sessions/${sessionId}/polls`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type, question, option })
+        })
 
-export { fetchUserLogin, fetchUserRegister }
+        if (!response.ok) {
+            const errorData = await response.json();
+            const errorMessage = errorData.message || errorData.error || "Created poll failed";
+            console.error("Backend error detail:", errorData);
+            throw new Error(errorMessage);
+        }
+
+        // DIPERBAIKI: Cukup gunakan response.json() saja (jangan panggil response.text() sebelumnya)
+        const data = await response.json();
+        return data
+    } catch (error) {
+        console.error("Register error:", error);
+        throw error;
+    }
+}
+
+
+export { fetchUserLogin, fetchUserRegister, createPolls }
