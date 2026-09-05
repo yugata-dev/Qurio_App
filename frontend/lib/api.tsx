@@ -105,7 +105,7 @@ const fetchUserRegister = async (name: string, email: string, password: string, 
 
 const createPolls = async (question: string, option: PollOptionInput[], sessionId: string): Promise<Polls> => {
     try {
-        const response = await fetch(`${API_URL}/sessions/${sessionId}/polls`, {
+        const response = await fetch(`${API_URL}/polls/sessions/${sessionId}/polls`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ question, option })
@@ -133,7 +133,7 @@ const postType = async (type: string, sessionId: string, token: string): Promise
     }
 
     try {
-        const response = await fetch(`${API_URL}polls/sessions/${sessionId}/polls`, {
+        const response = await fetch(`${API_URL}/polls/sessions/${sessionId}/polls`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
