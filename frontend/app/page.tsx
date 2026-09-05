@@ -1,7 +1,7 @@
 "use client"
 import { fetchUserRegister } from "@/lib/api"
 import { useForm } from "react-hook-form"
-import RegisterPage from "./register/page";
+import RegisterPage from "./(auth)/register/page";
 import Link from "next/link";
 
 export default function Home() {

@@ -11,7 +11,8 @@ export const middleware = (request: NextRequest) => {
   }
 
   if (
-    pathname.startsWith("/createsessions") &&
+    (pathname.startsWith("/createsessions") ||
+      pathname.startsWith("/createpolls")) &&
     role?.toLowerCase() === "siswa"
   ) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
@@ -21,5 +22,9 @@ export const middleware = (request: NextRequest) => {
 };
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/createsessions/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/createsessions/:path*",
+    "/createpolls/:path*",
+  ],
 };
