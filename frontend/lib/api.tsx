@@ -188,7 +188,7 @@ const createSession = async (title: string, token: string): Promise<Sessions> =>
     }
 }
 
-const getDataSession = async (title: string, sessionId: number): Promise<Sessions> => {
+const getDataSession = async (title: string, sessionId: string): Promise<Sessions> => {
     try {
         const response = await fetch(`${API_URL}/sessions/${sessionId}`, {
             method: "GET",

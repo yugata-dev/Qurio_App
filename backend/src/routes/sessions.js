@@ -1,5 +1,5 @@
 import express from "express"
-import { createSession, getSessions, getSession, updateSession } from "../controllers/controllersSessions.js"
+import { createSession, getSessions, getSession, updateSession, getType } from "../controllers/controllersSessions.js"
 // Import controller poll
 import { createPoll, getPollsBySession } from "../controllers/controllersPolls.js"
 import { teacherLimit } from "../middleware/JWT.js"
@@ -16,5 +16,6 @@ router.put("/:id", teacherLimit, updateSession)
 // URL Asli: /api/sessions/:sessionId/polls
 router.post("/:sessionId/polls", teacherLimit, createPoll)
 router.get("/:sessionId/polls", getPollsBySession)
+router.get("/:sessionId/type", getType)
 
 export default router

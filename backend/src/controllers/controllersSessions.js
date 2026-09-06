@@ -178,3 +178,20 @@ export const updateSession = async (req, res) => {
         })
     }
 }
+
+export const getType = async (req, res) => {
+    const { sessionId } = req.params
+
+    try {
+        const getDataType = await client.query("SELECT type FROM polls WHERE session_id = $1 LIMIT 1", [sessionId])
+
+        res.status(200).json({ success: true, message: getDataType })
+    } catch (error) {
+        console.error("Get data type:", error.message)
+        return res.status(500).json({
+            success: false,
+            message: "Gagal mendapat data type"
+        })
+    }
+
+} 

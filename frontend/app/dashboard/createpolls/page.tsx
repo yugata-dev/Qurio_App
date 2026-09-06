@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
-import { createPolls } from "@/lib/api"
+import { createPolls, getDataSession } from "@/lib/api"
 import { useAuth } from "@/context/AuthContext"
 
 interface pollOption {
@@ -12,6 +12,8 @@ interface pollOption {
 interface formPolls {
     question: string
     option: pollOption[]
+    token: string
+    title: string
     sessionId: string
 }
 
@@ -27,17 +29,30 @@ interface Question {
 }
 
 function CreatePollsPage() {
-    const { user } = useAuth()
+    const { user, token } = useAuth()
     const [inputAppears, setInputAppears] = useState<boolean>(true)
 
     const onSubmitPolls = async (dataPolls: formPolls) => {
-        if (!user) return alert("Anda harus login terlebih dahulu...")
+        if (!user || !token) return alert("Anda harus login terlebih dahulu...")
         try {
+            const getSessionId = await getDataSession(
+                dataPolls.title,
+                dataPolls.sessionId
+            )
+
+            const dataId = getSessionId.id || (getSessionId as any).data?.id;
+
+            if (!getSessionId) {
+                throw new Error("Gagal mendapatkan ID Sesi dari backend");
+            }
+
             const response = await createPolls(
                 dataPolls.question,
                 dataPolls.option,
-                dataPolls.sessionId
+                token,
+                dataId
             )
+
             if (response.success) {
                 alert("Soal yang Guru buat, berhasil terkirim secara live!")
             }
