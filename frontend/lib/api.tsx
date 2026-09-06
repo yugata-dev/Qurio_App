@@ -42,7 +42,7 @@ interface User {
 }
 
 interface PollOptionInput {
-    option_text: string;
+    text: string;
     is_correct: boolean;
     option_order: number;
 }
@@ -103,7 +103,7 @@ const fetchUserRegister = async (name: string, email: string, password: string, 
     }
 }
 
-const createPolls = async (question: string, option: PollOptionInput[], sessionId: string, token: string): Promise<Polls> => {
+const createPolls = async (type: string, question: string, options: PollOptionInput[], sessionId: string, token: string): Promise<Polls> => {
     try {
         const response = await fetch(`${API_URL}/polls/sessions/${sessionId}/polls`, {
             method: "POST",
@@ -111,7 +111,7 @@ const createPolls = async (question: string, option: PollOptionInput[], sessionI
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${token}`
             },
-            body: JSON.stringify({ question, option })
+            body: JSON.stringify({ type, question, options })
         })
 
         if (!response.ok) {

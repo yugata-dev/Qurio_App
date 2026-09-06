@@ -37,10 +37,15 @@ function CreatePollsPage() {
 
 
             const response = await createPolls(
+                "quiz",
                 dataPolls.question,
-                dataPolls.option,
-                token,
-                dataId
+                dataPolls.option.map((option, index) => ({
+                    text: option.option_text,
+                    is_correct: option.is_correct,
+                    option_order: index
+                })),
+                dataPolls.sessionId,
+                token
             )
 
             if (response.success) {

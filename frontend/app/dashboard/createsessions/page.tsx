@@ -7,7 +7,7 @@ import { useState } from "react";
 
 
 interface pollOption {
-    option_text: string
+    text: string
     is_correct: boolean
     option_order: number
 }
@@ -42,6 +42,11 @@ function CreateSessionsPage() {
     const onSubmitSession = async (dataSession: SessionFormInput) => {
         if (!user || !token) return alert("Anda harus login terlebih dahulu...")
 
+        const pollType = dataSession.type?.trim().toLowerCase()
+        if (!pollType || !["quiz", "wordcloud", "qa"].includes(pollType)) {
+            return alert("Silakan pilih tipe soal terlebih dahulu.")
+        }
+
         try {
             // 1. Buat session
             const postTitleSession = await createSession(dataSession.title, token);
@@ -56,12 +61,12 @@ function CreateSessionsPage() {
 
             try {
                 const optionsWithCorrectFlag = dataSession.option.map((opt, i) => ({
-                    ...opt,
+                    text: opt.text,
                     is_correct: i === Number(dataSession.correctIndex),
                     option_order: i
                 }))
 
-                await createPolls(dataSession.question, optionsWithCorrectFlag, token, newSessionId)
+                await createPolls(pollType, dataSession.question, optionsWithCorrectFlag, newSessionId, token)
                 alert("Sesi dan soal berhasil dibuat..")
             } catch (error) {
                 alert("Sesi berhasil dibuat, tapi soal gagal disimpan. Tambahkan soal lewat halaman sesi.")
@@ -133,7 +138,7 @@ function CreateSessionsPage() {
                                 {fields.map((field, i) => (
                                     <div key={field.id} className="p-2 gap-2 flex items-center border-2 border-amber-400 rounded-lg bg-white">
                                         <input
-                                            {...register(`option.${i}.option_text`, { required: "Opsi wajib diisi" })}
+                                            {...register(`option.${i}.text`, { required: "Opsi wajib diisi" })}
                                             placeholder={`Opsi ${i + 1}`}
                                             className="text-black bg-gray-50 flex-1 rounded p-1 border font-light"
                                         />
@@ -155,7 +160,7 @@ function CreateSessionsPage() {
 
                                 <button
                                     type="button"
-                                    onClick={() => append({ option_text: "", is_correct: false, option_order: fields.length })}
+                                    onClick={() => append({ text: "", is_correct: false, option_order: fields.length })}
                                     className="border-2 border-dashed border-amber-600 rounded-lg p-2 hover:bg-amber-100 text-amber-800 transition"
                                 >
                                     + Tambah Opsi

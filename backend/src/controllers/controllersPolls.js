@@ -52,7 +52,8 @@ function validatePollInput(type, question, options) {
 // ====================================================================
 export const createPoll = async (req, res) => {
     const { sessionId } = req.params
-    const { type, question, options = [] } = req.body
+    const type = typeof req.body.type === "string" ? req.body.type.trim().toLowerCase() : ""
+    const { question, options = [] } = req.body
 
     // Step 1: Validasi input yang dikirim dari client
     const validationError = validatePollInput(type, question, options)
