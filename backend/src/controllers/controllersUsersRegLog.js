@@ -64,11 +64,10 @@ export const usersReg = async (req, res) => {
         console.error("Register Error Full Object:", error)
 
         // Kirimkan pesan error asli agar mudah di-debug dari frontend
-        const errorMessage = error.message || "Pendaftaran gagal, terjadi kesalahan server"
-
+        const isDev = process.env.NODE_ENV !== "production"
         return res.status(500).json({
             success: false,
-            message: errorMessage
+            message: isDev ? error.message : "Pendaftaran gagal, terjadi kesalahan server"
         })
     }
 }

@@ -103,11 +103,14 @@ const fetchUserRegister = async (name: string, email: string, password: string, 
     }
 }
 
-const createPolls = async (question: string, option: PollOptionInput[], sessionId: string): Promise<Polls> => {
+const createPolls = async (question: string, option: PollOptionInput[], sessionId: string, token: string): Promise<Polls> => {
     try {
         const response = await fetch(`${API_URL}/polls/sessions/${sessionId}/polls`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
             body: JSON.stringify({ question, option })
         })
 
@@ -190,7 +193,7 @@ const getDataSession = async (title: string, sessionId: number): Promise<Session
         const response = await fetch(`${API_URL}/sessions/${sessionId}`, {
             method: "GET",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ title, sessionId })
+            body: JSON.stringify({ title })
         })
 
         if (!response.ok) {
