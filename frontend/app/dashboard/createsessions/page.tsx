@@ -87,7 +87,7 @@ function CreateSessionsPage() {
                             {errors.title && <div className="text-xs font-semibold block mt-1 text-red-500">{errors.title.message}</div>}
                         </div>
                         <button className="bg-amber-200 rounded-[0.3rem] p-2 cursor-pointer disabled:opacity-50" type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? "Memproses..." : "Buat Sekarang"}
+                            {isSubmitting ? "Memproses..." : "Tetapkan Judul"}
                         </button>
                     </form>
                 </div>
