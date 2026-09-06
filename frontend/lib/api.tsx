@@ -188,12 +188,11 @@ const createSession = async (title: string, token: string): Promise<Sessions> =>
     }
 }
 
-const getDataSession = async (title: string, sessionId: string): Promise<Sessions> => {
+const getDataType = async (sessionId: string): Promise<Sessions> => {
     try {
-        const response = await fetch(`${API_URL}/sessions/${sessionId}`, {
+        const response = await fetch(`${API_URL}/sessions/${sessionId}/type`, {
             method: "GET",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ title })
         })
 
         if (!response.ok) {
@@ -212,4 +211,4 @@ const getDataSession = async (title: string, sessionId: string): Promise<Session
 }
 
 
-export { fetchUserLogin, fetchUserRegister, createPolls, createSession, getDataSession, postType }
+export { fetchUserLogin, fetchUserRegister, createPolls, createSession, getDataType, postType }

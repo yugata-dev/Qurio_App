@@ -20,6 +20,15 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+function isTokenExpired(token: string) {
+    try {
+        const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")))
+        return typeof payload.exp !== "number" || payload.exp * 1000 <= Date.now()
+    } catch {
+        return true
+    }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null)
     const [token, setToken] = useState<string | null>(null)
@@ -30,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const storedToken = localStorage.getItem("token")
         const storedUser = localStorage.getItem("user")
 
-        if (storedToken) {
+        if (storedToken && !isTokenExpired(storedToken)) {
             try {
                 setToken(storedToken)
                 setIsAutheticated(true)
@@ -41,7 +50,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             } catch (error) {
                 console.error("gagal memuat login:", error)
                 localStorage.removeItem("token")
+                localStorage.removeItem("user")
             }
+        } else if (storedToken) {
+            localStorage.removeItem("token")
+            localStorage.removeItem("user")
+            Cookies.remove("token")
+            Cookies.remove("role")
         }
 
         setIsLoading(false)
@@ -54,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (tokenData)
             localStorage.setItem("token", tokenData)
         localStorage.setItem("user", JSON.stringify(userData))
-        Cookies.set("token", tokenData, { expires: 1 })
+        Cookies.set("token", tokenData, { expires: 7 })
         Cookies.set("role", userData.role, { expires: 1 })
     }
 

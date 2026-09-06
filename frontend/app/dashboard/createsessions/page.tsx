@@ -1,14 +1,25 @@
 "use client"
-import { createSession, postType } from "@/lib/api"
+import { createPolls, createSession } from "@/lib/api"
 import { useAuth } from "@/context/AuthContext"
 import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
+import { useForm, useFieldArray } from "react-hook-form"
 import { useState } from "react";
+
+
+interface pollOption {
+    option_text: string
+    is_correct: boolean
+    option_order: number
+}
+
 
 // Hanya cantumkan field yang di-input via form
 interface SessionFormInput {
     title: string
     type: string
+    question: string
+    option: pollOption[]
+    correctIndex: number
 }
 
 interface AnswerOption {
@@ -25,8 +36,8 @@ interface Question {
 function CreateSessionsPage() {
     const router = useRouter()
     const { user, token } = useAuth()
-    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<SessionFormInput>()
-    const [inputAppears, setInputAppears] = useState<boolean>(true)
+    const { register, control, handleSubmit, formState: { errors, isSubmitting } } = useForm<SessionFormInput>()
+    const { fields, append, remove } = useFieldArray({ control, name: "option" })
 
     const onSubmitSession = async (dataSession: SessionFormInput) => {
         if (!user || !token) return alert("Anda harus login terlebih dahulu...")
@@ -43,10 +54,18 @@ function CreateSessionsPage() {
                 throw new Error("Gagal mendapatkan ID Sesi dari backend");
             }
 
-            // 3. Simpan type ke poll
-            await postType(dataSession.type, newSessionId, token);
+            try {
+                const optionsWithCorrectFlag = dataSession.option.map((opt, i) => ({
+                    ...opt,
+                    is_correct: i === Number(dataSession.correctIndex),
+                    option_order: i
+                }))
 
-            alert("Session berhasil dibuat!");
+                await createPolls(dataSession.question, optionsWithCorrectFlag, token, newSessionId)
+                alert("Sesi dan soal berhasil dibuat..")
+            } catch (error) {
+                alert("Sesi berhasil dibuat, tapi soal gagal disimpan. Tambahkan soal lewat halaman sesi.")
+            }
 
             // 4. Pindah ke halaman detail session
             router.push(`/dashboard/session/${newSessionId}`);
@@ -56,81 +75,100 @@ function CreateSessionsPage() {
         }
     }
 
-    const handleAppears = (e: React.MouseEvent, status: boolean) => {
-        e.stopPropagation
-        setInputAppears(status)
-    }
-
-    const questions: Question = {
-        id: "q-1",
-        questionText: "test",
-        option: [
-            { id: "A", text: "test1" },
-            { id: "B", text: "test2" },
-            { id: "C", text: "test3" },
-            { id: "D", text: "test4" }
-        ]
-    }
-
-
     return (
-        <section>
-            <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-                <div className="bg-amber-50 w-4xl text-black flex items-center flex-col p-2 rounded-2xl font-bold">
-                    <h1 className="text-2xl font-bold">BUAT SESI</h1>
-                    <form className="flex items-center flex-col" onSubmit={handleSubmit(onSubmitSession)}>
-                        <div className="w-220 gap-2">
-                            <br />
-                            <label className="text-2xl">Title:</label>
-                            <br />
-                            <input {...register("title", { required: "Isi judul yang diinginkan..." })} className="h-10 w-full p-2 text-[1.2rem] border-black border-2 rounded-[0.4rem] mb-2 font-light" type="text" />
-                            {errors.title && <div className="text-xs font-semibold block mt-1 text-red-500">{errors.title.message}</div>}
-                        </div>
-                        <button className="bg-amber-200 rounded-[0.3rem] p-2 cursor-pointer disabled:opacity-50" type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? "Memproses..." : "Tetapkan Judul"}
-                        </button>
-                    </form>
-                </div>
-                <div className="bg-amber-50 w-4xl text-black flex items-center flex-col p-2 rounded-2xl font-bold">
-                    <h1 className="text-2xl font-bold">BUAT PERTANYAAN</h1>
-                    <form className="text-gray-400 flex w-full flex-col">
-                        <label className="text-2xl">Tipe:</label>
-                        <select {...register("type", { required: "Pilih type soal.." })} className="mb-2 border-2 border-black w-full rounded-[5px] p-1">
-                            <option value="">Pilih Tipe Soal</option>
-                            <option value="quiz">Quiz</option>
-                            <option value="wordcloud">Wordcloud</option>
-                            <option value="qa">Tanya Jawab</option>
-                        </select>
+        <section className="flex flex-col items-center justify-center min-h-screen gap-4  p-4">
+            {/* Kontainer Utama */}
+            <div className="bg-amber-50 w-full max-w-4xl text-black flex flex-col items-center p-6 rounded-2xl font-bold shadow-md">
+                <h1 className="text-3xl font-bold mb-6">BUAT SESI & PERTANYAAN</h1>
 
-                        <label className="font-bold text-[1.2rem] mt-2">Pertanyaan Anda:</label>
-                        <textarea className="w-full text-black bg-white rounded border border-gray-txt  h-32 text-base outline-none text-gray-txt py-1 px-3 resize-none"></textarea>
-                        <label className="font-bold text-[1.2rem] mt-2">Opsi Jawaban:</label>
-                        <div className="grid grid-cols-2 gap-4 w-full border-2 border-amber-600 mx-auto p-4 ">
-                            {
-                                questions.option?.map((options) => (
-                                    <div key={options.id} className="p-2 gap-2 justify-between flex border-2 border-amber-600">
-                                        <label htmlFor=""> <span className="bg-amber-300 p-1 rounded-lg font-extrabold">{options.id}</span> <span className="font-bold">{options.text}</span> </label>
-                                        <input type="radio" />
-                                    </div>
-                                ))
-                            }
+                {/* Pembungkus Form Tunggal */}
+                <form className="w-full max-w-2xl flex flex-col gap-4" onSubmit={handleSubmit(onSubmitSession)}>
+
+                    {/* BAGIAN 1: PEMBUATAN SESI */}
+                    <div className="flex flex-col gap-1">
+                        <label className="text-xl">Title Sesi:</label>
+                        <input
+                            {...register("title", { required: "Isi judul yang diinginkan..." })}
+                            className="h-10 w-full p-2 text-[1.2rem] border-black border-2 rounded-[0.4rem] font-light bg-white"
+                            type="text"
+                        />
+                        {errors.title && <div className="text-xs font-semibold mt-1 text-red-500">{errors.title.message}</div>}
+                    </div>
+
+                    <hr className="border-amber-200 my-4" />
+
+                    {/* BAGIAN 2: PEMBUATAN PERTANYAAN */}
+                    <div className="flex flex-col gap-3">
+                        <h2 className="text-2xl font-bold text-center">Buat Pertanyaan Pertama</h2>
+
+                        <div className="flex flex-col gap-1">
+                            <label className="text-xl">Tipe Soal:</label>
+                            <select
+                                {...register("type", { required: "Pilih type soal.." })}
+                                className="border-2 border-black w-full rounded-[5px] p-2 bg-white font-medium"
+                            >
+                                <option value="">Pilih Tipe Soal</option>
+                                <option value="quiz">Quiz</option>
+                                <option value="wordcloud">Wordcloud</option>
+                                <option value="qa">Tanya Jawab</option>
+                            </select>
+                            {errors.type && <div className="text-xs font-semibold mt-1 text-red-500">{errors.type.message}</div>}
                         </div>
-                        <div>
-                            <button type="button" className="flex justify-start m-4 text-blue-500 font-extrabold" onClick={(e) => handleAppears(e, false)} >
-                                + Tambah Opsi
-                            </button>
-                            {
-                                inputAppears ? null :
-                                    <div>
-                                        <label htmlFor="" className="p-2">SOAL:</label>
-                                        <input type="text" className="rounded border border-gray-txt bg-white p-1 m-2 text-black" />
-                                        <button className="bg-amber-200 rounded-lg p-1" onClick={(e) => handleAppears(e, true)} type="button">Buat Opsi Baru</button>
-                                    </div>
-                            }
+
+                        <div className="flex flex-col gap-1">
+                            <label className="font-bold text-[1.2rem]">Pertanyaan Anda:</label>
+                            {/* Diubah menggunakan {...register} agar nilainya masuk ke React Hook Form */}
+                            <textarea
+                                {...register("question", { required: "Pertanyaan wajib diisi" })}
+                                className="w-full text-black bg-white rounded border-2 border-black h-32 text-base outline-none py-2 px-3 resize-none font-light"
+                            />
+                            {errors.question && <div className="text-xs font-semibold mt-1 text-red-500">{errors.question.message}</div>}
                         </div>
-                        <button className="bg-amber-200 rounded-[0.3rem] p-2" type="submit">Buat Sekarang</button>
-                    </form>
-                </div>
+
+                        {/* BAGIAN OPSI JAWABAN */}
+                        <div className="flex flex-col gap-2">
+                            <label className="font-bold text-[1.2rem]">Opsi Jawaban:</label>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full border-2 border-amber-600 p-4 rounded-xl">
+                                {fields.map((field, i) => (
+                                    <div key={field.id} className="p-2 gap-2 flex items-center border-2 border-amber-400 rounded-lg bg-white">
+                                        <input
+                                            {...register(`option.${i}.option_text`, { required: "Opsi wajib diisi" })}
+                                            placeholder={`Opsi ${i + 1}`}
+                                            className="text-black bg-gray-50 flex-1 rounded p-1 border font-light"
+                                        />
+                                        <input
+                                            type="radio"
+                                            value={i}
+                                            {...register("correctIndex")}
+                                            className="w-4 h-4"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => remove(i)}
+                                            className="text-red-500 text-sm hover:underline"
+                                        >
+                                            Hapus
+                                        </button>
+                                    </div>
+                                ))}
+
+                                <button
+                                    type="button"
+                                    onClick={() => append({ option_text: "", is_correct: false, option_order: fields.length })}
+                                    className="border-2 border-dashed border-amber-600 rounded-lg p-2 hover:bg-amber-100 text-amber-800 transition"
+                                >
+                                    + Tambah Opsi
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Tombol Submit Utama */}
+                    <button className="bg-amber-300 text-xl font-bold rounded-xl p-3 mt-4 hover:bg-amber-400 shadow transition w-full" type="submit">
+                        Buat Sekarang
+                    </button>
+                </form>
             </div>
         </section>
     )
