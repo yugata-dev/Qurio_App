@@ -1,9 +1,9 @@
 import React from 'react'
 
-function dynamicPage() {
+function SessionPage() {
     return (
-        <div>dynamicPage</div>
+        <div>**Hub/control panel** sesi: kode akses, tabel semua soal (question, type, status), tombol Publish per baris (khusus quiz draft), tombol "+ Tambah Soal", listen socket.io untuk auto-update tabel tanpa refresh </div>
     )
 }
 
-export default dynamicPage
+export default SessionPage

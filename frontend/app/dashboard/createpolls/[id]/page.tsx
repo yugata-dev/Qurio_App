@@ -9,11 +9,14 @@ interface pollOption {
     option_order: number
 }
 
+type statusPoll = 'draft' | 'published' | "closed"
+
 interface formPolls {
     question: string
     option: pollOption[]
     token: string
     sessionId: string
+    status: statusPoll
 }
 
 interface AnswerOption {
@@ -45,7 +48,8 @@ function CreatePollsPage() {
                     option_order: index
                 })),
                 dataPolls.sessionId,
-                token
+                token,
+                "published"
             )
 
             if (response.success) {

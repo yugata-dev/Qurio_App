@@ -12,6 +12,7 @@ interface pollOption {
     option_order: number
 }
 
+type statusPoll = 'draft' | 'published' | 'closed'
 
 // Hanya cantumkan field yang di-input via form
 interface SessionFormInput {
@@ -20,6 +21,7 @@ interface SessionFormInput {
     question: string
     option: pollOption[]
     correctIndex: number
+    status: statusPoll
 }
 
 interface AnswerOption {
@@ -36,16 +38,12 @@ interface Question {
 function CreateSessionsPage() {
     const router = useRouter()
     const { user, token } = useAuth()
-    const { register, control, handleSubmit, formState: { errors, isSubmitting } } = useForm<SessionFormInput>()
+    const { register, watch, control, handleSubmit, formState: { errors, isSubmitting } } = useForm<SessionFormInput>()
     const { fields, append, remove } = useFieldArray({ control, name: "option" })
+    const selectedType = watch("type")
 
     const onSubmitSession = async (dataSession: SessionFormInput) => {
         if (!user || !token) return alert("Anda harus login terlebih dahulu...")
-
-        const pollType = dataSession.type?.trim().toLowerCase()
-        if (!pollType || !["quiz", "wordcloud", "qa"].includes(pollType)) {
-            return alert("Silakan pilih tipe soal terlebih dahulu.")
-        }
 
         try {
             // 1. Buat session
@@ -65,15 +63,17 @@ function CreateSessionsPage() {
                     is_correct: i === Number(dataSession.correctIndex),
                     option_order: i
                 }))
-
-                await createPolls(pollType, dataSession.question, optionsWithCorrectFlag, newSessionId, token)
-                alert("Sesi dan soal berhasil dibuat..")
+                if (selectedType === "quiz") {
+                    await createPolls(selectedType, dataSession.question, optionsWithCorrectFlag, newSessionId, token, "draft")
+                    router.push(`/dashboard/session/${newSessionId}`)
+                } else {
+                    await createPolls(selectedType, dataSession.question, optionsWithCorrectFlag, newSessionId, token, "published")
+                    router.push(`/dashboard/session/${newSessionId}`)
+                } alert("Sesi dan soal berhasil dibuat..")
             } catch (error) {
                 alert("Sesi berhasil dibuat, tapi soal gagal disimpan. Tambahkan soal lewat halaman sesi.")
             }
 
-            // 4. Pindah ke halaman detail session
-            router.push(`/dashboard/session/${newSessionId}`);
         } catch (error: any) {
             console.error("Create session error:", error.message || error);
             alert(`Gagal membuat sesi: ${error.message}`);
@@ -108,6 +108,7 @@ function CreateSessionsPage() {
 
                         <div className="flex flex-col gap-1">
                             <label className="text-xl">Tipe Soal:</label>
+                            <p className="font-light text-gray-400"><span className="text-red-500 m-0.3">Alert:</span> Tipe soal hanya bisa dipilih kali ini saja tidak bisa di ganti sepanjang sesi...</p>
                             <select
                                 {...register("type", { required: "Pilih type soal.." })}
                                 className="border-2 border-black w-full rounded-[5px] p-2 bg-white font-medium"
@@ -130,52 +131,55 @@ function CreateSessionsPage() {
                             {errors.question && <div className="text-xs font-semibold mt-1 text-red-500">{errors.question.message}</div>}
                         </div>
 
-                        {/* BAGIAN OPSI JAWABAN */}
-                        <div className="flex flex-col gap-2">
-                            <label className="font-bold text-[1.2rem]">Opsi Jawaban:</label>
+                        {selectedType === "quiz" && (
+                            < div className="flex flex-col gap-2">
+                                <label className="font-bold text-[1.2rem]">Opsi Jawaban:</label>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full border-2 border-amber-600 p-4 rounded-xl">
-                                {fields.map((field, i) => (
-                                    <div key={field.id} className="p-2 gap-2 flex items-center border-2 border-amber-400 rounded-lg bg-white">
-                                        <input
-                                            {...register(`option.${i}.text`, { required: "Opsi wajib diisi" })}
-                                            placeholder={`Opsi ${i + 1}`}
-                                            className="text-black bg-gray-50 flex-1 rounded p-1 border font-light"
-                                        />
-                                        <input
-                                            type="radio"
-                                            value={i}
-                                            {...register("correctIndex")}
-                                            className="w-4 h-4"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => remove(i)}
-                                            className="text-red-500 text-sm hover:underline"
-                                        >
-                                            Hapus
-                                        </button>
-                                    </div>
-                                ))}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full border-2 border-amber-600 p-4 rounded-xl">
+                                    {fields.map((field, i) => (
+                                        <div key={field.id} className="p-2 gap-2 flex items-center border-2 border-amber-400 rounded-lg bg-white">
+                                            <input
+                                                {...register(`option.${i}.text`, { required: "Opsi wajib diisi" })}
+                                                placeholder={`Opsi ${i + 1}`}
+                                                className="text-black bg-gray-50 flex-1 rounded p-1 border font-light"
+                                            />
+                                            <input
+                                                type="radio"
+                                                value={i}
+                                                {...register("correctIndex")}
+                                                className="w-4 h-4"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => remove(i)}
+                                                className="text-red-500 text-sm hover:underline"
+                                            >
+                                                Hapus
+                                            </button>
+                                        </div>
+                                    ))}
 
-                                <button
-                                    type="button"
-                                    onClick={() => append({ text: "", is_correct: false, option_order: fields.length })}
-                                    className="border-2 border-dashed border-amber-600 rounded-lg p-2 hover:bg-amber-100 text-amber-800 transition"
-                                >
-                                    + Tambah Opsi
-                                </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => append({ text: "", is_correct: false, option_order: fields.length })}
+                                        className="border-2 border-dashed border-amber-600 rounded-lg p-2 hover:bg-amber-100 text-amber-800 transition"
+                                    >
+                                        + Tambah Opsi
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* Tombol Submit Utama */}
-                    <button className="bg-amber-300 text-xl font-bold rounded-xl p-3 mt-4 hover:bg-amber-400 shadow transition w-full" type="submit">
-                        Buat Sekarang
+                    <button disabled={isSubmitting} className="bg-amber-300 text-xl font-bold rounded-xl p-3 mt-4 hover:bg-amber-400 shadow transition w-full" type="submit">
+
+                        {isSubmitting ? "Sedang memperoses..." : "Buat Sekarang"}
                     </button>
                 </form>
-            </div>
-        </section>
+            </div >
+        </section >
     )
 }
 
