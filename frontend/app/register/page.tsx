@@ -1,13 +1,32 @@
 "use client";
 import { fetchUserRegister } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface RegisterFormData {
   name: string;
   email: string;
   password: string;
-  role: string;
+  role: "guru" | "siswa";
 }
 
 export default function RegisterPage() {
@@ -27,6 +46,11 @@ export default function RegisterPage() {
         data.password,
         data.role,
       );
+
+      if (!response.success) {
+        alert("Register gagal: " + response.data);
+        return;
+      }
       alert("Register berhasil");
       router.push("/dashboard");
     } catch (error) {
@@ -35,78 +59,126 @@ export default function RegisterPage() {
   };
 
   return (
-    // ------------------------------------------------------------------------------------------ //
+    <div className="relative flex flex-col flex-1 items-center justify-center bg-zinc-100 font-sans min-h-screen p-4">
+      {/* <div className="absolute top-6 left-6 flex items-center gap-2">
+        <span className="size-3 rounded-full bg-blue-600" />
+        <span className="text-lg font-bold text-zinc-900">Qurio</span>
+      </div> */}
 
-    //----------------------------------- FORM REGISTER ----------------------------------------- //
-
-    // ------------------------------------------------------------------------------------------ //
-
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black min-h-screen">
-      <div className="bg-amber-50 w-96 p-6 flex flex-col items-center justify-center rounded-2xl shadow-lg">
-        <h1 className="text-2xl font-bold mb-4 text-black">Register Qurio</h1>
-        <form className="text-red-500 w-full" onSubmit={handleSubmit(onSubmit)}>
-          <label className="text-black font-bold block mb-1">NAME</label>
-          <input
-            {...register("name", { required: "Name required" })}
-            className="border-2 w-full border-black text-black pl-2 py-1 rounded"
-            placeholder="masukan nama..."
-          />
-          {errors.name && (
-            <span className="text-xs">{errors.name.message}</span>
-          )}
-
-          <label className="text-black font-bold block mt-3 mb-1">EMAIL</label>
-          <input
-            {...register("email", {
-              required: "Email required",
-              pattern: {
-                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                message: "Invalid email format",
-              },
-            })}
-            className="border-2 w-full border-black text-black pl-2 py-1 rounded"
-            placeholder="masukan email..."
-            type="email"
-          />
-          {errors.email && (
-            <span className="text-xs">{errors.email.message}</span>
-          )}
-
-          <label className="text-black font-bold block mt-3 mb-1">
-            PASSWORD
-          </label>
-          <input
-            {...register("password", { required: "Password required" })}
-            className="border-2 w-full border-black text-black pl-2 py-1 rounded"
-            placeholder="masukan password..."
-            type="password"
-          />
-          {errors.password && (
-            <span className="text-xs">{errors.password.message}</span>
-          )}
-
-          <label className="text-black font-bold block mt-3 mb-1">ROLE</label>
-          <select
-            {...register("role", { required: "Role required" })}
-            className="border-2 w-full border-black text-black pl-2 py-1 rounded"
+      <Card className="max-w-120 w-full shadow-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold text-zinc-900">
+            Daftar Akun Baru
+          </CardTitle>
+          <CardDescription className="text-sm text-zinc-500">
+            Bergabung dengan Qurio untuk pengalaman kelas interaktif
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-4"
           >
-            <option value="">Select Role</option>
-            <option value="guru">Guru</option>
-            {/* DIPERBAIKI: Mengubah "murid" menjadi "siswa" agar sesuai dengan Backend */}
-            <option value="siswa">Siswa</option>
-          </select>
-          {errors.role && (
-            <span className="text-xs">{errors.role.message}</span>
-          )}
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-sm font-semibold text-zinc-800">
+                Nama Lengkap
+              </Label>
+              <Input
+                {...register("name", { required: "Nama wajib diisi" })}
+                placeholder="Masukkan nama lengkap Anda"
+                className="w-full h-11"
+              />
+              {errors.name && (
+                <span className="text-xs text-red-500">
+                  {errors.name.message}
+                </span>
+              )}
+            </div>
 
-          <button
-            type="submit"
-            className="border-2 w-full h-10 font-bold rounded-2xl flex justify-center items-center border-black text-white bg-black mt-6 hover:bg-zinc-800 transition"
-          >
-            Register
-          </button>
-        </form>
-      </div>
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-sm font-semibold text-zinc-800">
+                Email
+              </Label>
+              <Input
+                {...register("email", {
+                  required: "Email wajib diisi",
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: "Format email tidak valid",
+                  },
+                })}
+                className="w-full h-11"
+                placeholder="nama@sekolah.sch.id"
+                type="email"
+              />
+              {errors.email && (
+                <span className="text-xs text-red-500">
+                  {errors.email.message}
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-sm font-semibold text-zinc-800">
+                Password
+              </Label>
+              <Input
+                {...register("password", { required: "Password wajib diisi" })}
+                className="w-full h-11"
+                placeholder="Buat kata sandi minimal 8 karakter"
+                type="password"
+              />
+              {errors.password && (
+                <span className="text-xs text-red-500">
+                  {errors.password.message}
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-sm font-semibold text-zinc-800">
+                Role
+              </Label>
+              <Select {...register("role", { required: "Role wajib dipilih" })}>
+                <SelectTrigger className="w-full h-11!">
+                  <SelectValue placeholder="Pilih role Anda" />
+                </SelectTrigger>
+                <SelectContent
+                  side="bottom"
+                  sideOffset={4}
+                  alignItemWithTrigger={false}
+                >
+                  <SelectItem value="guru" className="h-11!">
+                    Guru
+                  </SelectItem>
+                  <SelectItem value="siswa" className="h-11!">
+                    Siswa
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              {errors.role && (
+                <span className="text-xs text-red-500">
+                  {errors.role.message}
+                </span>
+              )}
+            </div>
+
+            <Button type="submit" className="w-full mt-6 h-11">
+              Daftar
+            </Button>
+          </form>
+
+          <p className="text-center text-sm text-zinc-500">
+            Sudah punya akun?{" "}
+            <Link
+              href="/login"
+              className="font-semibold text-blue-600 hover:underline"
+            >
+              Masuk
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

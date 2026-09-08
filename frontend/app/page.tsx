@@ -1,8 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { SubmitEvent, useEffect, useState } from "react";
 
+import { Button } from "@/components/ui/button";
+
 import { cn } from "@/lib/utils";
+
+// import icon
+import { IconLogin2 } from "@tabler/icons-react";
 
 const heroSlides = [
   {
@@ -75,12 +81,12 @@ function HeroSlider() {
       </div>
       <div className="flex gap-2 mt-6 mb-8" aria-label="Pilih pesan hero">
         {heroSlides.map((slide, index) => (
-          <button
+          <Button
             key={slide.title}
             // Class dasar + class kondisional untuk state aktif
             className={cn(
               "w-2 h-2 p-0 border-0 rounded-full bg-[#cbd5e1] cursor-pointer transition-all duration-200 ease-in-out",
-              ` ${index === active ? "w-6 bg-brand-purple" : ""}`,
+              ` ${index === active ? "w-6 bg-primary" : ""}`,
             )}
             aria-label={`Slide ${index + 1}`}
             aria-current={index === active ? "true" : undefined}
@@ -142,12 +148,12 @@ function AccessForm() {
         className="w-full h-16 mb-5 px-4 border border-[#dae3ef] rounded-xl bg-[#f8fafc] text-[#101a31] text-base outline-brand-purple"
       />
 
-      <button
-        className="w-full inline-flex items-center justify-center gap-3 rounded-[15px] px-6 py-3 border-0 font-extrabold text-base cursor-pointer transition-all duration-200 hover:-translate-y-0.5 bg-sky-500 text-white shadow-[0_12px_25px_rgba(14,165,233,0.2)]"
+      <Button
+        className="w-full inline-flex items-center justify-center gap-3 rounded-[15px] px-6 py-6! border-0 font-extrabold text-base cursor-pointer transition-all duration-200 hover:-translate-y-0.5 bg-primary text-white shadow-[0_12px_25px_rgba(14,165,233,0.2)]"
         type="submit"
       >
         Gabung Sesi Sekarang <span aria-hidden="true">→</span>
-      </button>
+      </Button>
 
       <p className="mt-4 text-center text-[#8b9ab0] text-xs">
         Tanpa perlu buat akun atau unduh aplikasi.
@@ -162,251 +168,32 @@ function AccessForm() {
   );
 }
 
-function DemoModal({ onClose }: { onClose: () => void }) {
-  const [view, setView] = useState<"student" | "teacher">("student");
-  const [toast, setToast] = useState(false);
-  function chooseAnswer() {
-    setToast(true);
-    window.setTimeout(() => {
-      setView("teacher");
-      setToast(false);
-    }, 850);
-  }
-  return (
-    <div
-      className="fixed inset-0 z-50 grid place-items-center p-0 items-end sm:p-6 sm:items-center bg-[rgba(16,26,49,0.62)] backdrop-blur-sm"
-      role="presentation"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <section
-        className="w-full max-h-[92vh] overflow-auto p-5 border border-[#dfe7f1] rounded-t-[22px] bg-[#f8fafc] shadow-[0_30px_80px_rgba(10,20,40,0.3)] sm:w-[min(1080px,100%)] sm:max-h-[calc(100vh-48px)] sm:p-[30px] sm:rounded-[26px]"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="demo-title"
-      >
-        {/* Modal Head */}
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <span className="block text-brand-purple text-[13px] tracking-[0.12em] font-extrabold mb-2">
-              LIVE SANDBOX
-            </span>
-            <h2 id="demo-title" className="mt-0 text-[32px] tracking-[-0.04em]">
-              Coba Demo Interaktif
-            </h2>
-          </div>
-          <button
-            className="w-[38px] h-[38px] border border-[#dce5ef] rounded-full bg-white text-[#52647e] text-2xl leading-none cursor-pointer"
-            onClick={onClose}
-            aria-label="Tutup demo"
-          >
-            ×
-          </button>
-        </div>
-
-        {/* Mobile Tabs */}
-        <div
-          className="grid grid-cols-2 gap-1 mb-4 p-1 rounded-xl bg-[#e9eef5] sm:hidden"
-          role="tablist"
-          aria-label="Tampilan demo"
-        >
-          <button
-            role="tab"
-            aria-selected={view === "student"}
-            className={cn(
-              "py-[11px] px-2 border-0 rounded-[9px] bg-transparent text-[#73839a] text-xs font-extrabold cursor-pointer",
-              view === "student" &&
-                "bg-white text-brand-purple shadow-[0_2px_7px_rgba(30,44,70,0.1)]",
-            )}
-            onClick={() => setView("student")}
-          >
-            View as Student
-          </button>
-          <button
-            role="tab"
-            aria-selected={view === "teacher"}
-            className={cn(
-              "py-[11px] px-2 border-0 rounded-[9px] bg-transparent text-[#73839a] text-xs font-extrabold cursor-pointer",
-              view === "teacher" &&
-                "bg-white text-brand-purple shadow-[0_2px_7px_rgba(30,44,70,0.1)]",
-            )}
-            onClick={() => setView("teacher")}
-          >
-            View as Teacher
-          </button>
-        </div>
-
-        {/* Split Panels */}
-        <div className="block sm:grid sm:grid-cols-[1fr_1.3fr] gap-[18px]">
-          {/* Student Panel */}
-          <article
-            className={cn(
-              "hidden sm:block min-h-0 sm:min-h-105 overflow-hidden border border-[#dce5ef] rounded-[18px] bg-white shadow-[0_12px_25px_rgba(30,44,70,0.08)]",
-              view === "student" && "block",
-            )}
-          >
-            <div className="flex items-center justify-between gap-2.5 px-[19px] py-[17px] border-b border-[#e7edf4] text-[#27354d] text-sm">
-              <b>Student Mobile View</b>
-              <span className="text-white bg-sky-500 px-2 py-1 rounded text-[10px] font-extrabold">
-                ● LIVE
-              </span>
-            </div>
-            <div className="max-w-70 mx-auto my-[25px] px-[17px] py-[25px] border-[7px] border-[#19253a] rounded-[29px] bg-white shadow-[0_16px_25px_rgba(21,34,56,0.16)]">
-              <span className="block text-brand-purple text-center text-[9px] font-extrabold tracking-[0.1em] mb-[15px]">
-                PERTANYAAN 4/10
-              </span>
-              <h3 className="mt-0 text-[#27354d] text-center text-[17px] leading-[1.4] mb-[35px]">
-                Planet mana yang dikenal sebagai Planet Merah?
-              </h3>
-              {[
-                ["A", "Venus"],
-                ["B", "Mars"],
-                ["C", "Jupiter"],
-                ["D", "Saturnus"],
-              ].map(([letter, answer]) => (
-                <button
-                  className={cn(
-                    "flex items-center gap-3 mt-2.5 p-3 border border-[#e5ebf3] rounded-xl text-[#40516b] text-[13px] font-bold",
-                    letter === "B" &&
-                      "border-2 border-brand-purple text-brand-purple bg-[#f0f1ff]",
-                  )}
-                  onClick={chooseAnswer}
-                  key={letter}
-                >
-                  <b
-                    className={cn(
-                      "grid place-items-center w-[27px] h-[27px] rounded-[7px] bg-[#f3f6fa] text-[#697993]",
-                      letter === "B" && "text-white bg-brand-purple",
-                    )}
-                  >
-                    {letter}
-                  </b>
-                  <span>{answer}</span>
-                </button>
-              ))}
-            </div>
-          </article>
-
-          {/* Teacher Panel */}
-          <article
-            className={cn(
-              "hidden sm:block min-h-0 sm:min-h-105 overflow-hidden border border-[#dce5ef] rounded-[18px] bg-white shadow-[0_12px_25px_rgba(30,44,70,0.08)]",
-              view === "teacher" && "block",
-            )}
-          >
-            <div className="flex items-center justify-between gap-2.5 px-[19px] py-[17px] border-b border-[#e7edf4] text-[#27354d] text-sm">
-              <b>Teacher Projector View</b>
-              <span className="text-[#8a9bb0] text-[11px]">
-                84 siswa bergabung
-              </span>
-            </div>
-            <div className="m-[18px] sm:m-[25px] p-5 rounded-[14px] bg-[#f8fbff]">
-              <div className="flex justify-between gap-3 text-[#27354d] text-sm font-extrabold">
-                <span>Analitik Kelas · Fisika 101</span>
-                <strong className="text-sky-500 text-[11px]">
-                  Jawaban live
-                </strong>
-              </div>
-
-              {/* Bar Chart */}
-              <div className="flex items-end justify-around h-[230px] px-[18px] pt-[25px] border-b border-[#dce5ef]">
-                <div className="flex h-full flex-col items-center justify-end gap-2 text-[#657894] text-[10px]">
-                  <span
-                    className="block w-[38px] min-h-6 rounded-t-[7px] bg-brand-purple"
-                    style={{ height: "72%" }}
-                  />
-                  <b>Gravitasi</b>
-                </div>
-                <div className="flex h-full flex-col items-center justify-end gap-2 text-[#657894] text-[10px]">
-                  <span
-                    className="block w-[38px] min-h-6 rounded-t-[7px] bg-sky-500"
-                    style={{ height: "54%" }}
-                  />
-                  <b>Energi</b>
-                </div>
-                <div className="flex h-full flex-col items-center justify-end gap-2 text-[#657894] text-[10px]">
-                  <span
-                    className="block w-[38px] min-h-6 rounded-t-[7px] bg-[#7c88ef]"
-                    style={{ height: "38%" }}
-                  />
-                  <b>Gaya</b>
-                </div>
-                <div className="flex h-full flex-col items-center justify-end gap-2 text-[#657894] text-[10px]">
-                  <span
-                    className="block w-[38px] min-h-6 rounded-t-[7px] bg-[#aebbd0]"
-                    style={{ height: "25%" }}
-                  />
-                  <b>Massa</b>
-                </div>
-              </div>
-
-              {/* Result */}
-              <div className="flex flex-col sm:flex-row justify-between gap-4 pt-3.5 border-t border-[#e5ebf3] text-[#566983] text-[11px]">
-                <span>
-                  <b className="text-brand-purple text-[17px]">72%</b> menjawab
-                  benar
-                </span>
-                <span className="text-sky-500">AI membaca pola pemahaman</span>
-              </div>
-            </div>
-          </article>
-        </div>
-
-        {/* Toast */}
-        {toast && (
-          <div
-            className="fixed left-1/2 bottom-[88px] sm:bottom-7 z-60 -translate-x-1/2 w-[calc(100%-32px)] sm:w-auto px-[18px] py-[13px] rounded-xl bg-sky-500 text-white shadow-[0_12px_25px_rgba(14,165,233,0.28)] text-[13px] font-extrabold text-center sm:text-left whitespace-normal sm:whitespace-nowrap"
-            role="status"
-          >
-            Response Sent! Switching to Teacher View...
-          </div>
-        )}
-
-        {/* Mobile Primary CTA */}
-        <a
-          className="flex sm:hidden sticky bottom-0 items-center justify-center gap-2 mt-[18px] p-3.5 rounded-[13px] bg-sky-500 text-white text-sm font-extrabold shadow-[0_8px_16px_rgba(14,165,233,0.22)]"
-          href="#cta"
-          onClick={onClose}
-        >
-          Buat Sesi Kelas Gratis <span aria-hidden="true">→</span>
-        </a>
-
-        {/* Footnote */}
-        <p className="mt-[19px] text-[#8495ac] text-center text-xs">
-          Sandbox aktif dengan data contoh. Tidak perlu login atau mengunduh
-          aplikasi.
-        </p>
-      </section>
-    </div>
-  );
-}
-
 export default function App() {
   const [demoOpen, setDemoOpen] = useState(false);
   return (
     <main id="top">
-      <header className="sticky top-0 z-40 sm:h-20 h-17.5 bg-white/70 backdrop-blur-sm border-b border-(--line)">
+      <header className="sticky top-0 z-40 sm:h-20 h-18 bg-white/70 backdrop-blur-sm border-b border-(--line)">
         {/* <div className="sm:w-[max(100%-32px,640px)] h-full w-full flex items-center justify-between gap-8"> */}
-        <div className="w-full px-4 sm:px-0 h-full flex items-center justify-between gap-8">
+        {/* <div className="w-full px-4! sm:px-0 h-full flex items-center justify-between gap-8"> */}
+        <div className="w-full px-4 sm:px-8 h-full flex items-center justify-between gap-8">
           <Logo />
           <nav
             aria-label="Navigasi utama"
-            className="hidden sm:flex sm:gap-10 sm:mx-auto sm:text-sm sm:font-bold sm:text-[#43536d]"
+            className="hidden md:flex md:gap-10 md:mx-auto md:text-sm md:font-bold md:text-[#43536d]"
           >
             <a href="#features">Fitur</a>
             <a href="#modes">Cara Kerja</a>
             <a href="#cta">Harga</a>
           </nav>
-          <div className="flex items-center gap-3 ml-auto text-sm font-bold text-slate-600 [&>a:first-child]:hidden sm:gap-8 sm:ml-0 sm:[&>a:first-child]:block">
-            <a href="#access">Masuk</a>
-            <a
-              className="inline-flex items-center justify-center gap-2.5 rounded-2xl px-5 py-3 border-0 font-extrabold text-small cursor-pointer transition-all duration-200 bg-brand-purple text-white shadow-[0_12px_25px_rgba(81,70,232,0.22)] hover:-translate-y-0.5 hover:shadow-xl"
-              href="#cta"
-            >
-              Daftar Gratis
-            </a>
-          </div>
+          {/* <div className="flex items-center gap-3 ml-auto text-sm font-bold text-slate-600 [&>a:first-child]:hidden sm:gap-8 sm:ml-0 sm:[&>a:first-child]:block"> */}
+          <Link
+            className="inline-flex items-center justify-center gap-2.5 rounded-full px-5 py-3 border-0 font-extrabold text-small cursor-pointer transition-all duration-200 bg-primary text-white shadow-[0_12px_25px_rgba(81,70,232,0.22)] hover:-translate-y-0.5 hover:shadow-xl"
+            href="/login"
+          >
+            <span>Masuk</span>
+            <IconLogin2 className="w-4 h-4" />
+          </Link>
+          {/* </div> */}
         </div>
       </header>
       <section className="min-h-[calc(100vh-80px)] flex items-start justify-center overflow-hidden bg-[radial-gradient(circle_at_75%_22%,#e9edff_0,#f5f8fc_40%,#f8fafc_76%)] pt-18.75 pb-27.5 lg:pt-28 lg:pb-32">
@@ -676,7 +463,7 @@ export default function App() {
               >
                 <span
                   className={cn(
-                    "grid place-items-center w-16 h-16 mx-auto mb-[30px] rounded-[17px] bg-brand-purple text-white text-2xl font-extrabold shadow-[0_10px_17px_rgba(37,99,235,0.24)]",
+                    "grid place-items-center w-16 h-16 mx-auto mb-[30px] rounded-[17px] bg-primary text-white text-2xl font-extrabold shadow-[0_10px_17px_rgba(37,99,235,0.24)]",
                     num === "2" && "bg-sky-500",
                   )}
                 >
@@ -689,41 +476,7 @@ export default function App() {
           </div>
         </div>
       </section>
-      <section
-        id="cta"
-        className="pt-28 pb-32 text-center bg-linear-to-b from-indigo-50 to-transparent"
-      >
-        <div className="w-full max-w-304 mx-auto px-6">
-          <h2 className="mt-0 text-3xl tracking-tighter mb-6">
-            Buat kelas Anda{" "}
-            <em className="not-italic text-blue-600 underline decoration-blue-200 decoration-8 underline-offset-8">
-              lebih transparan.
-            </em>
-          </h2>
 
-          <p className="mt-0 text-slate-600 leading-relaxed text-xl">
-            Mulai pahami setiap murid dengan data yang bermakna.
-          </p>
-
-          <div className="flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-6 mt-9">
-            <a
-              className="inline-flex items-center justify-center gap-2.5 rounded-2xl px-6 py-4 border-0 font-extrabold text-base cursor-pointer transition-all duration-200 hover:-translate-y-0.5 bg-sky-500 text-white shadow-lg shadow-sky-500/20"
-              href="#access"
-            >
-              Mulai Analisis Kelas Gratis
-            </a>
-
-            <button
-              className="inline-flex items-center justify-center gap-2.5 rounded-2xl px-6 py-4 border-2 border-slate-200 font-extrabold text-base cursor-pointer transition-all duration-200 hover:-translate-y-0.5 text-slate-700 bg-white"
-              type="button"
-              onClick={() => setDemoOpen(true)}
-            >
-              Coba Demo Interaktif (Tanpa Login){" "}
-              <span aria-hidden="true">→</span>
-            </button>
-          </div>
-        </div>
-      </section>
       <footer className="pt-[70px] pb-9 border-t border-slate-200 bg-slate-50">
         <div className="w-full max-w-304 mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-10">
           <div className="col-span-2 md:col-span-1">
@@ -774,7 +527,6 @@ export default function App() {
           <span>Ketentuan Layanan　 Kebijakan Privasi　 Pengaturan Cookie</span>
         </div>
       </footer>
-      {demoOpen && <DemoModal onClose={() => setDemoOpen(false)} />}
     </main>
   );
 }
