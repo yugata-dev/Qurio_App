@@ -52,7 +52,8 @@ function validatePollInput(type, question, options) {
 // ====================================================================
 export const createPoll = async (req, res) => {
     const { sessionId } = req.params
-    const { type, question, options = [] } = req.body
+    const type = typeof req.body.type === "string" ? req.body.type.trim().toLowerCase() : ""
+    const { question, options = [] } = req.body
 
     // Step 1: Validasi input yang dikirim dari client
     const validationError = validatePollInput(type, question, options)
@@ -80,6 +81,25 @@ export const createPoll = async (req, res) => {
         const loggedInTeacherId = req.user ? req.user.id : null
         if (teacherId !== loggedInTeacherId) {
             return res.status(403).json({ success: false, message: "Anda bukan pemilik sesi ini!" })
+        }
+
+        // Cek apakah sudah ada poll yang dibuat sebelumnya di sesi ini
+        const existingPollRes = await client.query(
+            "SELECT type FROM polls WHERE session_id = $1 LIMIT 1",
+            [sessionId] // Parameter harus sessionId, bukan type
+        )
+
+        // Jika sudah ada poll terdahulu, kunci tipenya
+        if (existingPollRes.rows.length > 0) {
+            const firstPollType = existingPollRes.rows[0].type
+
+            // Jika tipe baru yang dikirim berbeda dengan tipe pertama
+            if (type !== firstPollType) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Tipe soal di sesi ini sudah dikunci sebagai '${firstPollType}'. Soal berikutnya harus bertipe sama.`
+                })
+            }
         }
 
         // Step 4: Mulai transaksi database untuk menjaga konsistensi data

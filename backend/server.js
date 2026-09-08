@@ -16,7 +16,7 @@ import usersRegLogRouter from "./src/routes/usersRegLog.js"
 dotenv.config({ quiet: true })
 
 const app = express()
-const PORT = process.env.SERVER_PORT || process.env.PORT || 5000
+const PORT = process.env.PORT || process.env.SERVER_PORT || 5000
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000"
 
 // =====================

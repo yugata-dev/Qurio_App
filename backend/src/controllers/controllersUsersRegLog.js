@@ -59,8 +59,16 @@ export const usersReg = async (req, res) => {
         if (error.code === "23505") {
             return res.status(409).json({ success: false, message: "Nama atau email sudah terdaftar" })
         }
-        console.error("Register error:", error.message)
-        res.status(500).json({ success: false, error: "Pendaftaran gagal, silakan coba lagi" })
+
+        // TETAP KELUARKAN LOG LENGKAP DI SERVER RAILWAY
+        console.error("Register Error Full Object:", error)
+
+        // Kirimkan pesan error asli agar mudah di-debug dari frontend
+        const isDev = process.env.NODE_ENV !== "production"
+        return res.status(500).json({
+            success: false,
+            message: isDev ? error.message : "Pendaftaran gagal, terjadi kesalahan server"
+        })
     }
 }
 
