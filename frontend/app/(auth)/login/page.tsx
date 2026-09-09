@@ -1,10 +1,9 @@
 "use client";
 import { fetchUserLogin } from "@/lib/api";
 import { useForm } from "react-hook-form";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
+import { useAuth } from "@/context/AuthContext";
 import {
   Card,
   CardHeader,
@@ -15,73 +14,58 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface FormLogin {
   email: string;
   password: string;
   role: string;
+  token: string;
 }
-
-// komponen alert success dan failed
 
 function LoginPage() {
   const router = useRouter();
-  const [serverError, setServerError] = useState<string | null>(null);
 
+  const { login } = useAuth();
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<FormLogin>();
 
-  const onSubmit = async (data: FormLogin) => {
-    setServerError(null);
-    try {
-      if (!data.role || (data.role !== "guru" && data.role !== "siswa")) {
-        setServerError("Role wajib dipilih");
-        return;
-      }
+  //   useEffect(() => {
+  //     if (isAutheticated) {
+  //       router.push("/dashboard");
+  //     }
+  //   }, [isAutheticated, router]);
 
+  const onSubmit = async (data: FormLogin) => {
+    try {
       const response = await fetchUserLogin(
         data.email,
         data.password,
-        data.role,
+        // data.token,
       );
 
-      if (!response.success) {
-        if (response && "message" in response) {
-          setServerError(response.message);
-        }
-        return;
+      if (response.success && response.data) {
+        const dataUser = response.data.user;
+        const dataToken = response.data.token;
+
+        login(dataUser, dataToken);
+
+        alert("Login berhasil..");
       }
-
-      if (response && "data" in response)
-        console.log("login berhasil", response?.data);
-
+      // Simpan token (jika ada) dan redirect ke dashboard
       router.push("/dashboard");
     } catch (error: any) {
       console.error("login error:", error);
-      setServerError(error.message || "Gagal login, periksa kembali data Anda");
     }
   };
 
   const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
   return (
-    <div className="relative flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans min-h-screen">
-      <div className="absolute top-6 left-6 flex items-center gap-2">
-        <span className="size-3 rounded-full bg-blue-600" />
-        <span className="text-lg font-bold text-zinc-900">Qurio</span>
-      </div>
-
-      <Card className="w-95 rounded-2xl shadow-md">
+    <div className="relative flex flex-col flex-1 items-center justify-center bg-zinc-100 font-sans min-h-screen p-4">
+      <Card className="max-w-120 w-full shadow-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-zinc-900">
             Masuk ke Akun
@@ -91,17 +75,12 @@ function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {serverError && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded mb-4 w-full text-sm">
-              {serverError}
-            </div>
-          )}
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="flex flex-col gap-4"
+            className="flex flex-col gap-3"
           >
             <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-semibold text-zinc-800">
+              <Label className="text-sm font-semibold text-zinc-800 ml-[11.2px]">
                 Email
               </Label>
               <Input
@@ -114,6 +93,7 @@ function LoginPage() {
                 })}
                 placeholder="nama@sekolah.sch.id"
                 type="email"
+                className="w-full h-11"
               />
               {errors.email && (
                 <span className="text-xs text-red-500">
@@ -123,7 +103,7 @@ function LoginPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-semibold text-zinc-800">
+              <Label className="text-sm font-semibold text-zinc-800 ml-[11.2px]">
                 Password
               </Label>
               <Input
@@ -132,6 +112,7 @@ function LoginPage() {
                 })}
                 placeholder="Masukkan kata sandi Anda"
                 type="password"
+                className="w-full h-11"
               />
               {errors.password && (
                 <span className="text-xs text-red-500">
@@ -140,27 +121,11 @@ function LoginPage() {
               )}
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-semibold text-zinc-800">
-                Role
-              </Label>
-              <Select {...register("role", { required: "Role wajib dipilih" })}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Pilih Role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="guru">Guru</SelectItem>
-                  <SelectItem value="siswa">Siswa</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.role && (
-                <span className="text-xs text-red-500">
-                  {errors.role.message}
-                </span>
-              )}
-            </div>
-
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              className="w-full mt-6 h-11"
+              disabled={isSubmitting}
+            >
               {isSubmitting ? "Mengirim..." : "Masuk"}
             </Button>
           </form>

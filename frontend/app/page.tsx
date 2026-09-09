@@ -1,4 +1,7 @@
 "use client";
+import { fetchUserRegister } from "@/lib/api";
+import { useForm } from "react-hook-form";
+import RegisterPage from "./(auth)/register/page";
 
 import Link from "next/link";
 import { SubmitEvent, useEffect, useState } from "react";
@@ -48,14 +51,11 @@ const featureCards = [
   ],
 ];
 
-function Logo() {
-  return (
-    <a className="logo" href="#top" aria-label="Qurio beranda">
-      <img src="/qurio_ramping.png" alt="" />
-      {/* <span className=""></span> */}
-    </a>
-  );
-}
+// function Logo() {
+//   return (
+
+//   );
+// }
 
 function HeroSlider() {
   const [active, setActive] = useState(0);
@@ -176,7 +176,10 @@ export default function App() {
         {/* <div className="sm:w-[max(100%-32px,640px)] h-full w-full flex items-center justify-between gap-8"> */}
         {/* <div className="w-full px-4! sm:px-0 h-full flex items-center justify-between gap-8"> */}
         <div className="w-full px-4 sm:px-8 h-full flex items-center justify-between gap-8">
-          <Logo />
+          <a className="logo" href="#top" aria-label="Qurio beranda">
+            <img src="/qurio_ramping.png" alt="" draggable={false} />
+            {/* <span className=""></span> */}
+          </a>
           <nav
             aria-label="Navigasi utama"
             className="hidden md:flex md:gap-10 md:mx-auto md:text-sm md:font-bold md:text-[#43536d]"
@@ -371,9 +374,9 @@ export default function App() {
               </p>
 
               <div className="p-3.5 rounded-xl bg-slate-50">
-                <span className="block w-max mx-auto mb-3 px-2 py-1 rounded-lg bg-orange-50 text-orange-500 text-xs font-extrabold">
+                {/* <span className="block w-max mx-auto mb-3 px-2 py-1 rounded-lg bg-orange-50 text-orange-500 text-xs font-extrabold">
                   00:18
-                </span>
+                </span> */}
 
                 <b className="block mb-2.5 text-slate-800 text-sm">
                   Planet Merah?
@@ -481,7 +484,10 @@ export default function App() {
         <div className="w-full max-w-304 mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-10">
           <div className="col-span-2 md:col-span-1">
             <div className="w-20">
-              <Logo />
+              <a className="logo" href="#top" aria-label="Qurio beranda">
+                <img src="/qurio.png" alt="" draggable={false} />
+                {/* <span className=""></span> */}
+              </a>
             </div>
             <p className="mt-6 text-slate-500 leading-relaxed">
               Platform analitik kelas yang membantu guru

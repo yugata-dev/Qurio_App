@@ -26,7 +26,7 @@ interface RegisterFormData {
   name: string;
   email: string;
   password: string;
-  role: "guru" | "siswa";
+  role: string;
 }
 
 export default function RegisterPage() {
@@ -46,11 +46,6 @@ export default function RegisterPage() {
         data.password,
         data.role,
       );
-
-      if (!response.success) {
-        alert("Register gagal: " + response.data);
-        return;
-      }
       alert("Register berhasil");
       router.push("/dashboard");
     } catch (error) {
@@ -60,11 +55,6 @@ export default function RegisterPage() {
 
   return (
     <div className="relative flex flex-col flex-1 items-center justify-center bg-zinc-100 font-sans min-h-screen p-4">
-      {/* <div className="absolute top-6 left-6 flex items-center gap-2">
-        <span className="size-3 rounded-full bg-blue-600" />
-        <span className="text-lg font-bold text-zinc-900">Qurio</span>
-      </div> */}
-
       <Card className="max-w-120 w-full shadow-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-zinc-900">
@@ -77,7 +67,7 @@ export default function RegisterPage() {
         <CardContent>
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="flex flex-col gap-4"
+            className="flex flex-col gap-3"
           >
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-zinc-800">
