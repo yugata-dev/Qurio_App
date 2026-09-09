@@ -1,56 +1,118 @@
-"use client"
+"use client";
 
-import { createContext, ReactNode, useState } from "react"
+import {
+  createContext,
+  ReactNode,
+  useState,
+  useContext,
+  useEffect,
+} from "react";
+import Cookies from "js-cookie";
 
 interface User {
-    id: string;
-    name: string;
-    role: string;
-    email: string
+  id: string;
+  name: string;
+  role: string;
+  email: string;
 }
 
 interface AuthContextType {
-    user: User | null;
-    token: string | null;
-    isAutheticated: boolean
-    login: (user: User, token: string) => void
-    logout: () => void
+  user: User | null;
+  token: string | null;
+  isAutheticated: boolean;
+  login: (user: User, token: string) => void;
+  logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<User | null>(null)
-    const [token, setToken] = useState<string | null>(null)
-    const [isAutheticated, setIsAutheticated] = useState<boolean>(false)
+function isTokenExpired(token: string) {
+  try {
+    const payload = JSON.parse(
+      atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")),
+    );
+    return typeof payload.exp !== "number" || payload.exp * 1000 <= Date.now();
+  } catch {
+    return true;
+  }
+}
 
-    const login = (userData: User, tokenData: string) => {
-        setUser(userData)
-        setToken(tokenData)
-        setIsAutheticated(true)
-        if (tokenData)
-            localStorage.setItem("token", tokenData)
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [isAutheticated, setIsAutheticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+
+    if (storedToken && !isTokenExpired(storedToken)) {
+      try {
+        setToken(storedToken);
+        setIsAutheticated(true);
+
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
+      } catch (error) {
+        console.error("gagal memuat login:", error);
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+      }
+    } else if (storedToken) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      Cookies.remove("token");
+      Cookies.remove("role");
     }
 
-    const logout = () => {
-        setUser(null)
-        setToken(null)
-        setIsAutheticated(false)
-        localStorage.removeItem("token")
-    }
-    const value = {
-        user,
-        token,
-        isAutheticated,
-        login,
-        logout
-    }
+    setIsLoading(false);
+  }, []);
 
+  const login = (userData: User, tokenData: string) => {
+    setUser(userData);
+    setToken(tokenData);
+    setIsAutheticated(true);
+    if (tokenData) localStorage.setItem("token", tokenData);
+    localStorage.setItem("user", JSON.stringify(userData));
+    Cookies.set("token", tokenData, { expires: 7 });
+    Cookies.set("role", userData.role, { expires: 1 });
+  };
+
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    setIsAutheticated(false);
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    Cookies.remove("token");
+    Cookies.remove("role");
+  };
+  const value = {
+    user,
+    token,
+    isAutheticated,
+    login,
+    logout,
+  };
+
+  if (isLoading) {
     return (
-        <AuthContext.Provider value={value}>
-            {children}
-        </ AuthContext.Provider>
-    )
+      <div style={{ padding: "20px", textRendering: "optimizeLegibility" }}>
+        Sedang memuat...
+      </div>
+    );
+  }
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export default AuthContext
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth harus digunakan didalam AuthProvider");
+  }
+
+  return context;
+};
