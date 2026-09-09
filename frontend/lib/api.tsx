@@ -86,6 +86,7 @@ const fetchUserLogin = async (
 
     return await response.json();
   } catch (error) {
+    alert(`Login failed: ${toString(error)}`);
     console.error("Login error:", error);
     throw error;
   }
@@ -99,7 +100,7 @@ const fetchUserRegister = async (
   role: string,
 ): Promise<registerUser> => {
   try {
-    const response = await fetch(`${API_URL}/users/register`, {
+    const response = await fetch(`${API_URL}/api/users/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, role, password }),
@@ -132,7 +133,7 @@ const createPolls = async (
 ): Promise<Polls> => {
   try {
     const response = await fetch(
-      `${API_URL}/polls/sessions/${sessionId}/polls`,
+      `${API_URL}/api/polls/sessions/${sessionId}/polls`,
       {
         method: "POST",
         headers: {
@@ -173,7 +174,7 @@ const postType = async (
 
   try {
     const response = await fetch(
-      `${API_URL}/polls/sessions/${sessionId}/polls`,
+      `${API_URL}/api/polls/sessions/${sessionId}/polls`,
       {
         method: "POST",
         headers: {
@@ -206,7 +207,7 @@ const createSession = async (
   token: string,
 ): Promise<Sessions> => {
   try {
-    const response = await fetch(`${API_URL}/sessions`, {
+    const response = await fetch(`${API_URL}/api/sessions`, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -233,7 +234,7 @@ const createSession = async (
 
 const getDataType = async (sessionId: string): Promise<Sessions> => {
   try {
-    const response = await fetch(`${API_URL}/sessions/${sessionId}/type`, {
+    const response = await fetch(`${API_URL}/api/sessions/${sessionId}/type`, {
       method: "GET",
       headers: { "content-type": "application/json" },
     });

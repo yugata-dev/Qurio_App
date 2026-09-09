@@ -18,8 +18,8 @@ import { Label } from "@/components/ui/label";
 interface FormLogin {
   email: string;
   password: string;
-  role: string;
-  token: string;
+  // role: string;
+  // token: string;
 }
 
 function LoginPage() {

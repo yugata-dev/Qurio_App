@@ -2,7 +2,7 @@
 import { fetchUserRegister } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import {
   Card,
   CardHeader,
@@ -26,7 +26,7 @@ interface RegisterFormData {
   name: string;
   email: string;
   password: string;
-  role: string;
+  role: "guru" | "murid";
 }
 
 export default function RegisterPage() {
@@ -34,13 +34,14 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<RegisterFormData>();
 
   const onSubmit = async (data: RegisterFormData) => {
     console.log("Form data:", data);
     try {
-      const response = await fetchUserRegister(
+      await fetchUserRegister(
         data.name,
         data.email,
         data.password,
@@ -129,23 +130,34 @@ export default function RegisterPage() {
               <Label className="text-sm font-semibold text-zinc-800">
                 Role
               </Label>
-              <Select {...register("role", { required: "Role wajib dipilih" })}>
-                <SelectTrigger className="w-full h-11!">
-                  <SelectValue placeholder="Pilih role Anda" />
-                </SelectTrigger>
-                <SelectContent
-                  side="bottom"
-                  sideOffset={4}
-                  alignItemWithTrigger={false}
-                >
-                  <SelectItem value="guru" className="h-11!">
-                    Guru
-                  </SelectItem>
-                  <SelectItem value="siswa" className="h-11!">
-                    Siswa
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <Controller
+                name="role"
+                control={control}
+                rules={{ required: "Role wajib dipilih" }}
+                render={({ field }) => (
+                  <Select
+                    value={field.value ?? ""}
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger className="w-full h-11!">
+                      <SelectValue placeholder="Pilih role Anda" />
+                    </SelectTrigger>
+                    <SelectContent
+                      side="bottom"
+                      sideOffset={4}
+                      alignItemWithTrigger={false}
+                    >
+                      <SelectItem value="guru" className="h-11!">
+                        Guru
+                      </SelectItem>
+                      <SelectItem value="murid" className="h-11!">
+                        Murid
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+
               {errors.role && (
                 <span className="text-xs text-red-500">
                   {errors.role.message}
