@@ -41,12 +41,7 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormData) => {
     console.log("Form data:", data);
     try {
-      await fetchUserRegister(
-        data.name,
-        data.email,
-        data.password,
-        data.role,
-      );
+      await fetchUserRegister(data.name, data.email, data.password, data.role);
       alert("Register berhasil");
       router.push("/dashboard");
     } catch (error) {
@@ -150,8 +145,8 @@ export default function RegisterPage() {
                       <SelectItem value="guru" className="h-11!">
                         Guru
                       </SelectItem>
-                      <SelectItem value="murid" className="h-11!">
-                        Murid
+                      <SelectItem value="siswa" className="h-11!">
+                        Siswa
                       </SelectItem>
                     </SelectContent>
                   </Select>

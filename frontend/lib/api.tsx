@@ -86,7 +86,6 @@ const fetchUserLogin = async (
 
     return await response.json();
   } catch (error) {
-    alert(`Login failed: ${toString(error)}`);
     console.error("Login error:", error);
     throw error;
   }
