@@ -1,4 +1,14 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Qurio frontend
+
+## Deploy ke Vercel
+
+1. Import repository ini ke Vercel.
+2. Tambahkan environment variable `NEXT_PUBLIC_API_URL` dengan URL backend production tanpa akhiran `/api`.
+3. Deploy branch `main`.
+
+Backend Express dan Socket.IO dijalankan sebagai service terpisah. Atur `FRONTEND_URL` di backend ke URL aplikasi Vercel.
+
+Untuk pengembangan lokal, salin `.env.example` menjadi `.env.local` dan isi URL backend.
 
 ## Getting Started
 
