@@ -17,17 +17,27 @@ dotenv.config({ quiet: true })
 
 const app = express()
 const PORT = process.env.PORT || process.env.SERVER_PORT || 5000
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000"
+const FRONTEND_URLS = (process.env.FRONTEND_URL || "http://localhost:3000")
+    .split(",")
+    .map((url) => url.trim())
+    .filter(Boolean)
+const corsOptions = {
+    origin: (origin, callback) => {
+        if (!origin || FRONTEND_URLS.includes(origin)) {
+            callback(null, true)
+        } else {
+            callback(new Error("Origin tidak diizinkan oleh CORS"))
+        }
+    },
+    credentials: true,
+}
 
 // =====================
 // HTTP + WEBSOCKET SERVER
 // =====================
 const httpServer = createServer(app)
 const io = new Server(httpServer, {
-    cors: {
-        origin: FRONTEND_URL,
-        methods: ["GET", "POST", "PUT", "PATCH", "DELETE"]
-    }
+    cors: { ...corsOptions, methods: ["GET", "POST", "PUT", "PATCH", "DELETE"] }
 })
 
 // Simpan io ke app agar bisa dipakai di controller (req.app.get("io"))
@@ -36,7 +46,7 @@ app.set("io", io)
 // =====================
 // MIDDLEWARE
 // =====================
-app.use(cors({ origin: FRONTEND_URL }))
+app.use(cors(corsOptions))
 app.use(express.json())
 app.use(helmet())
 app.use(morgan("dev"))
