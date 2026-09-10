@@ -18,6 +18,13 @@ export const usersReg = async (req, res) => {
         return res.status(422).json({ success: false, message: "Format email tidak valid" })
     }
 
+    if (typeof password !== "string" || password.length < 8) {
+    return res.status(422).json({
+        success: false,
+        message: "Password minimal 8 karakter"
+    })
+}
+
     if (!VALID_ROLES.includes(role)) {
         return res.status(422).json({ success: false, message: "Role harus 'guru' atau 'siswa'" })
     }

@@ -109,7 +109,7 @@ export default function RegisterPage() {
                 Password
               </Label>
               <Input
-                {...register("password", { required: "Password wajib diisi" })}
+                {...register("password", { required: "Password wajib diisi", minLength: {value: 8, message: "Password minimal 8 karakter"} })}
                 className="w-full h-11"
                 placeholder="Buat kata sandi minimal 8 karakter"
                 type="password"
