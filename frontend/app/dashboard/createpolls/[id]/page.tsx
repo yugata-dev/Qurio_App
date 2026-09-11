@@ -57,7 +57,7 @@ function CreatePollsPage() {
             }
 
             console.log("hasil data:", response)
-        } catch (error: any) {
+        } catch (error) {
             console.error("login error:", error)
         }
     }

@@ -11,7 +11,7 @@ router.post("/", teacherLimit, createSession)
 router.get("/", getSessions)
 
 // get detail 1 session
-router.get("/:id", getSession)
+router.get("/:id",teacherLimit, getSession)
 
 // update session (guru pemilik)
 router.put("/:id", teacherLimit, updateSession)

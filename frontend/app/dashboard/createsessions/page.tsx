@@ -51,7 +51,7 @@ function CreateSessionsPage() {
             console.log("Hasil createSession:", postTitleSession); // Cek struktur respons backend
 
             // 2. Ambil ID (antisipasi jika ID dibungkus di dalam objek .data)
-            const newSessionId = postTitleSession.id || (postTitleSession as any).data?.id;
+            const newSessionId = postTitleSession.id || postTitleSession?.id;
 
             if (!newSessionId) {
                 throw new Error("Gagal mendapatkan ID Sesi dari backend");
@@ -70,13 +70,13 @@ function CreateSessionsPage() {
                     await createPolls(selectedType, dataSession.question, optionsWithCorrectFlag, newSessionId, token, "published")
                     router.push(`/dashboard/session/${newSessionId}`)
                 } alert("Sesi dan soal berhasil dibuat..")
-            } catch (error) {
+            } catch  {
                 alert("Sesi berhasil dibuat, tapi soal gagal disimpan. Tambahkan soal lewat halaman sesi.")
             }
 
-        } catch (error: any) {
-            console.error("Create session error:", error.message || error);
-            alert(`Gagal membuat sesi: ${error.message}`);
+        } catch (error) {
+            console.error("Create session error:", error || error);
+            alert(`Gagal membuat sesi: ${error}`);
         }
     }
 

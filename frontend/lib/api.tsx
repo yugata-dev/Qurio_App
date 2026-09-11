@@ -46,13 +46,6 @@ interface Polls {
   };
 }
 
-interface User {
-  id: string;
-  name: string;
-  role: string;
-  email: string;
-}
-
 interface PollOptionInput {
   text: string;
   is_correct: boolean;
@@ -63,6 +56,15 @@ interface Sessions {
   id: string;
   success: boolean;
   title: string;
+  token: string
+}
+
+interface SessionDetailResponse {
+  success: boolean;
+  data: {
+    id: string;
+    title: string;
+  };
 }
 
 const API_URL = (
@@ -255,6 +257,27 @@ const getDataType = async (sessionId: string): Promise<Sessions> => {
   }
 };
 
+const getDataSession = async (sessionId: string, token: string | null): Promise<SessionDetailResponse> => {
+  try {
+    const response = await fetch (`${API_URL}/api/sessions/${sessionId}`, {
+      method: "GET",
+      headers: {"Authorization": `Bearer ${token}`}
+    })
+
+    if(!response.ok){
+      const errorData = await response.json()
+      const errorMessage = errorData.message || errorData.error() || "Get data failed"
+      console.error("backend error detail", errorData)
+      throw new Error(errorMessage)
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error("Get data session:", error)
+    throw error
+  }
+}
+
 export {
   fetchUserLogin,
   fetchUserRegister,
@@ -262,4 +285,5 @@ export {
   createSession,
   getDataType,
   postType,
+  getDataSession
 };

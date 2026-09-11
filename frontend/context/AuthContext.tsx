@@ -3,9 +3,8 @@
 import {
   createContext,
   ReactNode,
-  useState,
   useContext,
-  useEffect,
+  useSyncExternalStore,
 } from "react";
 import Cookies from "js-cookie";
 
@@ -24,6 +23,20 @@ interface AuthContextType {
   logout: () => void;
 }
 
+interface AuthState {
+  user: User | null;
+  token: string | null;
+  isAutheticated: boolean;
+}
+
+const emptyAuthState: AuthState = {
+  user: null,
+  token: null,
+  isAutheticated: false,
+};
+
+const authListeners = new Set<() => void>();
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 function isTokenExpired(token: string) {
@@ -37,73 +50,74 @@ function isTokenExpired(token: string) {
   }
 }
 
+function getAuthSnapshot() {
+  if (typeof window === "undefined") {
+    return JSON.stringify(emptyAuthState);
+  }
+
+  const storedToken = localStorage.getItem("token");
+  const storedUser = localStorage.getItem("user");
+
+  if (!storedToken || isTokenExpired(storedToken)) {
+    return JSON.stringify(emptyAuthState);
+  }
+
+  try {
+    return JSON.stringify({
+      user: storedUser ? JSON.parse(storedUser) : null,
+      token: storedToken,
+      isAutheticated: true,
+    });
+  } catch {
+    return JSON.stringify(emptyAuthState);
+  }
+}
+
+function subscribeToAuth(listener: () => void) {
+  authListeners.add(listener);
+  window.addEventListener("storage", listener);
+
+  return () => {
+    authListeners.delete(listener);
+    window.removeEventListener("storage", listener);
+  };
+}
+
+function notifyAuthListeners() {
+  authListeners.forEach((listener) => listener());
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isAutheticated, setIsAutheticated] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-
-    if (storedToken && !isTokenExpired(storedToken)) {
-      try {
-        setToken(storedToken);
-        setIsAutheticated(true);
-
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
-        }
-      } catch (error) {
-        console.error("gagal memuat login:", error);
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-      }
-    } else if (storedToken) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      Cookies.remove("token");
-      Cookies.remove("role");
-    }
-
-    setIsLoading(false);
-  }, []);
+  const authState = JSON.parse(
+    useSyncExternalStore(
+      subscribeToAuth,
+      getAuthSnapshot,
+      () => JSON.stringify(emptyAuthState),
+    ),
+  ) as AuthState;
 
   const login = (userData: User, tokenData: string) => {
-    setUser(userData);
-    setToken(tokenData);
-    setIsAutheticated(true);
     if (tokenData) localStorage.setItem("token", tokenData);
     localStorage.setItem("user", JSON.stringify(userData));
     Cookies.set("token", tokenData, { expires: 7 });
     Cookies.set("role", userData.role, { expires: 1 });
+    notifyAuthListeners();
   };
 
   const logout = () => {
-    setUser(null);
-    setToken(null);
-    setIsAutheticated(false);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     Cookies.remove("token");
     Cookies.remove("role");
+    notifyAuthListeners();
   };
   const value = {
-    user,
-    token,
-    isAutheticated,
+    user: authState.user,
+    token: authState.token,
+    isAutheticated: authState.isAutheticated,
     login,
     logout,
   };
-
-  if (isLoading) {
-    return (
-      <div style={{ padding: "20px", textRendering: "optimizeLegibility" }}>
-        Sedang memuat...
-      </div>
-    );
-  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
