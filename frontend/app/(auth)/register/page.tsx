@@ -26,7 +26,7 @@ interface RegisterFormData {
   name: string;
   email: string;
   password: string;
-  role: "guru" | "murid";
+  role: "guru" | "siswa";
 }
 
 export default function RegisterPage() {

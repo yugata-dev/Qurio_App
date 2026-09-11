@@ -83,7 +83,7 @@ const fetchUserLogin = async (
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || "Login Error");
+      throw new Error(errorData.message || errorData.error || "Login Error");
     }
 
     return await response.json();

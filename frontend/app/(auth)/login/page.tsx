@@ -56,7 +56,7 @@ function LoginPage() {
       }
       // Simpan token (jika ada) dan redirect ke dashboard
       router.push("/dashboard");
-    } catch (error: any) {
+    } catch (error) {
       console.error("login error:", error);
     }
   };
