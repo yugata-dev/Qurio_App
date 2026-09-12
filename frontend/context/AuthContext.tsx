@@ -18,7 +18,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  isAutheticated: boolean;
+  isAuthenticated: boolean;
   login: (user: User, token: string) => void;
   logout: () => void;
 }
@@ -26,13 +26,13 @@ interface AuthContextType {
 interface AuthState {
   user: User | null;
   token: string | null;
-  isAutheticated: boolean;
+  isAuthenticated: boolean;
 }
 
 const emptyAuthState: AuthState = {
   user: null,
   token: null,
-  isAutheticated: false,
+  isAuthenticated: false,
 };
 
 const authListeners = new Set<() => void>();
@@ -66,7 +66,7 @@ function getAuthSnapshot() {
     return JSON.stringify({
       user: storedUser ? JSON.parse(storedUser) : null,
       token: storedToken,
-      isAutheticated: true,
+      isAuthenticated: true,
     });
   } catch {
     return JSON.stringify(emptyAuthState);
@@ -111,10 +111,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     Cookies.remove("role");
     notifyAuthListeners();
   };
-  const value = {
+
+  const value: AuthContextType = {
     user: authState.user,
     token: authState.token,
-    isAutheticated: authState.isAutheticated,
+    isAuthenticated: authState.isAuthenticated,
     login,
     logout,
   };

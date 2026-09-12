@@ -1,4 +1,6 @@
-interface loginUserSuccess {
+import { ApiResponse, Poll } from "@/app/dashboard/session/[id]/page";
+
+interface LoginUserSuccess {
   success: true;
   data: {
     user: { id: string; name: string; role: string; email: string };
@@ -6,14 +8,14 @@ interface loginUserSuccess {
   };
 }
 
-interface loginUserFailed {
+interface LoginUserFailed {
   success: false;
   message: string;
 }
 
-type loginUser = loginUserSuccess | loginUserFailed;
+type LoginUserResult = LoginUserSuccess | LoginUserFailed;
 
-interface registerUser {
+interface RegisterUserResult {
   success: boolean;
   data: {
     user: { id: string; name: string; role: string; email: string };
@@ -21,7 +23,7 @@ interface registerUser {
   };
 }
 
-interface pollOptions {
+interface PollOption {
   id: string;
   poll_id: string;
   option_text: string;
@@ -41,7 +43,7 @@ interface Polls {
       created_at: string;
       published_at: string;
       closed_at: string;
-      option?: pollOptions[];
+      option?: PollOption[];
     };
   };
 }
@@ -56,7 +58,7 @@ interface Sessions {
   id: string;
   success: boolean;
   title: string;
-  token: string
+  token: string;
 }
 
 interface SessionDetailResponse {
@@ -68,16 +70,6 @@ interface SessionDetailResponse {
   };
 }
 
-interface SessionDetailPolls {
-  success: boolean;
-  data: {
-    id: string;
-    type: string;
-    question: number;
-  };
-}
-
-
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 ).replace(/\/api\/?$/, "");
@@ -85,8 +77,7 @@ const API_URL = (
 const fetchUserLogin = async (
   email: string,
   password: string,
-  // token: string,
-): Promise<loginUser> => {
+): Promise<LoginUserResult> => {
   try {
     const response = await fetch(`${API_URL}/api/users/login`, {
       method: "POST",
@@ -101,18 +92,17 @@ const fetchUserLogin = async (
 
     return await response.json();
   } catch (error) {
-    console.error("Login error:", error);
+    console.error("Gagal login:", error);
     throw error;
   }
 };
 
-// DIPERBAIKI: Urutan parameter disamakan -> (name, email, password, role)
 const fetchUserRegister = async (
   name: string,
   email: string,
   password: string,
   role: string,
-): Promise<registerUser> => {
+): Promise<RegisterUserResult> => {
   try {
     const response = await fetch(`${API_URL}/api/users/register`, {
       method: "POST",
@@ -124,15 +114,14 @@ const fetchUserRegister = async (
       const errorData = await response.json();
       const errorMessage =
         errorData.message || errorData.error || "Register failed";
-      console.error("Backend error detail:", errorData);
+      console.error("Detail error backend:", errorData);
       throw new Error(errorMessage);
     }
 
-    // DIPERBAIKI: Cukup gunakan response.json() saja (jangan panggil response.text() sebelumnya)
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Register error:", error);
+    console.error("Gagal register:", error);
     throw error;
   }
 };
@@ -162,15 +151,14 @@ const createPolls = async (
       const errorData = await response.json();
       const errorMessage =
         errorData.message || errorData.error || "Created poll failed";
-      console.error("Backend error detail:", errorData);
+      console.error("Detail error backend:", errorData);
       throw new Error(errorMessage);
     }
 
-    // DIPERBAIKI: Cukup gunakan response.json() saja (jangan panggil response.text() sebelumnya)
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Register error:", error);
+    console.error("Gagal membuat poll:", error);
     throw error;
   }
 };
@@ -203,15 +191,14 @@ const postType = async (
       const errorData = await response.json();
       const errorMessage =
         errorData.message || errorData.error || "Created poll failed";
-      console.error("Backend error detail:", errorData);
+      console.error("Detail error backend:", errorData);
       throw new Error(errorMessage);
     }
 
-    // DIPERBAIKI: Cukup gunakan response.json() saja (jangan panggil response.text() sebelumnya)
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Register error:", error);
+    console.error("Gagal mengirim tipe poll:", error);
     throw error;
   }
 };
@@ -234,14 +221,14 @@ const createSession = async (
       const errorData = await response.json();
       const errorMessage =
         errorData.message || errorData.error || "Created session failed";
-      console.error("Backend error detail:", errorData);
+      console.error("Detail error backend:", errorData);
       throw new Error(errorMessage);
     }
 
     const result = await response.json();
     return result.data;
   } catch (error) {
-    console.error("Create sessions:", error);
+    console.error("Gagal membuat sesi:", error);
     throw error;
   }
 };
@@ -256,59 +243,71 @@ const getDataType = async (sessionId: string): Promise<Sessions> => {
     if (!response.ok) {
       const errorData = await response.json();
       const errorMessage =
-        errorData.message || errorData.error() || "Created sessions failed";
-      console.error("Backend error detail:", errorData);
+        errorData.message || errorData.error || "Created sessions failed";
+      console.error("Detail error backend:", errorData);
       throw new Error(errorMessage);
     }
 
     return await response.json();
   } catch (error) {
-    console.error("Create sessions:", error);
+    console.error("Gagal mengambil tipe data:", error);
     throw error;
   }
 };
 
-const getDataSession = async (sessionId: string, token: string | null): Promise<SessionDetailResponse> => {
+const getDataSession = async (
+  sessionId: string,
+  token: string | null,
+): Promise<SessionDetailResponse> => {
   try {
-    const response = await fetch (`${API_URL}/api/sessions/${sessionId}`, {
+    const response = await fetch(`${API_URL}/api/sessions/${sessionId}`, {
       method: "GET",
-      headers: {"Authorization": `Bearer ${token}`}
-    })
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-    if(!response.ok){
-      const errorData = await response.json()
-      const errorMessage = errorData.message || errorData.error() || "Get data failed"
-      console.error("backend error detail", errorData)
-      throw new Error(errorMessage)
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage =
+        errorData.message || errorData.error || "Get data failed";
+      console.error("Detail error backend:", errorData);
+      throw new Error(errorMessage);
     }
 
-    return await response.json()
+    return await response.json();
   } catch (error) {
-    console.error("Get data session:", error)
-    throw error
+    console.error("Gagal mengambil data sesi:", error);
+    throw error;
   }
-}
+};
 
-const getDataPolls = async (sessionId: string, token: string | null): Promise<SessionDetailPolls> => {
+const getAllDataPolls = async (
+  sessionId: string,
+  token: string | null,
+): Promise<Poll[]> => {
   try {
-    const response = await fetch (`${API_URL}/api//sessions/${sessionId}/polls${sessionId}`, {
-      method: "GET",
-      headers: {"Authorization": `Bearer ${token}`}
-    })
+    const response = await fetch(
+      `${API_URL}/api/polls/sessions/${sessionId}/polls`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
 
-    if(!response.ok){
-      const errorData = await response.json()
-      const errorMessage = errorData.message || errorData.error() || "Get data failed"
-      console.error("backend error detail", errorData)
-      throw new Error(errorMessage)
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage =
+        errorData.message || errorData.error || "Get data failed";
+      console.error("Detail error backend:", errorData);
+      throw new Error(errorMessage);
     }
 
-    return await response.json()
+    const result = await response.json();
+    return Array.isArray(result?.data) ? result.data : [];
   } catch (error) {
-    console.error("Get data session:", error)
-    throw error
+    console.error("Gagal mengambil data poll:", error);
+    throw error;
   }
-}
+};
 
 export {
   fetchUserLogin,
@@ -317,5 +316,6 @@ export {
   createSession,
   getDataType,
   postType,
-  getDataSession
+  getDataSession,
+  getAllDataPolls,
 };

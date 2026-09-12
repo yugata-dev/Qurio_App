@@ -1,46 +1,83 @@
 "use client"
-import { useAuth } from "@/context/AuthContext";
-import { getDataSession } from "@/lib/api";
-import { useEffect, useState } from "react"; // Tambahkan hook ini
 
-interface PageProps {
-  params: Promise<{ id: string }>; 
-}
+import { useAuth } from "@/context/AuthContext"
+import { getAllDataPolls, getDataSession } from "@/lib/api"
+import { useEffect, useState } from "react"
+import { useParams } from "next/navigation"
 
 interface SessionData {
-    id: string;
-    title: string;
-    access_code: number;
+  id: string
+  title: string
+  access_code: number
 }
 
-// LAKUKAN INI: Tangkap { params } di dalam tanda kurung fungsi komponen utama
-function SessionPage({ params }: PageProps) {
-    const { token } = useAuth();
-    const [sessionData, setSessionData] = useState<SessionData | null>(null);
-
-    useEffect(() => {
-        if (!token) return;
-
-        const getData = async () => {
-            try {
-                const { id: sessionId } = await params;
-                const response = await getDataSession(sessionId, token);
-                setSessionData(response.data);
-            } catch (error) {
-                console.error("Get data detail:", error);
-                alert("Sesi tidak ditemukan atau sudah tidak tersedia.");
-            }
-        };
-
-        void getData();
-    }, [params, token]);
-
-    return (
-        <div>
-            <h1>ID Sesi saat ini: {sessionData?.id}</h1>
-            <p>**Hub/control panel** sesi: {sessionData?.access_code}, tabel semua soal...</p>
-        </div>
-    );
+export interface Poll {
+  id: string
+  session_id: string
+  type: string
+  question: string
+  status: string
+  created_at: string
+  published_at: string | null
+  closed_at: string | null
+  options: []
 }
 
-export default SessionPage;
+export interface ApiResponse<T> {
+  success: boolean
+  data: T
+}
+
+function SessionPage() {
+  const params = useParams()
+  const { token } = useAuth()
+  const [session, setSession] = useState<SessionData | null>(null)
+  const [polls, setPolls] = useState<Poll[] | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const sessionId = params?.id as string
+
+  useEffect(() => {
+    if (!token || !sessionId) return
+
+    const fetchSessionData = async () => {
+      try {
+        const sessionResponse = await getDataSession(sessionId, token)
+        setSession(sessionResponse.data)
+      } catch (error) {
+        console.error("Gagal mengambil data sesi:", error)
+        setErrorMessage("Sesi tidak ditemukan atau sudah tidak tersedia.")
+      }
+    }
+
+    const fetchPollData = async () => {
+      try {
+        const pollResponse = await getAllDataPolls(sessionId, token)
+        setPolls(Array.isArray(pollResponse) ? pollResponse : [])
+      } catch (error) {
+        console.error("Gagal mengambil data poll:", error)
+      }
+    }
+
+    void fetchPollData()
+    void fetchSessionData()
+  }, [sessionId, token])
+
+  return (
+    <div>
+      <h1>ID Sesi saat ini: {session?.id}</h1>
+      <p> kode Sesi: {session?.access_code} </p>
+      {errorMessage && <p className="text-red-500">{errorMessage}</p>}
+      {!polls || polls.length === 0 ? (
+        <p>Belum ada pertanyaan di sesi ini.</p>
+      ) : (
+        polls.map((poll, index) => (
+          <div key={poll.id}>
+            No: {index + 1} <br /> Pertanyaan:{poll.question}
+          </div>
+        ))
+      )}
+    </div>
+  )
+}
+
+export default SessionPage
