@@ -8,7 +8,7 @@ const router = express.Router()
 router.post("/", teacherLimit, createSession)
 
 // list semua sessionnp
-router.get("/", getSessions)
+router.get("/", teacherLimit ,getSessions)
 
 // get detail 1 session
 router.get("/:id",teacherLimit, getSession)

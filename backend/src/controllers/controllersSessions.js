@@ -64,7 +64,7 @@ export const createSession = async (req, res) => {
 // GET SESSIONS (Guru mengambil daftar sesi miliknya)
 // ====================================================================
 export const getSessions = async (req, res) => {
-    const { teacher_id } = req.query
+    const  teacher_id  = req.user.id
 
     // Validasi parameter
     if (!teacher_id) {
