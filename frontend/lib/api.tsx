@@ -205,7 +205,7 @@ const secondCreatePolls = async (
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ question, status, options }),
+        body: JSON.stringify({ question, status, options, type }),
       },
     );
 

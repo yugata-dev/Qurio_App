@@ -94,7 +94,7 @@ export default function RegisterPage() {
                   },
                 })}
                 className="w-full h-11"
-                placeholder="nama@sekolah.sch.id"
+                placeholder="nama@gmail.com"
                 type="email"
               />
               {errors.email && (

@@ -70,10 +70,11 @@ function SessionPage() {
       <p> kode Sesi: {session?.access_code} </p>
 <button onClick={() => router.push(`/dashboard/createpolls/${session?.id}`)}>BUAT SOAL</button>
       {errorMessage && <p className="text-red-500">{errorMessage}</p>}
-      {!polls || polls.length === 0 ? (
+      { !polls || polls.length === 0 ? (
         <p>Belum ada pertanyaan di sesi ini.</p>
       ) : (
         polls.map((poll, index) => (
+          
           <div key={poll.id}>
             No: {index + 1} <br /> Type:{poll.type} <br /> Pertanyaan:{poll.question}
           </div>

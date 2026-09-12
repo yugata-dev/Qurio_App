@@ -91,7 +91,7 @@ function LoginPage() {
                     message: "Format email tidak valid",
                   },
                 })}
-                placeholder="nama@sekolah.sch.id"
+                placeholder="nama@gmail.com"
                 type="email"
                 className="w-full h-11"
               />
