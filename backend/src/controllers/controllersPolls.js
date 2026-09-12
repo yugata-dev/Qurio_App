@@ -52,32 +52,41 @@ function validatePollInput(type, question, options) {
 // ====================================================================
 export const createPoll = async (req, res) => {
     const { sessionId } = req.params
-    const { type, question, options = [], status = "draft" } = req.body
+    const { type, question, options = [] } = req.body
 
-    if (!['draft', 'published', 'closed'].includes(status)) {
-        return res.status(400).json({ success: false, message: "Status soal tidak valid!" })
-    }
-
+    
     // Step 1: Validasi input yang dikirim dari client
     const validationError = validatePollInput(type, question, options)
     if (validationError) {
         return res.status(400).json({ success: false, message: validationError })
     }
 
+    let status 
+    let publishedAt
+
+if (type === "quiz") {
+    status = "draft"
+    publishedAt = null
+} else {
+    status = "published"
+    publishedAt = new Date()
+}
+    
     // Step 2: Ambil koneksi database untuk transaksi
     let client
     try {
         client = await pool.connect()
-
+        
         // Step 3: Cek apakah sesi ada dan milik guru yang login
         const sessionRes = await client.query(
             "SELECT teacher_id FROM sessions WHERE id = $1",
             [sessionId]
         )
-
+        
         if (sessionRes.rows.length === 0) {
             return res.status(404).json({ success: false, message: "Sesi tidak ditemukan!" })
         }
+        
 
         // Verifikasi bahwa guru yang login adalah pemilik sesi
         const teacherId = sessionRes.rows[0].teacher_id
@@ -92,9 +101,9 @@ export const createPoll = async (req, res) => {
         // Step 5: Simpan poll ke database
         const pollRes = await client.query(
             `INSERT INTO polls (session_id, type, question, status, published_at)
-             VALUES ($1, $2, $3, $4, CASE WHEN $4 = 'published' THEN CURRENT_TIMESTAMP ELSE NULL END)
+             VALUES ($1, $2, $3, $4, $5)
              RETURNING *`,
-            [sessionId, type, question, status]
+            [sessionId, type, question, status, publishedAt]
         )
         const newPoll = pollRes.rows[0]
         const savedOptions = []
