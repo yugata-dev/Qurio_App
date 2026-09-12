@@ -64,8 +64,19 @@ interface SessionDetailResponse {
   data: {
     id: string;
     title: string;
+    access_code: number;
   };
 }
+
+interface SessionDetailPolls {
+  success: boolean;
+  data: {
+    id: string;
+    type: string;
+    question: number;
+  };
+}
+
 
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -260,6 +271,27 @@ const getDataType = async (sessionId: string): Promise<Sessions> => {
 const getDataSession = async (sessionId: string, token: string | null): Promise<SessionDetailResponse> => {
   try {
     const response = await fetch (`${API_URL}/api/sessions/${sessionId}`, {
+      method: "GET",
+      headers: {"Authorization": `Bearer ${token}`}
+    })
+
+    if(!response.ok){
+      const errorData = await response.json()
+      const errorMessage = errorData.message || errorData.error() || "Get data failed"
+      console.error("backend error detail", errorData)
+      throw new Error(errorMessage)
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error("Get data session:", error)
+    throw error
+  }
+}
+
+const getDataPolls = async (sessionId: string, token: string | null): Promise<SessionDetailPolls> => {
+  try {
+    const response = await fetch (`${API_URL}/api//sessions/${sessionId}/polls${sessionId}`, {
       method: "GET",
       headers: {"Authorization": `Bearer ${token}`}
     })

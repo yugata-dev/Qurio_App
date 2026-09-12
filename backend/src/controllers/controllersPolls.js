@@ -52,7 +52,11 @@ function validatePollInput(type, question, options) {
 // ====================================================================
 export const createPoll = async (req, res) => {
     const { sessionId } = req.params
-    const { type, question, options = [] } = req.body
+    const { type, question, options = [], status = "draft" } = req.body
+
+    if (!['draft', 'published', 'closed'].includes(status)) {
+        return res.status(400).json({ success: false, message: "Status soal tidak valid!" })
+    }
 
     // Step 1: Validasi input yang dikirim dari client
     const validationError = validatePollInput(type, question, options)
@@ -87,8 +91,10 @@ export const createPoll = async (req, res) => {
 
         // Step 5: Simpan poll ke database
         const pollRes = await client.query(
-            "INSERT INTO polls (session_id, type, question) VALUES ($1, $2, $3) RETURNING *",
-            [sessionId, type, question]
+            `INSERT INTO polls (session_id, type, question, status, published_at)
+             VALUES ($1, $2, $3, $4, CASE WHEN $4 = 'published' THEN CURRENT_TIMESTAMP ELSE NULL END)
+             RETURNING *`,
+            [sessionId, type, question, status]
         )
         const newPoll = pollRes.rows[0]
         const savedOptions = []

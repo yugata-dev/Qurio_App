@@ -10,6 +10,7 @@ interface PageProps {
 interface SessionData {
     id: string;
     title: string;
+    access_code: number;
 }
 
 // LAKUKAN INI: Tangkap { params } di dalam tanda kurung fungsi komponen utama
@@ -37,7 +38,7 @@ function SessionPage({ params }: PageProps) {
     return (
         <div>
             <h1>ID Sesi saat ini: {sessionData?.id}</h1>
-            <p>**Hub/control panel** sesi: kode akses, tabel semua soal...</p>
+            <p>**Hub/control panel** sesi: {sessionData?.access_code}, tabel semua soal...</p>
         </div>
     );
 }

@@ -3,7 +3,6 @@ import { createPolls, createSession } from "@/lib/api"
 import { useAuth } from "@/context/AuthContext"
 import { useRouter } from "next/navigation"
 import { useForm, useFieldArray } from "react-hook-form"
-import { useState } from "react";
 
 
 interface pollOption {
@@ -22,17 +21,6 @@ interface SessionFormInput {
     option: pollOption[]
     correctIndex: number
     status: statusPoll
-}
-
-interface AnswerOption {
-    id: string
-    text: string
-}
-
-interface Question {
-    id: string;
-    questionText?: string;
-    option?: AnswerOption[];
 }
 
 function CreateSessionsPage() {

@@ -96,6 +96,7 @@ export const getSessions = async (req, res) => {
 // ====================================================================
 export const getSession = async (req, res) => {
     const { id } = req.params
+    const idTeacher = req.user.id
 
     try {
         // Ambil detail sesi berdasarkan ID
@@ -110,6 +111,10 @@ export const getSession = async (req, res) => {
                 message: "Sesi tidak ditemukan!"
             })
         }
+
+if(sessionResult.teacher_id !== idTeacher){
+    return res.status(403).json({success: false, message: "ID tidak cocok"})
+}
 
         res.status(200).json({ success: true, data: sessionResult.rows[0] })
     } catch (error) {

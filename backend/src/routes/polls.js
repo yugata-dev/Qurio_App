@@ -8,7 +8,7 @@ const router = express.Router()
 router.post("/sessions/:sessionId/polls", teacherLimit, createPoll)
 
 // get polls dalam session
-router.get("/sessions/:sessionId/polls", getPollsBySession)
+router.get("/sessions/:sessionId/polls", teacherLimit , getPollsBySession)
 
 // get detail 1 poll
 router.get("/:pollId", getPoll)
