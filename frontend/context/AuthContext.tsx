@@ -25,7 +25,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  isAuthenticated: boolean;
+  isAutheticated: boolean;
   login: (user: User, token: string) => void;
   logout: () => void;
 }
@@ -33,7 +33,7 @@ interface AuthContextType {
 interface AuthState {
   user: User | null;
   token: string | null;
-  isAuthenticated: boolean;
+  isAutheticated: boolean;
 }
 
 // ============ KONSTANTA ============
@@ -41,7 +41,7 @@ interface AuthState {
 const emptyAuthState: AuthState = {
   user: null,
   token: null,
-  isAuthenticated: false,
+  isAutheticated: false,
 };
 
 const authListeners = new Set<() => void>();
@@ -83,7 +83,7 @@ function getAuthSnapshot() {
     return JSON.stringify({
       user: storedUser ? JSON.parse(storedUser) : null,
       token: storedToken,
-      isAuthenticated: true,
+      isAutheticated: true,
     });
   } catch {
     return JSON.stringify(emptyAuthState);
@@ -138,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const authContextValue: AuthContextType = {
     user: authState.user,
     token: authState.token,
-    isAuthenticated: authState.isAuthenticated,
+    isAutheticated: authState.isAutheticated,
     login,
     logout,
   };
