@@ -112,9 +112,12 @@ export const getSession = async (req, res) => {
             })
         }
 
-if(sessionResult.teacher_id !== idTeacher){
-    return res.status(403).json({success: false, message: "ID tidak cocok"})
-}
+  const teacherId = sessionResult.rows[0].teacher_id
+        const loggedInTeacherId = req.user ? req.user.id : null
+        if (teacherId !== loggedInTeacherId) {
+            return res.status(403).json({ success: false, message: "Anda bukan pemilik sesi ini!" })
+        }
+
 
         res.status(200).json({ success: true, data: sessionResult.rows[0] })
     } catch (error) {

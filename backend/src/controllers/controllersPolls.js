@@ -138,7 +138,7 @@ export const createPoll = async (req, res) => {
         if (client) {
             await client.query("ROLLBACK").catch(() => { })
         }
-        console.error("Create poll error:", error.message)
+        console.error("Create poll error:", error)
         return res.status(500).json({ success: false, message: "Gagal membuat soal" })
     } finally {
         // Selalu lepaskan koneksi database

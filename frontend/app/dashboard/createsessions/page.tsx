@@ -39,11 +39,13 @@ function CreateSessionsPage() {
             console.log("Hasil createSession:", postTitleSession); // Cek struktur respons backend
 
             // 2. Ambil ID (antisipasi jika ID dibungkus di dalam objek .data)
-            const newSessionId = postTitleSession.id || postTitleSession?.id;
+            const newSessionId = postTitleSession?.id;
 
             if (!newSessionId) {
                 throw new Error("Gagal mendapatkan ID Sesi dari backend");
             }
+
+         console.log(newSessionId)
 
             try {
                 const optionsWithCorrectFlag = dataSession.option.map((opt, i) => ({
