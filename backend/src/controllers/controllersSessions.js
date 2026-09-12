@@ -64,7 +64,7 @@ export const createSession = async (req, res) => {
 // GET SESSIONS (Guru mengambil daftar sesi miliknya)
 // ====================================================================
 export const getSessions = async (req, res) => {
-    const  teacher_id  = req.user.id
+    const teacher_id = req.user.id
 
     // Validasi parameter
     if (!teacher_id) {
@@ -96,7 +96,6 @@ export const getSessions = async (req, res) => {
 // ====================================================================
 export const getSession = async (req, res) => {
     const { id } = req.params
-    const idTeacher = req.user.id
 
     try {
         // Ambil detail sesi berdasarkan ID
@@ -112,7 +111,7 @@ export const getSession = async (req, res) => {
             })
         }
 
-  const teacherId = sessionResult.rows[0].teacher_id
+        const teacherId = sessionResult.rows[0].teacher_id
         const loggedInTeacherId = req.user ? req.user.id : null
         if (teacherId !== loggedInTeacherId) {
             return res.status(403).json({ success: false, message: "Anda bukan pemilik sesi ini!" })

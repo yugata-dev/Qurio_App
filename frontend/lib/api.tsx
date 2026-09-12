@@ -48,6 +48,23 @@ interface Polls {
   };
 }
 
+interface secondPolls {
+  success: boolean;
+  data: {
+    poll: {
+      id: string;
+      sessionId: number;
+      type: "qa" | "wordcloud"
+      question: string;
+      status: "draft" | "published" | "closed";
+      created_at: string;
+      published_at: string;
+      closed_at: string;
+      option?: PollOption[];
+    };
+  };
+}
+
 interface PollOptionInput {
   text: string;
   is_correct: boolean;
@@ -67,6 +84,7 @@ interface SessionDetailResponse {
     id: string;
     title: string;
     access_code: number;
+    type: "quiz" | "qa" | "wordcloud"
   };
 }
 
@@ -162,12 +180,56 @@ const createPolls = async (
     throw error;
   }
 };
+// id: string;
+//     sessionId: number;
+//     question: string;
+//     status: "draft" | "published" | "closed";
+//     created_at: string;
+//     published_at: string;
+//     closed_at: string;
+//     option?: PollOption[];
+const secondCreatePolls = async (
+  sessionId: string,
+  type: "qa" | "wordcloud",
+  question: string,
+  status: "draft" | "published" | "closed",
+  options: PollOptionInput[],
+  token: string
+): Promise<secondPolls> => {
+  try {
+    const response = await fetch(
+      `${API_URL}/api/sessions/${sessionId}/polls/`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ question, status, options }),
+      },
+    );
+
+      if (!response.ok) {
+      const errorData = await response.json();
+      const errorMessage =
+        errorData.message || errorData.error || "Created poll failed";
+      console.error("Detail error backend:", errorData);
+      throw new Error(errorMessage);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+      console.error("Gagal membuat poll:", error);
+    throw error;
+  }
+  }
 
 const postType = async (
-  type: string,
-  sessionId: string,
-  token: string,
-): Promise<Polls> => {
+    type: string,
+    sessionId: string,
+    token: string,
+  ): Promise<Polls> => {
   if (!sessionId || sessionId === "undefined") {
     throw new Error(
       "Gagal memanggil API: sessionId tidak valid atau bernilai undefined.",
@@ -255,6 +317,7 @@ const getDataType = async (sessionId: string): Promise<Sessions> => {
   }
 };
 
+
 const getDataSession = async (
   sessionId: string,
   token: string | null,
@@ -318,4 +381,5 @@ export {
   postType,
   getDataSession,
   getAllDataPolls,
+  secondCreatePolls
 };

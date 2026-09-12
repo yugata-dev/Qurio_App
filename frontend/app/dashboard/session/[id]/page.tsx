@@ -3,12 +3,13 @@
 import { useAuth } from "@/context/AuthContext"
 import { getAllDataPolls, getDataSession } from "@/lib/api"
 import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 
-interface SessionData {
+export interface SessionData {
   id: string
   title: string
   access_code: number
+  type: "quiz" | "qa" | "wordcloud"
 }
 
 export interface Poll {
@@ -29,6 +30,7 @@ export interface ApiResponse<T> {
 }
 
 function SessionPage() {
+  const router = useRouter()
   const params = useParams()
   const { token } = useAuth()
   const [session, setSession] = useState<SessionData | null>(null)
@@ -66,13 +68,14 @@ function SessionPage() {
     <div>
       <h1>ID Sesi saat ini: {session?.id}</h1>
       <p> kode Sesi: {session?.access_code} </p>
+<button onClick={() => router.push(`/dashboard/createpolls/${session?.id}`)}>BUAT SOAL</button>
       {errorMessage && <p className="text-red-500">{errorMessage}</p>}
       {!polls || polls.length === 0 ? (
         <p>Belum ada pertanyaan di sesi ini.</p>
       ) : (
         polls.map((poll, index) => (
           <div key={poll.id}>
-            No: {index + 1} <br /> Pertanyaan:{poll.question}
+            No: {index + 1} <br /> Type:{poll.type} <br /> Pertanyaan:{poll.question}
           </div>
         ))
       )}
