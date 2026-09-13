@@ -1,5 +1,5 @@
 import express from "express"
-import { createPoll, getPoll, getPollsBySession, updatePoll } from "../controllers/controllersPolls.js"
+import { createPoll, getPoll, getPollsBySession, updateAllPollsBySession } from "../controllers/controllersPolls.js"
 import { teacherLimit } from "../middleware/JWT.js"
 
 const router = express.Router()
@@ -14,6 +14,6 @@ router.get("/sessions/:sessionId/polls", teacherLimit, getPollsBySession)
 router.get("/:pollId", getPoll)
 
 // update poll (guru)
-router.put("/:sessionId", teacherLimit, updatePoll)
+router.put("/:sessionId", teacherLimit, updateAllPollsBySession)
 
 export default router
