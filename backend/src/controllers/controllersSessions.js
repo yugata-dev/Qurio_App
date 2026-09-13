@@ -64,7 +64,7 @@ export const createSession = async (req, res) => {
 // GET SESSIONS (Guru mengambil daftar sesi miliknya)
 // ====================================================================
 export const getSessions = async (req, res) => {
-    const { teacher_id } = req.query
+    const teacher_id = req.user.id
 
     // Validasi parameter
     if (!teacher_id) {
@@ -110,6 +110,13 @@ export const getSession = async (req, res) => {
                 message: "Sesi tidak ditemukan!"
             })
         }
+
+        const teacherId = sessionResult.rows[0].teacher_id
+        const loggedInTeacherId = req.user ? req.user.id : null
+        if (teacherId !== loggedInTeacherId) {
+            return res.status(403).json({ success: false, message: "Anda bukan pemilik sesi ini!" })
+        }
+
 
         res.status(200).json({ success: true, data: sessionResult.rows[0] })
     } catch (error) {
@@ -178,22 +185,3 @@ export const updateSession = async (req, res) => {
         })
     }
 }
-
-export const getType = async (req, res) => {
-    const { sessionId } = req.params
-
-    try {
-        const getDataType = await client.query("SELECT type FROM polls WHERE session_id = $1 LIMIT 1", [sessionId])
-
-        const type = getDataType.rows[0]?.type || null
-
-        res.status(200).json({ success: true, message: type })
-    } catch (error) {
-        console.error("Get data type:", error.message)
-        return res.status(500).json({
-            success: false,
-            message: "Gagal mendapat data type"
-        })
-    }
-
-} 

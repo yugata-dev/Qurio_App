@@ -52,29 +52,41 @@ function validatePollInput(type, question, options) {
 // ====================================================================
 export const createPoll = async (req, res) => {
     const { sessionId } = req.params
-    const type = typeof req.body.type === "string" ? req.body.type.trim().toLowerCase() : ""
-    const { question, options = [] } = req.body
+    const { type, question, options = [] } = req.body
 
+    
     // Step 1: Validasi input yang dikirim dari client
     const validationError = validatePollInput(type, question, options)
     if (validationError) {
         return res.status(400).json({ success: false, message: validationError })
     }
 
+    let status 
+    let publishedAt
+
+if (type === "quiz") {
+    status = "draft"
+    publishedAt = null
+} else {
+    status = "published"
+    publishedAt = new Date()
+}
+    
     // Step 2: Ambil koneksi database untuk transaksi
     let client
     try {
         client = await pool.connect()
-
+        
         // Step 3: Cek apakah sesi ada dan milik guru yang login
         const sessionRes = await client.query(
             "SELECT teacher_id FROM sessions WHERE id = $1",
             [sessionId]
         )
-
+        
         if (sessionRes.rows.length === 0) {
             return res.status(404).json({ success: false, message: "Sesi tidak ditemukan!" })
         }
+        
 
         // Verifikasi bahwa guru yang login adalah pemilik sesi
         const teacherId = sessionRes.rows[0].teacher_id
@@ -83,32 +95,15 @@ export const createPoll = async (req, res) => {
             return res.status(403).json({ success: false, message: "Anda bukan pemilik sesi ini!" })
         }
 
-        // Cek apakah sudah ada poll yang dibuat sebelumnya di sesi ini
-        const existingPollRes = await client.query(
-            "SELECT type FROM polls WHERE session_id = $1 LIMIT 1",
-            [sessionId] // Parameter harus sessionId, bukan type
-        )
-
-        // Jika sudah ada poll terdahulu, kunci tipenya
-        if (existingPollRes.rows.length > 0) {
-            const firstPollType = existingPollRes.rows[0].type
-
-            // Jika tipe baru yang dikirim berbeda dengan tipe pertama
-            if (type !== firstPollType) {
-                return res.status(400).json({
-                    success: false,
-                    message: `Tipe soal di sesi ini sudah dikunci sebagai '${firstPollType}'. Soal berikutnya harus bertipe sama.`
-                })
-            }
-        }
-
         // Step 4: Mulai transaksi database untuk menjaga konsistensi data
         await client.query("BEGIN")
 
         // Step 5: Simpan poll ke database
         const pollRes = await client.query(
-            "INSERT INTO polls (session_id, type, question) VALUES ($1, $2, $3) RETURNING *",
-            [sessionId, type, question]
+            `INSERT INTO polls (session_id, type, question, status, published_at)
+             VALUES ($1, $2, $3, $4, $5)
+             RETURNING *`,
+            [sessionId, type, question, status, publishedAt]
         )
         const newPoll = pollRes.rows[0]
         const savedOptions = []
@@ -152,7 +147,7 @@ export const createPoll = async (req, res) => {
         if (client) {
             await client.query("ROLLBACK").catch(() => { })
         }
-        console.error("Create poll error:", error.message)
+        console.error("Create poll error:", error)
         return res.status(500).json({ success: false, message: "Gagal membuat soal" })
     } finally {
         // Selalu lepaskan koneksi database

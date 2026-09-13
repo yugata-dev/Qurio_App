@@ -2,9 +2,7 @@ import jwt from "jsonwebtoken"
 
 // Membuat token JWT
 export const generateCode = (data) => {
-    return jwt.sign(data, process.env.JWT_SECRET, {
-        expiresIn: process.env.JWT_EXPIRES_IN || "7d"
-    })
+    return jwt.sign(data, process.env.JWT_SECRET, { expiresIn: "1h" })
 }
 
 // Memverifikasi token JWT

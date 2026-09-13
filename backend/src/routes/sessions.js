@@ -1,21 +1,19 @@
 import express from "express"
-import { createSession, getSessions, getSession, updateSession, getType } from "../controllers/controllersSessions.js"
-// Import controller poll
-import { createPoll, getPollsBySession } from "../controllers/controllersPolls.js"
+import { createSession, getSessions, getSession, updateSession } from "../controllers/controllersSessions.js"
 import { teacherLimit } from "../middleware/JWT.js"
 
 const router = express.Router()
 
-// --- SESSION ROUTES ---
+// create session baru (guru)
 router.post("/", teacherLimit, createSession)
-router.get("/", getSessions)
-router.get("/:id", getSession)
-router.put("/:id", teacherLimit, updateSession)
 
-// --- POLLS IN SESSION ROUTES ---
-// URL Asli: /api/sessions/:sessionId/polls
-router.post("/:sessionId/polls", teacherLimit, createPoll)
-router.get("/:sessionId/polls", getPollsBySession)
-router.get("/:sessionId/type", getType)
+// list semua sessionnp
+router.get("/", teacherLimit ,getSessions)
+
+// get detail 1 session
+router.get("/:id",teacherLimit, getSession)
+
+// update session (guru pemilik)
+router.put("/:id", teacherLimit, updateSession)
 
 export default router

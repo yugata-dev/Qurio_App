@@ -5,18 +5,6 @@ dotenv.config({ quiet: true })
 
 const { Pool } = pg
 
-const databaseUrl = process.env.DATABASE_URL?.trim()
-
-const databaseConfig = databaseUrl
-    ? { connectionString: databaseUrl }
-    : {
-        user: process.env.PGUSER || process.env.DB_USER,
-        host: process.env.PGHOST || process.env.DB_HOST,
-        database: process.env.PGDATABASE || process.env.DB_NAME,
-        password: process.env.PGPASSWORD || process.env.DB_PASSWORD,
-        port: Number(process.env.PGPORT || process.env.DB_PORT) || 5432
-    }
-
 const pool = new Pool({
     user: process.env.DB_USER,
     host: process.env.DB_HOST,

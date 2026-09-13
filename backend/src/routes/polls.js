@@ -1,14 +1,19 @@
 import express from "express"
-import { createPoll, getPoll, updatePoll } from "../controllers/controllersPolls.js"
+import { createPoll, getPoll, getPollsBySession, updatePoll } from "../controllers/controllersPolls.js"
 import { teacherLimit } from "../middleware/JWT.js"
 
 const router = express.Router()
 
-// Buat poll baru di dalam sesi (guru)
+// create poll dalam session (guru)
 router.post("/sessions/:sessionId/polls", teacherLimit, createPoll)
 
-// URL Asli: /api/polls/:pollId
+// get polls dalam session
+router.get("/sessions/:sessionId/polls", teacherLimit , getPollsBySession)
+
+// get detail 1 poll
 router.get("/:pollId", getPoll)
+
+// update poll (guru)
 router.put("/:pollId", teacherLimit, updatePoll)
 
 export default router

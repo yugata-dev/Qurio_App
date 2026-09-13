@@ -28,8 +28,7 @@ const corsOptions = {
         } else {
             callback(new Error("Origin tidak diizinkan oleh CORS"))
         }
-    },
-    credentials: true,
+    }
 }
 
 // =====================

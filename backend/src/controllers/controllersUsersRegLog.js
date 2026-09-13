@@ -18,6 +18,13 @@ export const usersReg = async (req, res) => {
         return res.status(422).json({ success: false, message: "Format email tidak valid" })
     }
 
+    if (typeof password !== "string" || password.length < 8) {
+    return res.status(422).json({
+        success: false,
+        message: "Password minimal 8 karakter"
+    })
+}
+
     if (!VALID_ROLES.includes(role)) {
         return res.status(422).json({ success: false, message: "Role harus 'guru' atau 'siswa'" })
     }
@@ -59,16 +66,8 @@ export const usersReg = async (req, res) => {
         if (error.code === "23505") {
             return res.status(409).json({ success: false, message: "Nama atau email sudah terdaftar" })
         }
-
-        // TETAP KELUARKAN LOG LENGKAP DI SERVER RAILWAY
-        console.error("Register Error Full Object:", error)
-
-        // Kirimkan pesan error asli agar mudah di-debug dari frontend
-        const isDev = process.env.NODE_ENV !== "production"
-        return res.status(500).json({
-            success: false,
-            message: isDev ? error.message : "Pendaftaran gagal, terjadi kesalahan server"
-        })
+        console.error("Register error:", error.message)
+        res.status(500).json({ success: false, error: "Pendaftaran gagal, silakan coba lagi" })
     }
 }
 
