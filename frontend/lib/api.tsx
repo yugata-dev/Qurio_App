@@ -315,8 +315,9 @@ const getAllDataPolls = async (
 export const updateDataPolls = async (sessionId: string, status: "published" | "closed", token: string | null): Promise<Poll> => {
   try {
     const response = await fetch(`${API_URL}/api/polls/${sessionId}`, {
-      method: "PATCH",
-      headers: { Authorization: `Bearer ${token}` }
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ status })
     })
 
     if (!response.ok) {
