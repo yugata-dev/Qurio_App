@@ -54,39 +54,39 @@ export const createPoll = async (req, res) => {
     const { sessionId } = req.params
     const { type, question, options = [] } = req.body
 
-    
+
     // Step 1: Validasi input yang dikirim dari client
     const validationError = validatePollInput(type, question, options)
     if (validationError) {
         return res.status(400).json({ success: false, message: validationError })
     }
 
-    let status 
+    let status
     let publishedAt
 
-if (type === "quiz") {
-    status = "draft"
-    publishedAt = null
-} else {
-    status = "published"
-    publishedAt = new Date()
-}
-    
+    if (type === "quiz") {
+        status = "draft"
+        publishedAt = null
+    } else {
+        status = "published"
+        publishedAt = new Date()
+    }
+
     // Step 2: Ambil koneksi database untuk transaksi
     let client
     try {
         client = await pool.connect()
-        
+
         // Step 3: Cek apakah sesi ada dan milik guru yang login
         const sessionRes = await client.query(
             "SELECT teacher_id FROM sessions WHERE id = $1",
             [sessionId]
         )
-        
+
         if (sessionRes.rows.length === 0) {
             return res.status(404).json({ success: false, message: "Sesi tidak ditemukan!" })
         }
-        
+
 
         // Verifikasi bahwa guru yang login adalah pemilik sesi
         const teacherId = sessionRes.rows[0].teacher_id
@@ -267,17 +267,27 @@ export const updatePoll = async (req, res) => {
             return res.status(403).json({ success: false, message: "Anda bukan pemilik sesi ini!" })
         }
 
-        // Step 3: Update status dan set timestamp yang sesuai
+        // Step 3: Update status dan set timestamp dengan validasi tipe di SQL
         let query = "UPDATE polls SET status = $1"
         if (status === "published") {
             query += ", published_at = CURRENT_TIMESTAMP"
         } else if (status === "closed") {
             query += ", closed_at = CURRENT_TIMESTAMP"
         }
-        query += " WHERE id = $2 RETURNING *"
+        // Tambahkan kondisi 'type = 'quiz'' langsung di WHERE
+        query += " WHERE id = $2 AND type = 'quiz' RETURNING *"
 
         const updatedPollRes = await pool.query(query, [status, pollId])
         const updatedPoll = updatedPollRes.rows[0]
+
+        // Jika updatedPoll kosong, artinya ID tidak ketemu ATAU tipenya bukan quiz
+        if (!updatedPoll) {
+            return res.status(400).json({
+                success: false,
+                message: "Poll tidak ditemukan atau tipe soal selain Quiz tidak bisa diperbarui statusnya."
+            })
+        }
+
         const sessionId = ownerRes.rows[0].session_id
 
         // Step 4: Ambil opsi jawaban (tanpa is_correct untuk keamanan)
