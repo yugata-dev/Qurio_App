@@ -26,7 +26,7 @@ interface RegisterFormData {
   name: string;
   email: string;
   password: string;
-  role: "guru" | "murid";
+  role: "guru" | "siswa";
 }
 
 export default function RegisterPage() {
@@ -94,7 +94,7 @@ export default function RegisterPage() {
                   },
                 })}
                 className="w-full h-11"
-                placeholder="nama@sekolah.sch.id"
+                placeholder="nama@gmail.com"
                 type="email"
               />
               {errors.email && (
@@ -109,7 +109,7 @@ export default function RegisterPage() {
                 Password
               </Label>
               <Input
-                {...register("password", { required: "Password wajib diisi" })}
+                {...register("password", { required: "Password wajib diisi", minLength: {value: 8, message: "Password minimal 8 karakter"} })}
                 className="w-full h-11"
                 placeholder="Buat kata sandi minimal 8 karakter"
                 type="password"

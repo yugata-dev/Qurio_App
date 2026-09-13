@@ -1,0 +1,16 @@
+{
+  "javascript.validate.enable": true,
+  "typescript.validate.enable": true,
+  "editor.showUnused": true,
+
+  // Tambahan khusus untuk mengatur ekstensi Error Lens:
+  // Hanya menampilkan "error" (merah), "warning" (kuning) akan disembunyikan
+  "errorLens.enabledDiagnosticLevels": [
+    "error"
+  ],
+
+  "workbench.colorCustomizations": {
+    "editorWarning.foreground": "#00000000",
+    "editorWarning.border": "#00000000"
+  }
+}

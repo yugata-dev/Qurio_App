@@ -56,7 +56,7 @@ function LoginPage() {
       }
       // Simpan token (jika ada) dan redirect ke dashboard
       router.push("/dashboard");
-    } catch (error: any) {
+    } catch (error) {
       console.error("login error:", error);
     }
   };
@@ -91,7 +91,7 @@ function LoginPage() {
                     message: "Format email tidak valid",
                   },
                 })}
-                placeholder="nama@sekolah.sch.id"
+                placeholder="nama@gmail.com"
                 type="email"
                 className="w-full h-11"
               />

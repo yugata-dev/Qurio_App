@@ -1,9 +1,96 @@
-import React from 'react'
+"use client"
+
+import { useAuth } from "@/context/AuthContext"
+import { getAllDataPolls, getDataSession } from "@/lib/api"
+import { useEffect, useState } from "react"
+import { useParams, useRouter } from "next/navigation"
+
+export interface SessionData {
+  id: string
+  title: string
+  access_code: number
+  type: "quiz" | "qa" | "wordcloud"
+}
+interface PollOption {
+  id: string;
+  poll_id: string;
+  option_text: string;
+  is_correct: boolean;
+  option_order: number;
+}
+
+export interface Poll {
+  id: string
+  session_id: string
+  type: string
+  question: string
+  status: string
+  created_at: string
+  published_at: string | null
+  closed_at: string | null
+  options: PollOption[]
+}
+
+export interface ApiResponse<T> {
+  success: boolean
+  data: T
+}
 
 function SessionPage() {
-    return (
-        <div>**Hub/control panel** sesi: kode akses, tabel semua soal (question, type, status), tombol Publish per baris (khusus quiz draft), tombol "+ Tambah Soal", listen socket.io untuk auto-update tabel tanpa refresh </div>
-    )
+  const router = useRouter()
+  const params = useParams()
+  const { token } = useAuth()
+  const [session, setSession] = useState<SessionData | null>(null)
+  const [polls, setPolls] = useState<Poll[] | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const sessionId = params?.id as string
+
+  useEffect(() => {
+    if (!token || !sessionId) return
+
+    const fetchSessionData = async () => {
+      try {
+        const sessionResponse = await getDataSession(sessionId, token)
+        setSession(sessionResponse.data)
+      } catch (error) {
+        console.error("Gagal mengambil data sesi:", error)
+        setErrorMessage("Sesi tidak ditemukan atau sudah tidak tersedia.")
+      }
+    }
+
+    const fetchPollData = async () => {
+      try {
+        const pollResponse = await getAllDataPolls(sessionId, token)
+        setPolls(Array.isArray(pollResponse) ? pollResponse : [])
+      } catch (error) {
+        console.error("Gagal mengambil data poll:", error)
+      }
+    }
+
+    void fetchPollData()
+    void fetchSessionData()
+  }, [sessionId, token])
+
+  return (
+    <div>
+      <h1>ID Sesi saat ini: {session?.id}</h1>
+      <p> kode Sesi: {session?.access_code} </p>
+      <button onClick={() => router.push(`/dashboard/createpolls/${session?.id}`)}>BUAT SOAL</button>
+      {errorMessage && <p className="text-red-500">{errorMessage}</p>}
+      {!polls || polls.length === 0 ? (
+        <p>Belum ada pertanyaan di sesi ini.</p>
+      ) : (
+        polls.map((poll, index) => {
+          return poll.type === "quiz" ? (<div key={poll.id} className="m-1">
+            No: {index + 1} <br /> Type:{poll.type} <br /> {poll.options.map((opt, index) => (<div key={index}>No: {opt.option_order} Opsi jawaban:{opt.option_text} {opt.is_correct ? "✔️" : null}</div>))} Pertanyaan:{poll.question}
+
+          </div>) : (<div key={poll.id}>
+            No: {index + 1} <br /> Type:{poll.type} <br /> Pertanyaan:{poll.question}
+          </div>)
+        })
+      )}
+    </div>
+  )
 }
 
 export default SessionPage
