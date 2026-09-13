@@ -14,6 +14,6 @@ router.get("/sessions/:sessionId/polls", teacherLimit, getPollsBySession)
 router.get("/:pollId", getPoll)
 
 // update poll (guru)
-router.put("/:pollId", teacherLimit, updatePoll)
+router.put("/:sessionId", teacherLimit, updatePoll)
 
 export default router
