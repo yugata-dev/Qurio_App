@@ -94,7 +94,17 @@ function SessionPage() {
         statusTarget === "closed" ? "closed" : "published",
         token,
       )
-      setPolls(updateAll)
+      setPolls((prevPolls) => {
+        // Jika prevPolls masih null, langsung kembalikan null atau array kosong
+        if (!prevPolls) return null;
+
+        return prevPolls.map((oldPoll) => {
+          const updated = updateAll.find((u) => u.id === oldPoll.id);
+          return updated
+            ? { ...updated, options: oldPoll.options } // Gabungkan kembali options
+            : oldPoll;
+        });
+      });
       setSuccessMessage(`Berhasil mengupdate semua poll menjadi ${statusTarget}.`);
     } catch (error) {
       setErrorMessage(
@@ -127,9 +137,9 @@ function SessionPage() {
       {!polls || polls.length === 0 ? (
         <p>Belum ada pertanyaan di sesi ini.</p>
       ) : (
-        polls.map((poll, index) => {
+        polls?.map((poll, index) => {
           return poll.type === "quiz" ? (<div key={poll.id} className="m-1">
-            No: {index + 1} <br /> Type:{poll.type} <br /> {poll.options.map((opt, index) => (<div key={index}>No: {opt.option_order} Opsi jawaban:{opt.option_text} {opt.is_correct ? "✔️" : null}</div>))} Pertanyaan:{poll.question}
+            No: {index + 1} <br /> Type:{poll.type} <br /> {poll.options.map((opt, index) => (<div key={index}>No: {opt.option_order} Opsi jawaban:{opt.option_text} {opt.is_correct ? "✔️" : null}</div>))} Pertanyaan:{poll.question} <br /> status: {poll.status}
           </div>) : (<div key={poll.id}>
             No: {index + 1} <br /> Type:{poll.type} <br /> Pertanyaan:{poll.question}
           </div>)

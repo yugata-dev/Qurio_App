@@ -312,32 +312,39 @@ const getAllDataPolls = async (
   }
 };
 
-export const updateDataPolls = async (sessionId: string, status: "published" | "closed", token: string | null): Promise<Poll[]> => {
+export const updateDataPolls = async (
+  sessionId: string,
+  status: "published" | "closed",
+  token: string | null
+): Promise<Poll[]> => {
   try {
-    const response = await fetch(`${API_URL}/api/sessions/${sessionId}/polls/status`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ status })
-    })
+    // 1. Perbaiki URL: gunakan '/status' secara literal di ujung path
+    const response = await fetch(
+      `${API_URL}/api/polls/sessions/${sessionId}/polls/status`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      }
+    );
 
+    // 2. Tangkap jika backend mengembalikan status HTTP error (4xx / 5xx)
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const errorMessage =
-        errorData.message || errorData.error || "Get data failed";
-      console.error("Detail error backend:", errorData);
-      throw new Error(errorMessage);
+      throw new Error(errorData.message || "Gagal mengupdate status poll");
     }
 
+    // 3. Extract JSON dan kembalikan datanya
     const result = await response.json();
-    return Array.isArray(result?.data) ? result.data : [];
+    return result.data; // atau 'result' sesuai struktur response backend kamu
   } catch (error) {
-    console.error("Gagal Mengupdate data poll:", error);
+    console.error("Gagal mengupdate status:", error);
     throw error;
   }
-}
+};
 
 
 export {
