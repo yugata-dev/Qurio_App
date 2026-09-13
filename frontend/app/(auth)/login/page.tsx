@@ -64,10 +64,10 @@ function LoginPage() {
   const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
   return (
-    <div className="relative flex flex-col flex-1 items-center justify-center bg-zinc-100 font-sans min-h-screen p-4">
+    <div className="relative flex flex-col flex-1 items-center justify-center bg-secondary/80 font-sans min-h-screen p-4">
       <Card className="max-w-120 w-full shadow-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-zinc-900">
+          <CardTitle className="text-2xl font-bold text-primary">
             Masuk ke Akun
           </CardTitle>
           <CardDescription className="text-sm text-zinc-500">
@@ -80,7 +80,7 @@ function LoginPage() {
             className="flex flex-col gap-3"
           >
             <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-semibold text-zinc-800 ml-[11.2px]">
+              <Label className="text-sm font-semibold text-primary-foreground">
                 Email
               </Label>
               <Input
@@ -96,14 +96,14 @@ function LoginPage() {
                 className="w-full h-11"
               />
               {errors.email && (
-                <span className="text-xs text-red-500">
+                <span className="text-xs text-destructive">
                   {errors.email.message}
                 </span>
               )}
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-semibold text-zinc-800 ml-[11.2px]">
+              <Label className="text-sm font-semibold text-primary-foreground">
                 Password
               </Label>
               <Input
@@ -115,7 +115,7 @@ function LoginPage() {
                 className="w-full h-11"
               />
               {errors.password && (
-                <span className="text-xs text-red-500">
+                <span className="text-xs text-destructive">
                   {errors.password.message}
                 </span>
               )}

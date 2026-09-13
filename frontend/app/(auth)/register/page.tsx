@@ -50,10 +50,10 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="relative flex flex-col flex-1 items-center justify-center bg-zinc-100 font-sans min-h-screen p-4">
+    <div className="relative flex flex-col flex-1 items-center justify-center bg-secondary/80 font-sans min-h-screen p-4">
       <Card className="max-w-120 w-full shadow-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-zinc-900">
+          <CardTitle className="text-2xl font-bold text-primary">
             Daftar Akun Baru
           </CardTitle>
           <CardDescription className="text-sm text-zinc-500">
@@ -66,7 +66,7 @@ export default function RegisterPage() {
             className="flex flex-col gap-3"
           >
             <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-semibold text-zinc-800">
+              <Label className="text-sm font-semibold text-primary-foreground">
                 Nama Lengkap
               </Label>
               <Input
@@ -75,14 +75,14 @@ export default function RegisterPage() {
                 className="w-full h-11"
               />
               {errors.name && (
-                <span className="text-xs text-red-500">
+                <span className="text-xs text-destructive">
                   {errors.name.message}
                 </span>
               )}
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-semibold text-zinc-800">
+              <Label className="text-sm font-semibold text-primary-foreground">
                 Email
               </Label>
               <Input
@@ -98,31 +98,37 @@ export default function RegisterPage() {
                 type="email"
               />
               {errors.email && (
-                <span className="text-xs text-red-500">
+                <span className="text-xs text-destructive">
                   {errors.email.message}
                 </span>
               )}
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-semibold text-zinc-800">
+              <Label className="text-sm font-semibold text-primary-foreground">
                 Password
               </Label>
               <Input
-                {...register("password", { required: "Password wajib diisi", minLength: {value: 8, message: "Password minimal 8 karakter"} })}
+                {...register("password", {
+                  required: "Password wajib diisi",
+                  minLength: {
+                    value: 8,
+                    message: "Password minimal 8 karakter",
+                  },
+                })}
                 className="w-full h-11"
                 placeholder="Buat kata sandi minimal 8 karakter"
                 type="password"
               />
               {errors.password && (
-                <span className="text-xs text-red-500">
+                <span className="text-xs text-destructive">
                   {errors.password.message}
                 </span>
               )}
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-semibold text-zinc-800">
+              <Label className="text-sm font-semibold text-primary-foreground">
                 Role
               </Label>
               <Controller
@@ -154,7 +160,7 @@ export default function RegisterPage() {
               />
 
               {errors.role && (
-                <span className="text-xs text-red-500">
+                <span className="text-xs text-destructive">
                   {errors.role.message}
                 </span>
               )}

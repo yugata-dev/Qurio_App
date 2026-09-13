@@ -23,7 +23,13 @@ interface RegisterUserResult {
   };
 }
 
-
+interface PollOption {
+  id: string;
+  poll_id: string;
+  option_text: string;
+  is_correct: boolean;
+  option_order: number;
+}
 
 interface Polls {
   success: boolean;
@@ -48,7 +54,7 @@ interface secondPolls {
     poll: {
       id: string;
       sessionId: number;
-      type: "qa" | "wordcloud"
+      type: "qa" | "wordcloud";
       question: string;
       status: "draft" | "published" | "closed";
       created_at: string;
@@ -78,7 +84,7 @@ interface SessionDetailResponse {
     id: string;
     title: string;
     access_code: number;
-    type: "quiz" | "qa" | "wordcloud"
+    type: "quiz" | "qa" | "wordcloud";
   };
 }
 
@@ -267,7 +273,6 @@ const getDataType = async (sessionId: string): Promise<Sessions> => {
   }
 };
 
-
 const getDataSession = async (
   sessionId: string,
   token: string | null,
@@ -331,5 +336,5 @@ export {
   postType,
   getDataSession,
   getAllDataPolls,
-  secondCreatePolls
+  secondCreatePolls,
 };
