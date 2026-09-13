@@ -11,6 +11,13 @@ export interface SessionData {
   access_code: number
   type: "quiz" | "qa" | "wordcloud"
 }
+interface PollOption {
+  id: string;
+  poll_id: string;
+  option_text: string;
+  is_correct: boolean;
+  option_order: number;
+}
 
 export interface Poll {
   id: string
@@ -21,7 +28,7 @@ export interface Poll {
   created_at: string
   published_at: string | null
   closed_at: string | null
-  options: []
+  options: PollOption[]
 }
 
 export interface ApiResponse<T> {
@@ -68,17 +75,19 @@ function SessionPage() {
     <div>
       <h1>ID Sesi saat ini: {session?.id}</h1>
       <p> kode Sesi: {session?.access_code} </p>
-<button onClick={() => router.push(`/dashboard/createpolls/${session?.id}`)}>BUAT SOAL</button>
+      <button onClick={() => router.push(`/dashboard/createpolls/${session?.id}`)}>BUAT SOAL</button>
       {errorMessage && <p className="text-red-500">{errorMessage}</p>}
-      { !polls || polls.length === 0 ? (
+      {!polls || polls.length === 0 ? (
         <p>Belum ada pertanyaan di sesi ini.</p>
       ) : (
-        polls.map((poll, index) => (
-          
-          <div key={poll.id}>
+        polls.map((poll, index) => {
+          return poll.type === "quiz" ? (<div key={poll.id} className="m-1">
+            No: {index + 1} <br /> Type:{poll.type} <br /> {poll.options.map((opt, index) => (<div key={index}>No: {opt.option_order} Opsi jawaban:{opt.option_text} {opt.is_correct ? "✔️" : null}</div>))} Pertanyaan:{poll.question}
+
+          </div>) : (<div key={poll.id}>
             No: {index + 1} <br /> Type:{poll.type} <br /> Pertanyaan:{poll.question}
-          </div>
-        ))
+          </div>)
+        })
       )}
     </div>
   )

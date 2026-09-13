@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { useForm, useFieldArray } from "react-hook-form"
+import { useForm, useFieldArray, get } from "react-hook-form"
 import { createPolls, createSession } from "@/lib/api"
 import { useAuth } from "@/context/AuthContext"
 
@@ -18,8 +18,8 @@ interface SessionFormInput {
   title: string
   type: string
   question: string
-  option: PollOption[]
   correctIndex: number
+  option: PollOption[]
 }
 
 function CreateSessionsPage() {
@@ -39,6 +39,7 @@ function CreateSessionsPage() {
   const selectedType = watch("type")
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const errorOpsiPertama = errors.option?.[0]?.text;
 
   const buildOptionsPayload = (
     options: PollOption[],
@@ -197,7 +198,7 @@ function CreateSessionsPage() {
                       <input
                         type="radio"
                         value={index}
-                        {...register("correctIndex")}
+                        {...register("correctIndex", { required: "Pilih jawaban yang benar..." })}
                         className="w-4 h-4"
                       />
                       <button
@@ -226,6 +227,12 @@ function CreateSessionsPage() {
                 </div>
               </div>
             )}
+            
+            {errorOpsiPertama && <div className="text-xs font-semibold mt-1 text-red-500">
+              {errorOpsiPertama.message} 
+            </div> || errors.correctIndex && <div className="text-xs font-semibold mt-1 text-red-500">
+              {errors.correctIndex.message}
+            </div>}
           </div>
 
           <button
