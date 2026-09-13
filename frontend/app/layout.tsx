@@ -29,6 +29,7 @@ export default function RootLayout({
       lang="en"
       data-scroll-behavior="smooth"
       className={cn(
+        "dark",
         "h-full",
         "antialiased",
         geistSans.variable,

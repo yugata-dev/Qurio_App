@@ -79,10 +79,10 @@ function HeroSlider() {
         className="min-h-55 flex flex-col items-center justify-center p-4"
         aria-live="polite"
       >
-        <h1 className="max-w-205 m-0 text-(--ink) text-[clamp(42px,5.2vw,72px)] leading-[1.04] tracking-[-0.055em] text-balance">
+        <h1 className="max-w-205 m-0 text-foreground text-[clamp(42px,5.2vw,72px)] leading-[1.04] tracking-[-0.055em] text-balance">
           {heroSlides[active].title}
         </h1>
-        <p className="max-w-162.5 mx-auto mt-6.25 text-[#51627c] text-base leading-[1.65] text-balance">
+        <p className="max-w-162.5 mx-auto mt-6.25 text-muted-foreground text-base leading-[1.65] text-balance">
           {heroSlides[active].text}
         </p>
       </div>
@@ -92,7 +92,7 @@ function HeroSlider() {
             key={slide.title}
             // Class dasar + class kondisional untuk state aktif
             className={cn(
-              "w-2 h-2 p-0 border-0 rounded-full bg-[#cbd5e1] cursor-pointer transition-all duration-200 ease-in-out",
+              "w-2 h-2 p-0 border-0 rounded-full bg-muted cursor-pointer transition-all duration-200 ease-in-out",
               ` ${index === active ? "w-6 bg-primary" : ""}`,
             )}
             aria-label={`Slide ${index + 1}`}
@@ -121,7 +121,7 @@ function AccessForm() {
   return (
     <form
       id="access"
-      className="max-w-md mt-8 pt-8 px-8 pb-8 rounded-3xl bg-white shadow-[0_22px_35px_rgba(30,44,70,0.14)]"
+      className="max-w-md mt-8 pt-8 px-8 pb-8 rounded-3xl bg-card text-card-foreground shadow-lg"
       onSubmit={submit}
       aria-label="Form masuk ruang kelas"
     >
@@ -129,7 +129,7 @@ function AccessForm() {
 
       <label
         htmlFor="code"
-        className="text-left block mb-2 text-[#8fa0ba] uppercase tracking-[0.04em] text-xs font-extrabold"
+        className="text-left block mb-2 text-muted-foreground uppercase tracking-[0.04em] text-xs font-extrabold"
       >
         Kode Akses 6-Digit <span>(Cth: A7B3K9)</span>
       </label>
@@ -139,12 +139,12 @@ function AccessForm() {
         inputMode="text"
         maxLength={6}
         placeholder="Masukkan kode akses"
-        className="w-full h-16 mb-5 px-4 border border-[#dae3ef] rounded-xl bg-[#f8fafc] text-[#101a31] text-base outline-brand-purple"
+        className="w-full h-16 mb-5 px-4 border border-input rounded-xl bg-background text-foreground text-base outline-ring placeholder:text-muted-foreground"
       />
 
       <label
         htmlFor="name"
-        className="text-left block mb-2 text-[#8fa0ba] uppercase tracking-[0.04em] text-xs font-extrabold"
+        className="text-left block mb-2 text-muted-foreground uppercase tracking-[0.04em] text-xs font-extrabold"
       >
         Nama Lengkap Kamu
       </label>
@@ -152,22 +152,22 @@ function AccessForm() {
         id="name"
         name="name"
         placeholder="Masukkan nama lengkap"
-        className="w-full h-16 mb-5 px-4 border border-[#dae3ef] rounded-xl bg-[#f8fafc] text-[#101a31] text-base outline-brand-purple"
+        className="w-full h-16 mb-5 px-4 border border-input rounded-xl bg-background text-foreground text-base outline-ring placeholder:text-muted-foreground"
       />
 
       <Button
-        className="w-full inline-flex items-center justify-center gap-3 rounded-[15px] px-6 py-6! border-0 font-extrabold text-base cursor-pointer transition-all duration-200 hover:-translate-y-0.5 bg-primary text-white shadow-[0_12px_25px_rgba(14,165,233,0.2)]"
+        className="w-full inline-flex items-center justify-center gap-3 rounded-[15px] px-6 py-6! border-0 font-extrabold text-base cursor-pointer transition-all duration-200 hover:-translate-y-0.5 bg-primary text-primary-foreground shadow-lg"
         type="submit"
       >
         Gabung Sesi Sekarang <span aria-hidden="true">→</span>
       </Button>
 
-      <p className="mt-4 text-center text-[#8b9ab0] text-xs">
+      <p className="mt-4 text-center text-muted-foreground text-xs">
         Tanpa perlu buat akun atau unduh aplikasi.
       </p>
 
       {message && (
-        <p className="mt-3 text-brand-purple text-[13px]" role="status">
+        <p className="mt-3 text-primary text-[13px]" role="status">
           {message}
         </p>
       )}
@@ -179,7 +179,7 @@ export default function App() {
   const [demoOpen, setDemoOpen] = useState(false);
   return (
     <main id="top">
-      <header className="sticky top-0 z-40 sm:h-20 h-18 bg-white/70 backdrop-blur-sm border-b border-(--line)">
+      <header className="sticky top-0 z-40 sm:h-20 h-18 border-b border-border/80 bg-background/80 shadow-sm backdrop-blur-sm">
         {/* <div className="sm:w-[max(100%-32px,640px)] h-full w-full flex items-center justify-between gap-8"> */}
         {/* <div className="w-full px-4! sm:px-0 h-full flex items-center justify-between gap-8"> */}
         <div className="w-full px-4 sm:px-8 h-full flex items-center justify-between gap-8">
@@ -189,7 +189,7 @@ export default function App() {
           </a>
           <nav
             aria-label="Navigasi utama"
-            className="hidden md:flex md:gap-10 md:mx-auto md:text-sm md:font-bold md:text-[#43536d]"
+            className="hidden md:mx-auto md:flex md:gap-10 md:text-sm md:font-bold md:text-muted-foreground [&_a]:transition-colors [&_a]:duration-200 [&_a:hover]:text-primary"
           >
             <a href="#features">Fitur</a>
             <a href="#modes">Cara Kerja</a>
@@ -197,7 +197,7 @@ export default function App() {
           </nav>
           {/* <div className="flex items-center gap-3 ml-auto text-sm font-bold text-slate-600 [&>a:first-child]:hidden sm:gap-8 sm:ml-0 sm:[&>a:first-child]:block"> */}
           <Link
-            className="inline-flex items-center justify-center gap-2.5 rounded-full px-5 py-3 border-0 font-extrabold text-small cursor-pointer transition-all duration-200 bg-primary text-white shadow-[0_12px_25px_rgba(81,70,232,0.22)] hover:-translate-y-0.5 hover:shadow-xl"
+            className="inline-flex items-center justify-center gap-2.5 rounded-full border border-primary/20 bg-primary px-5 py-3 font-extrabold text-primary-foreground text-small shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-xl"
             href="/login"
           >
             <span>Masuk</span>
@@ -206,18 +206,18 @@ export default function App() {
           {/* </div> */}
         </div>
       </header>
-      <section className="min-h-[calc(100vh-80px)] flex items-start justify-center overflow-hidden bg-[radial-gradient(circle_at_75%_22%,#e9edff_0,#f5f8fc_40%,#f8fafc_76%)] pt-18.75 pb-27.5 lg:pt-28 lg:pb-32">
+      <section className="min-h-[calc(100vh-80px)] flex items-start justify-center overflow-hidden bg-[radial-gradient(circle_at_75%_22%,var(--secondary)_0,var(--background)_76%)] pt-18.75 pb-27.5 lg:pt-28 lg:pb-32">
         <div className=".container-custom">
           <div className="max-w-205 mx-auto flex flex-col items-center text-center">
-            <span className="inline-flex gap-2 items-center text-brand-green-dark bg-brand-green-light border border-green-border rounded-[30px] px-4 py-2 text-sm font-bold mb-6">
-              <span className="text-brand-green">●</span> AI-Powered Classroom
+            <span className="inline-flex gap-2 items-center text-brand-green bg-brand-secondary border border-green-border rounded-[30px] px-4 py-2 text-sm font-bold mb-6">
+              <span className="text-primary">●</span> AI-Powered Classroom
               Analytics
             </span>
 
             <HeroSlider />
             <AccessForm />
             <a
-              className="mt-6 text-brand-purple text-sm hover:underline"
+              className="mt-6 text-primary text-sm hover:underline"
               href="#cta"
             >
               Apakah Anda seorang Guru?
@@ -227,12 +227,12 @@ export default function App() {
         </div>
       </section>
       <section
-        className="w-full overflow-hidden border-y border-[#dfe7f1] bg-brand-bg-light group"
+        className="w-full overflow-hidden border-y border-border bg-secondary group"
         aria-label="Qurio key highlights"
       >
         {/* Animasi infinite */}
         <div className="flex w-max animate-[qurio-marquee-scroll_34s_linear_infinite] motion-reduce:[animation-play-state:paused]">
-          <div className="flex items-center gap-7 px-7 py-[17px] whitespace-nowrap text-brand-text-dark text-xl font-bold">
+          <div className="flex items-center gap-7 px-7 py-[17px] whitespace-nowrap text-secondary-foreground text-xl font-bold">
             <span>Qurio: Transparansi Kemampuan Intelektual Murid</span>
             <span>Tanpa Download Aplikasi &amp; Tanpa Login Siswa</span>
             <span>Analisis Pemahaman Berbasis AI Real-Time</span>
@@ -243,7 +243,7 @@ export default function App() {
           </div>
 
           <div
-            className="flex items-center gap-7 px-7 py-[17px] whitespace-nowrap text-brand-text-dark text-xl font-bold"
+            className="flex items-center gap-7 px-7 py-[17px] whitespace-nowrap text-secondary-foreground text-xl font-bold"
             aria-hidden="true"
           >
             <span>Qurio: Transparansi Kemampuan Intelektual Murid</span>
@@ -260,13 +260,13 @@ export default function App() {
         {/* Perbaikan: hapus titik di depan className, gunakan max-w dan px untuk simulasi min() */}
         <div className="w-full max-w-304 mx-auto px-6">
           <div className="text-center mb-19.5">
-            <span className="block text-brand-purple text-[13px] tracking-widest font-extrabold mb-[25px]">
+            <span className="block text-primary text-[13px] tracking-widest font-extrabold mb-[25px]">
               TRANSPARANSI AI
             </span>
             <h2 className="mt-0 text-3xl tracking-[-0.04em] mb-4">
               Setiap respons adalah insight.
             </h2>
-            <p className="mt-0 text-[#536682] text-[18px] leading-normal">
+            <p className="mt-0 text-muted-foreground text-[18px] leading-normal">
               Jadikan data kelas sebagai keputusan belajar yang tepat sasaran.
             </p>
           </div>
@@ -275,8 +275,8 @@ export default function App() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {featureCards.map(([icon, title, copy]) => (
               <article key={title}>
-                <Card className="p-7 min-h-68 border border-[#e5ebf3] bg-[#f8fafc] shadow-[0_14px_28px_rgba(30,44,70,0.07)]">
-                  <span className="grid place-items-center w-16 h-16 mb-5 rounded-[15px] bg-white text-brand-purple shadow-[0_5px_12px_#e8edf4] text-[27px]">
+                <Card className="p-7 min-h-68 border-border bg-card shadow-lg">
+                  <span className="grid place-items-center w-16 h-16 mb-5 rounded-[15px] bg-secondary text-primary shadow-md text-[27px]">
                     {icon}
                   </span>
                   <CardHeader>
@@ -284,7 +284,7 @@ export default function App() {
                       {title}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="mt-0 text-[#50627d] leading-[1.6] text-4">
+                  <CardContent className="mt-0 text-muted-foreground leading-[1.6] text-4">
                     {copy}
                   </CardContent>
                 </Card>
@@ -293,27 +293,27 @@ export default function App() {
           </div>
         </div>
       </section>
-      <section id="modes" className="pt-24 pb-24 bg-[#f8fafc]">
+      <section id="modes" className="pt-24 pb-24 bg-muted">
         <div className="w-full max-w-304 mx-auto px-6">
           <div className="text-center mb-20">
-            <span className="block text-brand-purple text-[13px] tracking-[0.12em] font-extrabold mb-6">
+            <span className="block text-primary text-[13px] tracking-[0.12em] font-extrabold mb-6">
               3 CORE INTERACTIONS
             </span>
             <h2 className="mt-0 text-3xl tracking-[-0.04em] mb-4">
               Interaksi yang membuat AI bekerja.
             </h2>
-            <p className="mt-0 text-[#536682] text-lg leading-normal">
+            <p className="mt-0 text-muted-foreground text-lg leading-normal">
               Bangun sinyal pemahaman dari setiap suara di kelas.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="p-7 border border-[#e5ebf3] bg-white shadow-[0_14px_28px_rgba(30,44,70,0.07)]">
-              <span className="block mb-5 text-brand-purple text-[11px] font-extrabold tracking-[0.12em]">
+            <Card className="p-7 border-border bg-card shadow-lg">
+              <span className="block mb-5 text-primary text-[11px] font-extrabold tracking-[0.12em]">
                 01
               </span>
               <CardContent>
                 <h3 className="mt-0 mb-3 text-[22px]">Word Cloud</h3>
-                <p className="mt-0 min-h-13 text-[#50627d] leading-normal text-[15px]">
+                <p className="mt-0 min-h-13 text-muted-foreground leading-normal text-[15px]">
                   Curah pendapat live yang memetakan kata dan pola pikir kelas.
                 </p>
                 <div className="flex min-h-36 flex-wrap items-center justify-center gap-x-3 gap-y-2 py-4">
@@ -330,78 +330,78 @@ export default function App() {
                 </div>
               </CardContent>
             </Card>
-            <Card className="p-7 border border-[#e5ebf3] bg-white shadow-[0_14px_28px_rgba(30,44,70,0.07)]">
-              <span className="block mb-[19px] text-sky-500 text-[11px] font-extrabold tracking-[0.12em]">
+            <Card className="p-7 border-border bg-card shadow-lg">
+              <span className="block mb-[19px] text-primary text-[11px] font-extrabold tracking-[0.12em]">
                 02
               </span>
               <CardContent>
                 <h3 className="mt-0 mb-[10px] text-[22px]">
                   Tanya Jawab (Q&amp;A)
                 </h3>
-                <p className="mt-0 min-h-13 text-[#50627d] leading-[1.5] text-[15px]">
+                <p className="mt-0 min-h-13 text-muted-foreground leading-[1.5] text-[15px]">
                   Papan diskusi termoderasi agar semua pertanyaan terdengar.
                 </p>
                 {/* Pertanyaan 1 */}
-                <div className="flex gap-4 mt-[15px] p-4 border-2 border-[#edf1f6] rounded-[15px] text-[#40516b] font-bold items-center">
-                  <span className="grid place-items-center flex-none w-10 h-10 rounded-full text-brand-purple bg-[#dfe4ff] font-extrabold">
+                <div className="flex gap-4 mt-[15px] p-4 border-2 border-border rounded-[15px] text-foreground font-bold items-center">
+                  <span className="grid place-items-center flex-none w-10 h-10 rounded-full text-primary bg-secondary font-extrabold">
                     AJ
                   </span>
                   <div>
-                    <b className="text-[#253149] text-[11px] block mb-[5px]">
+                    <b className="text-foreground text-[11px] block mb-[5px]">
                       Bisakah dijelaskan lagi?
                     </b>
-                    <small className="text-[#9aa9bd] text-[9px] block">
+                    <small className="text-muted-foreground text-[9px] block">
                       18 upvote · Direkomendasikan AI
                     </small>
                   </div>
                 </div>
                 {/* Pertanyaan 2 */}
-                <div className="flex gap-4 mt-[15px] p-4 border-2 border-[#edf1f6] rounded-[15px] text-[#40516b] font-bold items-center">
-                  <span className="grid place-items-center flex-none w-10 h-10 rounded-full text-[#079d70] bg-[#dffbef] font-extrabold">
+                <div className="flex gap-4 mt-[15px] p-4 border-2 border-border rounded-[15px] text-foreground font-bold items-center">
+                  <span className="grid place-items-center flex-none w-10 h-10 rounded-full text-primary bg-secondary font-extrabold">
                     RN
                   </span>
                   <div>
-                    <b className="text-[#253149] text-[11px] block mb-[5px]">
+                    <b className="text-foreground text-[11px] block mb-[5px]">
                       Contoh di kehidupan nyata?
                     </b>
-                    <small className="text-[#9aa9bd] text-[9px] block">
+                    <small className="text-muted-foreground text-[9px] block">
                       9 upvote · Menunggu moderasi
                     </small>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            <Card className="p-7 border border-slate-200 bg-white shadow-lg">
-              <span className="block mb-5 text-blue-600 text-xs font-extrabold tracking-widest">
+            <Card className="p-7 border-border bg-card shadow-lg">
+              <span className="block mb-5 text-primary text-xs font-extrabold tracking-widest">
                 03
               </span>
               <CardContent>
                 <h3 className="mt-0 mb-2.5 text-2xl">Kuis (Quiz)</h3>
-                <p className="mt-0 min-h-13 text-slate-600 leading-normal text-[15px]">
+                <p className="mt-0 min-h-13 text-muted-foreground leading-normal text-[15px]">
                   Evaluasi kognitif interaktif dengan leaderboard instan.
                 </p>
-                <div className="p-3.5 rounded-xl bg-slate-50">
+                <div className="p-3.5 rounded-xl bg-muted">
                   {/* <span className="block w-max mx-auto mb-3 px-2 py-1 rounded-lg bg-orange-50 text-orange-500 text-xs font-extrabold">
                   00:18
                 </span> */}
 
-                  <b className="block mb-2.5 text-slate-800 text-sm">
+                  <b className="block mb-2.5 text-foreground text-sm">
                     Planet Merah?
                   </b>
 
-                  <div className="flex items-center gap-2 mt-2 p-2 border border-slate-200 rounded-lg text-slate-600 text-xs">
-                    <i className="grid place-items-center w-6 h-6 rounded-md bg-slate-100 text-slate-500 not-italic font-extrabold">
+                  <div className="flex items-center gap-2 mt-2 p-2 border border-border rounded-lg text-muted-foreground text-xs">
+                    <i className="grid place-items-center w-6 h-6 rounded-md bg-secondary text-muted-foreground not-italic font-extrabold">
                       A
                     </i>
                     <span>Venus</span>
                   </div>
 
-                  <div className="flex items-center gap-2 mt-2 p-2 border border-blue-600 rounded-lg text-blue-600 bg-blue-50 text-xs">
-                    <i className="grid place-items-center w-6 h-6 rounded-md bg-blue-600 text-white not-italic font-extrabold">
+                  <div className="flex items-center gap-2 mt-2 p-2 border border-primary rounded-lg text-primary bg-secondary text-xs">
+                    <i className="grid place-items-center w-6 h-6 rounded-md bg-primary text-primary-foreground not-italic font-extrabold">
                       B
                     </i>
                     <span>Mars</span>
-                    <strong className="ml-auto text-sky-500 text-[10px]">
+                    <strong className="ml-auto text-primary text-[10px]">
                       #1
                     </strong>
                   </div>
@@ -434,17 +434,17 @@ export default function App() {
           </div>
         </div>
       </section> */}
-      <section className="pt-25 pb-30 text-(--ink) bg-[#f8fafc]">
+      <section className="pt-25 pb-30 text-foreground bg-muted">
         {/* Perbaikan: hapus titik di depan className */}
         <div className="w-full max-w-304 mx-auto px-6">
           <div className="text-center mb-[78px]">
-            <span className="block text-sky-500 text-[13px] tracking-[0.12em] font-extrabold mb-[25px]">
+            <span className="block text-primary text-[13px] tracking-[0.12em] font-extrabold mb-[25px]">
               MULAI DALAM HITUNGAN DETIK
             </span>
-            <h2 className="mt-0 text-(--ink) text-[38px] tracking-[-0.04em] mb-4">
+            <h2 className="mt-0 text-foreground text-[38px] tracking-[-0.04em] mb-4">
               Mulai Live dalam 3 Langkah Mudah
             </h2>
-            <p className="mt-0 text-[#536682] text-lg leading-normal">
+            <p className="mt-0 text-muted-foreground text-lg leading-normal">
               Dari nol hingga analitik kelas aktif. Tidak perlu keahlian teknis.
             </p>
           </div>
@@ -453,7 +453,7 @@ export default function App() {
           <div className="relative flex flex-col">
             {/* Garis dari tengah card pertama ke tengah card terakhir */}
             <div
-              className="pointer-events-none absolute top-1/2 z-0 hidden h-0.5 bg-blue-200 md:block"
+              className="pointer-events-none absolute top-1/2 z-0 hidden h-0.5 bg-blue-600 md:block"
               style={{
                 left: "calc((100% - 6rem) / 6)",
                 right: "calc((100% - 6rem) / 6)",
@@ -480,19 +480,21 @@ export default function App() {
               ].map(([num, title, copy]) => (
                 <Card
                   key={num}
-                  className="w-full max-w-prose relative rounded-7 px-8.5 py-10 text-center shadow-[0_14px_28px_rgba(30,44,70,0.07)]"
+                  className="w-full max-w-prose relative rounded-7 px-8.5 py-10 text-center shadow-lg"
                 >
                   {/* isi card */}
                   <span
                     className={cn(
-                      "grid place-items-center w-16 h-16 mx-auto mb-[30px] rounded-[17px] bg-primary text-white text-2xl font-extrabold shadow-[0_10px_17px_rgba(37,99,235,0.24)]",
+                      "grid place-items-center w-16 h-16 mx-auto mb-[30px] rounded-[17px] bg-primary text-primary-foreground text-2xl font-extrabold shadow-lg",
                       num === "2" && "bg-sky-500",
                     )}
                   >
                     {num}
                   </span>
                   <h3 className="mt-0 text-[19px]">{title}</h3>
-                  <p className="mt-0 text-[#536682] leading-normal">{copy}</p>
+                  <p className="mt-0 text-muted-foreground leading-normal">
+                    {copy}
+                  </p>
                 </Card>
               ))}
             </div>
@@ -500,7 +502,7 @@ export default function App() {
         </div>
       </section>
 
-      <footer className="pt-[70px] pb-9 border-t border-slate-200 bg-slate-50">
+      <footer className="pt-[70px] pb-9 border-t border-border bg-secondary">
         <div className="w-full max-w-304 mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-10">
           <div className="col-span-2 md:col-span-1">
             <div className="w-20">
@@ -509,18 +511,18 @@ export default function App() {
                 {/* <span className=""></span> */}
               </a>
             </div>
-            <p className="mt-6 text-slate-500 leading-relaxed">
+            <p className="mt-6 text-muted-foreground leading-relaxed">
               Platform analitik kelas yang membantu guru
               <br /> memahami setiap suara dan pola belajar.
             </p>
             <div className="flex gap-3.5 mt-7">
-              <span className="grid place-items-center w-10 h-10 border border-slate-200 rounded-full text-slate-400 text-sm font-extrabold">
+              <span className="grid place-items-center w-10 h-10 border border-border rounded-full text-muted-foreground text-sm font-extrabold">
                 t
               </span>
-              <span className="grid place-items-center w-10 h-10 border border-slate-200 rounded-full text-slate-400 text-sm font-extrabold">
+              <span className="grid place-items-center w-10 h-10 border border-border rounded-full text-muted-foreground text-sm font-extrabold">
                 in
               </span>
-              <span className="grid place-items-center w-10 h-10 border border-slate-200 rounded-full text-slate-400 text-sm font-extrabold">
+              <span className="grid place-items-center w-10 h-10 border border-border rounded-full text-muted-foreground text-sm font-extrabold">
                 ▶
               </span>
             </div>
@@ -537,7 +539,7 @@ export default function App() {
                 <a
                   href="#top"
                   key={link}
-                  className="text-slate-500 text-sm hover:text-slate-900 transition-colors"
+                  className="text-muted-foreground text-sm hover:text-foreground transition-colors"
                 >
                   {link}
                 </a>
@@ -546,7 +548,7 @@ export default function App() {
           ))}
         </div>
 
-        <div className="w-full max-w-304 mx-auto px-6 flex flex-col sm:flex-row justify-between gap-5 pt-9 mt-14 border-t border-slate-200 text-slate-400 text-xs">
+        <div className="w-full max-w-304 mx-auto px-6 flex flex-col sm:flex-row justify-between gap-5 pt-9 mt-14 border-t border-border text-muted-foreground text-xs">
           <span>
             © 2026 Qurio Interaction Inc. Hak cipta dilindungi undang-undang.
           </span>
