@@ -1,4 +1,5 @@
 import { ApiResponse, Poll } from "@/app/dashboard/session/[id]/page";
+import { promises } from "node:timers";
 
 interface LoginUserSuccess {
   success: true;
@@ -23,32 +24,21 @@ interface RegisterUserResult {
   };
 }
 
+export interface PollOption {
+  id: string;
+  poll_id: string;
+  option_text: string;
+  is_correct: boolean;
+  option_order: number;
+}
 
-
-interface Polls {
+export interface Polls {
   success: boolean;
   data: {
     poll: {
       id: string;
       sessionId: number;
       type: "quiz" | "qa" | "wordcloud";
-      question: string;
-      status: "draft" | "published" | "closed";
-      created_at: string;
-      published_at: string;
-      closed_at: string;
-      option?: PollOption[];
-    };
-  };
-}
-
-interface secondPolls {
-  success: boolean;
-  data: {
-    poll: {
-      id: string;
-      sessionId: number;
-      type: "qa" | "wordcloud"
       question: string;
       status: "draft" | "published" | "closed";
       created_at: string;
@@ -322,6 +312,30 @@ const getAllDataPolls = async (
   }
 };
 
+export const updateDataPolls = async (pollId: string, status: "published" | "closed", token: string | null): Promise<Poll> => {
+  try {
+    const response = await fetch(`${API_URL}/api/polls/${pollId}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` }
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage =
+        errorData.message || errorData.error || "Get data failed";
+      console.error("Detail error backend:", errorData);
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+    return result
+  } catch (error) {
+    console.error("Gagal Mengupdate data poll:", error);
+    throw error;
+  }
+}
+
+
 export {
   fetchUserLogin,
   fetchUserRegister,
@@ -330,6 +344,5 @@ export {
   getDataType,
   postType,
   getDataSession,
-  getAllDataPolls,
-  secondCreatePolls
+  getAllDataPolls
 };

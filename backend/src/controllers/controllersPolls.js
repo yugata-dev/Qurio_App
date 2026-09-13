@@ -237,7 +237,7 @@ export const getPoll = async (req, res) => {
 // 4. UPDATE POLL STATUS (Ubah status soal: draft -> published -> closed)
 // ====================================================================
 export const updatePoll = async (req, res) => {
-    const { pollId } = req.params
+    const { sessionId } = req.params
     const { status } = req.body
 
     // Validasi status yang dikirim
@@ -277,7 +277,7 @@ export const updatePoll = async (req, res) => {
         // Tambahkan kondisi 'type = 'quiz'' langsung di WHERE
         query += " WHERE id = $2 AND type = 'quiz' RETURNING *"
 
-        const updatedPollRes = await pool.query(query, [status, pollId])
+        const updatedPollRes = await pool.query(query, [status, sessionId])
         const updatedPoll = updatedPollRes.rows[0]
 
         // Jika updatedPoll kosong, artinya ID tidak ketemu ATAU tipenya bukan quiz
