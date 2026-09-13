@@ -83,23 +83,17 @@ function SessionPage() {
       return
     }
 
-    const pollId = polls?.[0]?.id;
-    if (!pollId) {
-      setErrorMessage("Data poll tidak ditemukan.");
-      return;
-    }
-
     if (!polls || polls.length === 0) {
       setErrorMessage("Tidak ada data poll untuk diupdate.");
       return;
     }
 
     try {
-      const updatePromises = polls.map((poll) =>
-        updateDataPolls(poll.id, (statusTarget || "published") as "published" || "closed", token)
-      );
-
-      const updateAll = await Promise.all(updatePromises)
+      const updateAll = await updateDataPolls(
+        sessionId,
+        statusTarget === "closed" ? "closed" : "published",
+        token,
+      )
       setPolls(updateAll)
       setSuccessMessage(`Berhasil mengupdate semua poll menjadi ${statusTarget}.`);
     } catch (error) {

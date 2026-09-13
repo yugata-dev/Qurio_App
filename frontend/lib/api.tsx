@@ -312,11 +312,14 @@ const getAllDataPolls = async (
   }
 };
 
-export const updateDataPolls = async (sessionId: string, status: "published" | "closed", token: string | null): Promise<Poll> => {
+export const updateDataPolls = async (sessionId: string, status: "published" | "closed", token: string | null): Promise<Poll[]> => {
   try {
-    const response = await fetch(`${API_URL}/api/polls/${sessionId}`, {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${token}` },
+    const response = await fetch(`${API_URL}/api/sessions/${sessionId}/polls/status`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({ status })
     })
 
@@ -329,7 +332,7 @@ export const updateDataPolls = async (sessionId: string, status: "published" | "
     }
 
     const result = await response.json();
-    return result
+    return Array.isArray(result?.data) ? result.data : [];
   } catch (error) {
     console.error("Gagal Mengupdate data poll:", error);
     throw error;
