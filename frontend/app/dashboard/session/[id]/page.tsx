@@ -1,7 +1,7 @@
 "use client"
 
 import { useAuth } from "@/context/AuthContext"
-import { getAllDataPolls, getDataSession, updateDataPolls } from "@/lib/api"
+import { getAllDataPolls, getDataSession, updateDataPolls, updateSinglePolls } from "@/lib/api"
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Polls } from "@/lib/api"
@@ -76,8 +76,8 @@ function SessionPage() {
     void fetchSessionData()
   }, [sessionId, token])
 
-  // memangil api update poll untuk di picu saat tombol di klik
-  const onUpdateAll = async (statusTarget: Poll["status"]) => {
+  // 1. Terima pollId sebagai parameter pertama
+  const onUpdateSingle = async (pollId: string, statusTarget: Poll["status"]) => {
     if (!token || !login) {
       setErrorMessage("Token tidak sesuai atau kedaluarsa..")
       return
@@ -89,23 +89,30 @@ function SessionPage() {
     }
 
     try {
-      const updateAll = await updateDataPolls(
-        sessionId,
+      // 2. HAPUS baris 'const pollId = polls?.[0]?.id' 
+      // Gunakan pollId yang dikirim dari parameter
+      const updateSingle = await updateSinglePolls(
+        pollId,
         statusTarget === "closed" ? "closed" : "published",
         token,
       )
+
       setPolls((prevPolls) => {
-        // Jika prevPolls masih null, langsung kembalikan null atau array kosong
-        if (!prevPolls) return null;
+        if (!prevPolls) return null
 
         return prevPolls.map((oldPoll) => {
-          const updated = updateAll.find((u) => u.id === oldPoll.id);
-          return updated
-            ? { ...updated, options: oldPoll.options } // Gabungkan kembali options
-            : oldPoll;
-        });
-      });
-      setSuccessMessage(`Berhasil mengupdate semua poll menjadi ${statusTarget}.`);
+          if (oldPoll.id === updateSingle.id) {
+            // Gabungkan data update dari backend dan pertahankan options jika backend tidak mengembalikannya
+            return {
+              ...updateSingle,
+              options: updateSingle.options || oldPoll.options
+            }
+          }
+          return oldPoll
+        })
+      })
+
+      setSuccessMessage(`Berhasil mengupdate poll menjadi ${statusTarget}.`);
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Gagal mengupdate status."
@@ -113,23 +120,9 @@ function SessionPage() {
     }
   }
 
+
   return (
     <div>
-      <button
-        type="button"
-        onClick={() => void onUpdateAll("published")}
-        className="bg-green-600 text-white px-4 py-2 rounded"
-      >
-        Publikasikan Semua
-      </button>
-
-      <button
-        type="button"
-        onClick={() => void onUpdateAll("closed")}
-        className="bg-red-600 text-white px-4 py-2 rounded"
-      >
-        Tutup Semua
-      </button>
       <h1>ID Sesi saat ini: {session?.id}</h1>
       <p> kode Sesi: {session?.access_code} </p>
       <button onClick={() => router.push(`/dashboard/createpolls/${session?.id}`)}>BUAT SOAL</button>
@@ -139,13 +132,28 @@ function SessionPage() {
       ) : (
         polls?.map((poll, index) => {
           return poll.type === "quiz" ? (<div key={poll.id} className="m-1">
-            No: {index + 1} <br /> Type:{poll.type} <br /> {poll.options.map((opt, index) => (<div key={index}>No: {opt.option_order} Opsi jawaban:{opt.option_text} {opt.is_correct ? "✔️" : null}</div>))} Pertanyaan:{poll.question} <br /> status: {poll.status}
+            poll_id: {poll.id} <br />
+            No: {index + 1} <br /> Type:{poll.type} <br /> {poll.options?.map((opt, index) => (<div key={index}>No: {opt.option_order} Opsi jawaban:{opt.option_text} {opt.is_correct ? "✔️" : null}</div>))} Pertanyaan:{poll.question} <br /> status: {poll.status}
+            <br />
+            <button
+              type="button"
+              onClick={() => void onUpdateSingle(poll.id, "published")}
+              className="bg-green-600 text-white px-4 py-2 rounded"
+            >
+              Publikasikan Semua
+            </button>
+            <button
+              type="button"
+              onClick={() => void onUpdateSingle(poll.id, "closed")}
+              className="bg-red-600 text-white px-4 py-2 rounded"
+            >
+              Tutup Semua
+            </button>
           </div>) : (<div key={poll.id}>
             No: {index + 1} <br /> Type:{poll.type} <br /> Pertanyaan:{poll.question}
           </div>)
         })
       )}
-      {success}
     </div>
   )
 }

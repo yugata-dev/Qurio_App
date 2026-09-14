@@ -312,15 +312,15 @@ const getAllDataPolls = async (
   }
 };
 
-export const updateDataPolls = async (
+export const updateSinglePolls = async (
   pollId: string,
   status: "published" | "closed",
   token: string | null
-): Promise<Poll[]> => {
+): Promise<Poll> => {
   try {
     // 1. Perbaiki URL: gunakan '/status' secara literal di ujung path
     const response = await fetch(
-      `${API_URL}/api/polls/sessions/${pollId}/polls/status`,
+      `${API_URL}/api/polls/${pollId}/status`,
       {
         method: "PATCH",
         headers: {
