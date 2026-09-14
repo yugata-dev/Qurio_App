@@ -313,14 +313,14 @@ const getAllDataPolls = async (
 };
 
 export const updateDataPolls = async (
-  sessionId: string,
+  pollId: string,
   status: "published" | "closed",
   token: string | null
 ): Promise<Poll[]> => {
   try {
     // 1. Perbaiki URL: gunakan '/status' secara literal di ujung path
     const response = await fetch(
-      `${API_URL}/api/polls/sessions/${sessionId}/polls/status`,
+      `${API_URL}/api/polls/sessions/${pollId}/polls/status`,
       {
         method: "PATCH",
         headers: {

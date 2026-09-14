@@ -145,6 +145,7 @@ function SessionPage() {
           </div>)
         })
       )}
+      {success}
     </div>
   )
 }

@@ -308,3 +308,83 @@ export const updateAllPollsBySession = async (req, res) => {
         return res.status(500).json({ success: false, message: "Gagal mengubah status semua poll" });
     }
 };
+
+export const updatePoll = async (req, res) => {
+    const { pollId } = req.params;
+    const { status } = req.body;
+
+    // Validasi status — TODO: copy validasi yang sama persis kayak di updateAllPollsBySession
+    const validStatuses = ["draft", "published", "closed"];
+    if (!validStatuses.includes(status)) {
+        return res.status(400).json({ success: false, message: "Status tidak valid! (draft/published/closed)" });
+    }
+
+    try {
+        // Step 1: Cek poll ada, sekalian ambil session_id + teacher_id buat verifikasi kepemilikan
+        // TODO: query JOIN polls ke sessions, ambil: p.id, p.type, p.session_id, s.teacher_id
+        // Petunjuk: SELECT p.id, p.type, p.session_id, s.teacher_id
+        //           FROM polls p JOIN sessions s ON p.session_id = s.id
+        //           WHERE p.id = $1
+        const pollRes = await pool.query(
+            `SELECT p.id, p.type, p.session_id, s.teacher_id FROM polls p JOIN sessions s ON 
+            p.session_id = s.id WHERE p.id = $1`,
+            [pollId]
+        );
+
+        if (pollRes.rows.length === 0) {
+            return res.status(404).json({ success: false, message: "Poll tidak ditemukan." });
+        }
+
+        const poll = pollRes.rows[0];
+
+        // Step 2: Guard type — TODO: cuma quiz yang boleh lewat endpoint ini
+        // Kalau poll.type bukan 'quiz', tolak dengan 400 + pesan jelas
+
+        // Step 3: Verifikasi kepemilikan — TODO: copy pola yang sama dari updateAllPollsBySession
+        // (bandingin poll.teacher_id sama req.user.id)
+        const teacherId = pollRes.rows[0].teacher_id;
+        const loggedInTeacherId = req.user ? req.user.id : null;
+
+        if (teacherId !== loggedInTeacherId) {
+            return res.status(403).json({ success: false, message: "Anda bukan pemilik sesi ini!" });
+        }
+
+        if (poll.type !== 'quiz') {
+            return res.status(400).json({ success: false, message: "Poll bukan type quiz." });
+        }
+
+        // Step 4: Update — TODO: mirip query bulk, tapi WHERE id = $2 (bukan session_id)
+        let query = "UPDATE polls SET status = $1";
+        if (status === "published") {
+            query += ", published_at = CURRENT_TIMESTAMP";
+        } else if (status === "closed") {
+            query += ", closed_at = CURRENT_TIMESTAMP";
+        }
+        query += " WHERE id = $2 AND type = 'quiz' RETURNING *";
+
+        const updatedRes = await pool.query(query, [status, pollId]);
+        const updatedPoll = updatedRes.rows[0];
+
+        // Step 5: Broadcast socket — TODO: emit ke room session, nama event bebas
+        // tapi HARUS beda dari "all_polls_updated" biar frontend bisa bedain
+        // saran nama: "poll_status_updated"
+        const io = req.app.get("io");
+        if (io) {
+            io.to(`session:${poll.session_id}`).emit("poll_updated", {
+                pollId,
+                status,
+                poll: updatedPoll
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: `Poll berhasil diubah menjadi ${status}`,
+            data: updatedPoll
+        });
+
+    } catch (error) {
+        console.error("Update single poll error:", error.message);
+        return res.status(500).json({ success: false, message: "Gagal mengubah status poll" });
+    }
+};
