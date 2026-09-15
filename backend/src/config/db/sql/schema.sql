@@ -88,6 +88,15 @@ CREATE TABLE IF NOT EXISTS question_votes (
     UNIQUE (question_id, student_id)
 );
 
+CREATE TABLE IF NOT EXISTS participants (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+    session_id UUID NOT NULL REFERENCES sessions (id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    absen VARCHAR(20) NOT NULL,
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (session_id, absen)
+);
+
 -- Cegah siswa yang login mengisi jawaban lebih dari sekali pada poll yang sama
 CREATE UNIQUE INDEX IF NOT EXISTS unique_response_per_student ON responses (poll_id, student_id)
 WHERE
