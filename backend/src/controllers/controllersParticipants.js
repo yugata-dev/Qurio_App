@@ -1,4 +1,4 @@
-import pool from "../config/db/connection";
+import pool from "../config/db/connection.js";
 
 export const joinSession = async (req, res) => {
     const { sessionId } = req.params
