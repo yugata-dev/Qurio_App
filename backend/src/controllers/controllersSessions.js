@@ -136,6 +136,13 @@ export const updateSession = async (req, res) => {
     const { status } = req.body
 
     try {
+        if (status !== "active" && status !== "ended") {
+            return res.status(400).json({
+                success: false,
+                message: "Status sesi harus active atau ended."
+            })
+        }
+
         // Cek kepemilikan: hanya guru yang punya sesi ini yang boleh mengubahnya
         const ownerResult = await pool.query(
             "SELECT teacher_id FROM sessions WHERE id = $1",

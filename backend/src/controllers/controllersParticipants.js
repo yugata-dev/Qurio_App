@@ -20,9 +20,9 @@ export const joinSession = async (req, res) => {
             })
         }
 
-        const existingParticipants = await pool.query("SELECT * FROM participants WHERE sessions_id = $1 AND absen = $2", [sessionId, absen])
+        const existingParticipants = await pool.query("SELECT * FROM participants WHERE session_id = $1 AND absen = $2", [sessionId, absen])
 
-        if (existingParticipants.rows.length === 0) {
+        if (existingParticipants.rows.length > 0) {
             return res.status(404).json({
                 success: false,
                 message: "Anda sudah bergabung dengan sesi ini!",
@@ -30,8 +30,8 @@ export const joinSession = async (req, res) => {
             })
         }
 
-        const newParticipant = pool.query("INSERT INTO (session_id, name, absen) VALUES ($1, $2, $3) RETURNING *",
-            [sessionId, name, absen]
+        const newParticipant = await pool.query("INSERT INTO participants (session_id, name, absen) VALUES ($1, $2, $3) RETURNING *",
+            [sessionId, nama, absen]
         )
 
         return res.status(201).json({

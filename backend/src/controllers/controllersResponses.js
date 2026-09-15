@@ -43,7 +43,7 @@ export const getResponses = async (req, res) => {
 // ====================================================================
 export const createResponse = async (req, res) => {
     const { pollId } = req.params
-    const { option_id, answer, participant_name, student_id } = req.body
+    const { option_id, answer, participant_id } = req.body
 
     try {
         // Step 1: Pastikan soal sudah dipublikasikan
@@ -62,11 +62,17 @@ export const createResponse = async (req, res) => {
 
         const poll = pollResult.rows[0]
 
-        // Step 2: Validasi input dasar dari peserta
-        if (!participant_name) {
+        if (poll.type === "qa") {
             return res.status(400).json({
                 success: false,
-                message: "Nama peserta wajib diisi!"
+                message: "Tipe qa mengirim pertanyaan melalui POST /api/questions."
+            })
+        }
+
+        if (poll.type === "wordcloud") {
+            return res.status(400).json({
+                success: false,
+                message: "Tipe wordcloud mengirim jawaban melalui POST /api/wordcloud/sessions/:sessionId/responses."
             })
         }
 
@@ -102,10 +108,10 @@ export const createResponse = async (req, res) => {
         }
 
         // Step 4: Cegah peserta yang sama menjawab soal yang sama dua kali
-        if (student_id) {
+        if (participant_id) {
             const duplicateResult = await pool.query(
-                "SELECT id FROM responses WHERE poll_id = $1 AND student_id = $2",
-                [pollId, student_id]
+                "SELECT id FROM responses WHERE poll_id = $1 AND participant_id = $2",
+                [pollId, participant_id]
             )
 
             if (duplicateResult.rows.length > 0) {
@@ -118,10 +124,10 @@ export const createResponse = async (req, res) => {
 
         // Step 5: Simpan jawaban ke database
         const insertResult = await pool.query(
-            `INSERT INTO responses (poll_id, student_id, participant_name, answer, option_id, is_correct)
+            `INSERT INTO responses (poll_id, participant_id, answer, option_id, is_correct)
             VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING *`,
-            [pollId, student_id || null, participant_name, answerText, option_id || null, isCorrect]
+            [pollId, participant_id || null, answerText, option_id || null, isCorrect]
         )
 
         const newResponse = insertResult.rows[0]

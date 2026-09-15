@@ -4,9 +4,9 @@ import { createResponse, getResponses } from "../controllers/controllersResponse
 const router = express.Router()
 
 // peserta submit response
-router.post("/polls/:pollId/responses", createResponse)
+router.post("/:pollId/responses", createResponse)
 
 // get semua responses untuk poll (guru)
-router.get("/polls/:pollId/responses", getResponses)
+router.get("/:pollId/responses", getResponses)
 
 export default router

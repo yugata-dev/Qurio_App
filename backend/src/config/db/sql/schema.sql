@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS responses (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
     poll_id UUID NOT NULL REFERENCES polls (id) ON DELETE CASCADE,
     student_id UUID REFERENCES users (id) ON DELETE CASCADE,
+    participant_id UUID,
     participant_name VARCHAR(100),
     answer TEXT,
     option_id UUID REFERENCES poll_options (id) ON DELETE SET NULL,
@@ -97,10 +98,18 @@ CREATE TABLE IF NOT EXISTS participants (
     UNIQUE (session_id, absen)
 );
 
+-- Tambahkan dukungan peserta anonim pada database yang sudah terlanjur dibuat.
+ALTER TABLE responses
+ADD COLUMN IF NOT EXISTS participant_id UUID REFERENCES participants (id) ON DELETE CASCADE;
+
 -- Cegah siswa yang login mengisi jawaban lebih dari sekali pada poll yang sama
 CREATE UNIQUE INDEX IF NOT EXISTS unique_response_per_student ON responses (poll_id, student_id)
 WHERE
     student_id IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS unique_response_per_participant ON responses (poll_id, participant_id)
+WHERE
+    participant_id IS NOT NULL;
 
 -- Percepat pencarian data berdasarkan poll
 CREATE INDEX IF NOT EXISTS idx_responses_poll ON responses (poll_id);

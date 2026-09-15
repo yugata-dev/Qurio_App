@@ -1,5 +1,4 @@
-import { ApiResponse, Poll } from "@/app/dashboard/session/[id]/page";
-import { promises } from "node:timers";
+import { Poll, SessionData } from "@/app/dashboard/session/[id]/page";
 
 interface LoginUserSuccess {
   success: true;
@@ -69,6 +68,7 @@ interface SessionDetailResponse {
     title: string;
     access_code: number;
     type: "quiz" | "qa" | "wordcloud"
+    status: "active" | "ended"
   };
 }
 
@@ -340,6 +340,40 @@ export const updateSinglePolls = async (
     // 3. Extract JSON dan kembalikan datanya
     const result = await response.json();
     return result.data; // atau 'result' sesuai struktur response backend kamu
+  } catch (error) {
+    console.error("Gagal mengupdate status:", error);
+    throw error;
+  }
+};
+
+export const updateStatusSession = async (
+  sessionId: string,
+  status: "active" | "ended",
+  token: string | null
+): Promise<SessionData> => {
+  try {
+    // Backend hanya menyediakan route PUT untuk update session (lihat routes/sessions.js)
+    const response = await fetch(
+      `${API_URL}/api/sessions/${sessionId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      }
+    );
+
+    // 2. Tangkap jika backend mengembalikan status HTTP error (4xx / 5xx)
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Gagal mengupdate status sessions");
+    }
+
+    // 3. Extract JSON dan kembalikan datanya
+    const result = await response.json();
+    return result.data; // struktur response backend: { success, data: session }
   } catch (error) {
     console.error("Gagal mengupdate status:", error);
     throw error;

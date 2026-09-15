@@ -56,6 +56,7 @@ app.use(morgan("dev"))
 // =====================
 app.use("/api/sessions", sessionsRouter)
 app.use("/api/polls", pollsRouter)
+app.use("/api/polls", responsesRouter)
 app.use("/api/responses", responsesRouter)
 app.use("/api/questions", questionsRouter)
 app.use("/api/wordcloud", wordcloudRouter)

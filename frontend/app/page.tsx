@@ -2,7 +2,6 @@
 import { fetchUserRegister } from "@/lib/api";
 import { useForm } from "react-hook-form";
 import RegisterPage from "./(auth)/register/page";
-
 import Link from "next/link";
 import { SubmitEvent, useEffect, useState } from "react";
 

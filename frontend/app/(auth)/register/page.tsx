@@ -35,6 +35,7 @@ export default function RegisterPage() {
     register,
     handleSubmit,
     control,
+    setError,
     formState: { errors },
   } = useForm<RegisterFormData>();
 
@@ -44,10 +45,26 @@ export default function RegisterPage() {
       await fetchUserRegister(data.name, data.email, data.password, data.role);
       alert("Register berhasil");
       router.push("/dashboard");
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
+
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Terjadi kesalahan saat registrasi.";
+
+      if (message.toLowerCase().includes("email")) {
+        setError("email", {
+          type: "server",
+          message: "Email ini sudah terdaftar. Silakan gunakan email lain.",
+        });
+      } else {
+        alert(message);
+      }
     }
   };
+
+
 
   return (
     <div className="relative flex flex-col flex-1 items-center justify-center bg-zinc-100 font-sans min-h-screen p-4">
@@ -109,7 +126,7 @@ export default function RegisterPage() {
                 Password
               </Label>
               <Input
-                {...register("password", { required: "Password wajib diisi", minLength: {value: 8, message: "Password minimal 8 karakter"} })}
+                {...register("password", { required: "Password wajib diisi", minLength: { value: 8, message: "Password minimal 8 karakter" } })}
                 className="w-full h-11"
                 placeholder="Buat kata sandi minimal 8 karakter"
                 type="password"
