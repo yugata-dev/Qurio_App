@@ -40,3 +40,25 @@ export const teacherLimit = (req, res, next) => {
         return res.status(403).json({ success: false, message: "Token palsu atau kadaluwarsa!" })
     }
 }
+
+// Middleware: hanya siswa yang boleh mengakses route berikutnya
+export const studentLimit = (req, res, next) => {
+    const token = getTokenFromHeader(req)
+
+    if (!token) {
+        return res.status(401).json({ success: false, message: "Token tidak ada, akses ditolak!" })
+    }
+
+    try {
+        const decoded = verifyToken(token)
+
+        if (decoded.role !== "siswa") {
+            return res.status(403).json({ success: false, message: "Hanya Siswa yang boleh mengakses fitur ini!" })
+        }
+
+        req.user = decoded
+        next()
+    } catch (error) {
+        return res.status(403).json({ success: false, message: "Token palsu atau kadaluwarsa!" })
+    }
+}
