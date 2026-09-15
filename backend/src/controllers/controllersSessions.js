@@ -185,7 +185,7 @@ export const updateSession = async (req, res) => {
 
         res.status(200).json({ success: true, data: updatedSession })
     } catch (error) {
-        console.error("Update session error:", error.message)
+        console.error("Update session error:", error)
         return res.status(500).json({
             success: false,
             message: "Gagal memperbarui status sesi"

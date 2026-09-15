@@ -19,6 +19,9 @@ CREATE TABLE IF NOT EXISTS sessions (
     ended_at TIMESTAMP
 );
 
+-- Tambahkan kolom waktu selesai pada database lama yang belum memilikinya.
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ended_at TIMESTAMP;
+
 -- 3. TABLE POLLS (pertanyaan/interaksi)
 CREATE TABLE IF NOT EXISTS polls (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid (),

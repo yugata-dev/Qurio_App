@@ -368,7 +368,10 @@ export const updateStatusSession = async (
     // 2. Tangkap jika backend mengembalikan status HTTP error (4xx / 5xx)
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || "Gagal mengupdate status sessions");
+      throw new Error(
+        errorData.message ||
+        `Gagal memperbarui status sesi (HTTP ${response.status})`,
+      );
     }
 
     // 3. Extract JSON dan kembalikan datanya

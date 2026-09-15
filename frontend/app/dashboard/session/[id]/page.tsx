@@ -4,12 +4,11 @@ import { useAuth } from "@/context/AuthContext"
 import { getAllDataPolls, getDataSession, updateSinglePolls, updateStatusSession } from "@/lib/api"
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Polls } from "@/lib/api"
 
 export interface SessionData {
   id: string
   title: string
-  access_code: number
+  access_code: string | number
   type: "quiz" | "qa" | "wordcloud"
   status: "active" | "ended"
 }
@@ -49,7 +48,7 @@ function SessionPage() {
   const [polls, setPolls] = useState<Poll[] | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const sessionId = params?.id as string
-  const [success, setSuccessMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (!token || !sessionId) return
@@ -121,30 +120,25 @@ function SessionPage() {
     }
   }
 
-  // Fungsi untuk mengubah status SESI (bukan poll), misalnya dari "active" menjadi "ended"
-  const togleStatus = async (sessionId: string, statusTarget: SessionData["status"]) => {
+  const toggleSessionStatus = async (statusTarget: SessionData["status"]) => {
     if (!token || !login) {
-      setErrorMessage("Token tidak sesuai atau kedaluarsa..")
+      setErrorMessage("Token tidak sesuai atau sudah kedaluwarsa.")
       return
     }
 
     try {
-      // Panggil API untuk update status sesi di backend
-      const updatedSession = await updateStatusSession(
-        sessionId,
-        statusTarget === "ended" ? "ended" : "active",
-        token,
-      )
-
-      // Simpan hasil update ke state "session" (bukan "polls"),
-      // supaya tampilan status di layar langsung berubah
+      const updatedSession = await updateStatusSession(sessionId, statusTarget, token)
       setSession(updatedSession)
-
-      setSuccessMessage(`Berhasil mengubah status sesi menjadi "${statusTarget}".`);
+      setErrorMessage(null)
+      setSuccessMessage(
+        statusTarget === "ended"
+          ? "Sesi berhasil diakhiri."
+          : "Sesi berhasil diaktifkan."
+      )
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "Gagal mengupdate status."
-      );
+        error instanceof Error ? error.message : "Gagal mengubah status sesi."
+      )
     }
   }
 
@@ -153,44 +147,24 @@ function SessionPage() {
     <div>
       <h1>ID Sesi saat ini: {session?.id}</h1>
       <p> kode Sesi: {session?.access_code} </p>
-
-      {/* Badge status sesi: hijau = active, abu-abu = ended */}
-      <p>
-        Status Sesi:{" "}
-        <span
-          className={
-            session?.status === "active"
-              ? "bg-green-600 text-white px-2 py-1 rounded text-sm"
-              : "bg-gray-500 text-white px-2 py-1 rounded text-sm"
-          }
-        >
-          {session?.status === "active" ? "AKTIF" : "SELESAI"}
-        </span>
-      </p>
-
-      {/* Tombol untuk mengubah status sesi */}
-      <div className="my-2">
-        <button
-          type="button"
-          disabled={session?.status === "active"}
-          onClick={() => session && void togleStatus(session.id, "active")}
-          className="bg-green-600 text-white px-4 py-2 rounded mr-2 disabled:opacity-50"
-        >
-          Aktifkan Sesi
-        </button>
-        <button
-          type="button"
-          disabled={session?.status === "ended"}
-          onClick={() => session && void togleStatus(session.id, "ended")}
-          className="bg-red-600 text-white px-4 py-2 rounded disabled:opacity-50"
-        >
-          Akhiri Sesi
-        </button>
-      </div>
-
+      <p>Status sesi: {session?.status === "ended" ? "Selesai" : "Aktif"}</p>
+      <button
+        type="button"
+        onClick={() => void toggleSessionStatus("active")}
+        disabled={session?.status === "active"}
+      >
+        Aktifkan Sesi
+      </button>
+      <button
+        type="button"
+        onClick={() => void toggleSessionStatus("ended")}
+        disabled={session?.status === "ended"}
+      >
+        Akhiri Sesi
+      </button>
       <button onClick={() => router.push(`/dashboard/createpolls/${session?.id}`)}>BUAT SOAL</button>
       {errorMessage && <p className="text-red-500">{errorMessage}</p>}
-      {success && <p className="text-green-600">{success}</p>}
+      {successMessage && <p className="text-green-600">{successMessage}</p>}
       {!polls || polls.length === 0 ? (
         <p>Belum ada pertanyaan di sesi ini.</p>
       ) : (
