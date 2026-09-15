@@ -163,13 +163,14 @@ export const updateSession = async (req, res) => {
             })
         }
 
+        const endedAt = status === "ended" ? new Date() : null
         const updatedSessionResult = await pool.query(
             `UPDATE sessions
-     SET status = $1,
-         ended_at = CASE WHEN $1::text = 'ended' THEN CURRENT_TIMESTAMP ELSE ended_at END
-     WHERE id = $2
-     RETURNING *`,
-            [status, id]
+             SET status = $1,
+                 ended_at = $2
+             WHERE id = $3
+             RETURNING *`,
+            [status, endedAt, id]
         )
 
         const updatedSession = updatedSessionResult.rows[0]
