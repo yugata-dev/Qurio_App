@@ -1,10 +1,9 @@
-import { ApiResponse, Poll } from "@/app/dashboard/session/[id]/page";
+import { Poll, SessionData } from "@/app/dashboard/session/[id]/page";
 
 interface LoginUserSuccess {
   success: true;
   data: {
     user: { id: string; name: string; role: string; email: string };
-    token: string;
   };
 }
 
@@ -23,7 +22,7 @@ interface RegisterUserResult {
   };
 }
 
-interface PollOption {
+export interface PollOption {
   id: string;
   poll_id: string;
   option_text: string;
@@ -31,7 +30,7 @@ interface PollOption {
   option_order: number;
 }
 
-interface Polls {
+export interface Polls {
   success: boolean;
   data: {
     poll: {
@@ -48,33 +47,19 @@ interface Polls {
   };
 }
 
-interface secondPolls {
-  success: boolean;
-  data: {
-    poll: {
-      id: string;
-      sessionId: number;
-      type: "qa" | "wordcloud";
-      question: string;
-      status: "draft" | "published" | "closed";
-      created_at: string;
-      published_at: string;
-      closed_at: string;
-      option?: PollOption[];
-    };
-  };
-}
-
 interface PollOptionInput {
   text: string;
   is_correct: boolean;
   option_order: number;
 }
 
-interface Sessions {
+export interface Sessions {
   id: string;
   success: boolean;
   title: string;
+  code_access: number;
+  name: string;
+  absen: number;
   token: string;
 }
 
@@ -85,6 +70,18 @@ interface SessionDetailResponse {
     title: string;
     access_code: number;
     type: "quiz" | "qa" | "wordcloud";
+    status: "active" | "ended";
+  };
+}
+
+interface JoinSessionResponse {
+  success: boolean;
+  message: string;
+  data: {
+    id: string; // ID Participant
+    session_id: string; // ID Sesi yang
+    name: string;
+    absen: number;
   };
 }
 
@@ -327,6 +324,99 @@ const getAllDataPolls = async (
   }
 };
 
+export const updateSinglePolls = async (
+  pollId: string,
+  status: "published" | "closed",
+  token: string | null,
+): Promise<Poll> => {
+  try {
+    // 1. Perbaiki URL: gunakan '/status' secara literal di ujung path
+    const response = await fetch(`${API_URL}/api/polls/${pollId}/status`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ status }),
+    });
+
+    // 2. Tangkap jika backend mengembalikan status HTTP error (4xx / 5xx)
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Gagal mengupdate status poll");
+    }
+
+    // 3. Extract JSON dan kembalikan datanya
+    const result = await response.json();
+    return result.data; // atau 'result' sesuai struktur response backend kamu
+  } catch (error) {
+    console.error("Gagal mengupdate status:", error);
+    throw error;
+  }
+};
+
+export const updateStatusSession = async (
+  sessionId: string,
+  status: "active" | "ended",
+  token: string | null,
+): Promise<SessionData> => {
+  try {
+    // Backend hanya menyediakan route PUT untuk update session (lihat routes/sessions.js)
+    const response = await fetch(`${API_URL}/api/sessions/${sessionId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ status }),
+    });
+
+    // 2. Tangkap jika backend mengembalikan status HTTP error (4xx / 5xx)
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.message ||
+          `Gagal memperbarui status sesi (HTTP ${response.status})`,
+      );
+    }
+
+    // 3. Extract JSON dan kembalikan datanya
+    const result = await response.json();
+    return result.data; // struktur response backend: { success, data: session }
+  } catch (error) {
+    console.error("Gagal mengupdate status:", error);
+    throw error;
+  }
+};
+
+export const fetchUserParticipant = async (
+  access_code: number,
+  name: string,
+  absen: number,
+): Promise<JoinSessionResponse> => {
+  try {
+    const response = await fetch(`${API_URL}/api/sessions/participants/join`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ access_code, nama: name, absen }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Gagal memasuki sesi!`);
+    }
+
+    // 3. Extract JSON dan kembalikan datanya
+    const result = await response.json();
+    return result.data;
+  } catch (error) {
+    console.error("Gagal mengupdate status:", error);
+    throw error;
+  }
+};
+
 export {
   fetchUserLogin,
   fetchUserRegister,
@@ -336,5 +426,4 @@ export {
   postType,
   getDataSession,
   getAllDataPolls,
-  secondCreatePolls,
 };

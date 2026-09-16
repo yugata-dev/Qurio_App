@@ -1,0 +1,27 @@
+[1mdiff --git a/backend/src/controllers/controllersParticipants.js b/backend/src/controllers/controllersParticipants.js[m
+[1mindex ab98b64..849b057 100644[m
+[1m--- a/backend/src/controllers/controllersParticipants.js[m
+[1m+++ b/backend/src/controllers/controllersParticipants.js[m
+[36m@@ -20,9 +20,9 @@[m [mexport const joinSession = async (req, res) => {[m
+             })[m
+         }[m
+ [m
+[31m-        const existingParticipants = await pool.query("SELECT * FROM participants WHERE sessions_id = $1 AND absen = $2", [sessionId, absen])[m
+[32m+[m[32m        const existingParticipants = await pool.query("SELECT * FROM participants WHERE session_id = $1 AND absen = $2", [sessionId, absen])[m
+ [m
+[31m-        if (existingParticipants.rows.length === 0) {[m
+[32m+[m[32m        if (existingParticipants.rows.length > 0) {[m
+             return res.status(404).json({[m
+                 success: false,[m
+                 message: "Anda sudah bergabung dengan sesi ini!",[m
+[36m@@ -30,8 +30,8 @@[m [mexport const joinSession = async (req, res) => {[m
+             })[m
+         }[m
+ [m
+[31m-        const newParticipant = pool.query("INSERT INTO (session_id, name, absen) VALUES ($1, $2, $3) RETURNING *",[m
+[31m-            [sessionId, name, absen][m
+[32m+[m[32m        const newParticipant = await pool.query("INSERT INTO participants (session_id, name, absen) VALUES ($1, $2, $3) RETURNING *",[m
+[32m+[m[32m            [sessionId, nama, absen][m
+         )[m
+ [m
+         return res.status(201).json({[m

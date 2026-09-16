@@ -1,6 +1,6 @@
 -- 1. TABLE USERS (guru & peserta)
 CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
     email VARCHAR(100) NOT NULL UNIQUE,
     PASSWORD VARCHAR(255) NOT NULL,
     name VARCHAR(100) NOT NULL,
@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- 2. TABLE SESSIONS (ruang kelas/acara)
 CREATE TABLE IF NOT EXISTS sessions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    teacher_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+    teacher_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     title VARCHAR(200) NOT NULL,
     access_code VARCHAR(6) NOT NULL UNIQUE,
     STATUS VARCHAR(20) DEFAULT 'active' CHECK (STATUS IN ('active', 'ended')),
@@ -19,13 +19,29 @@ CREATE TABLE IF NOT EXISTS sessions (
     ended_at TIMESTAMP
 );
 
+-- Tambahkan kolom waktu selesai pada database lama yang belum memilikinya.
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS ended_at TIMESTAMP;
+
 -- 3. TABLE POLLS (pertanyaan/interaksi)
 CREATE TABLE IF NOT EXISTS polls (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    session_id UUID NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
-    TYPE VARCHAR(20) NOT NULL CHECK (TYPE IN ('wordcloud', 'polling', 'qa', 'quiz')),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+    session_id UUID NOT NULL REFERENCES sessions (id) ON DELETE CASCADE,
+    TYPE VARCHAR(20) NOT NULL CHECK (
+        TYPE IN (
+            'wordcloud',
+            'polling',
+            'qa',
+            'quiz'
+        )
+    ),
     question TEXT NOT NULL,
-    STATUS VARCHAR(20) DEFAULT 'draft' CHECK (STATUS IN ('draft', 'published', 'closed')),
+    STATUS VARCHAR(20) DEFAULT 'draft' CHECK (
+        STATUS IN (
+            'draft',
+            'published',
+            'closed'
+        )
+    ),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     published_at TIMESTAMP,
     closed_at TIMESTAMP
@@ -33,8 +49,8 @@ CREATE TABLE IF NOT EXISTS polls (
 
 -- 4. TABLE POLL_OPTIONS (opsi untuk polling & quiz)
 CREATE TABLE IF NOT EXISTS poll_options (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    poll_id UUID NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+    poll_id UUID NOT NULL REFERENCES polls (id) ON DELETE CASCADE,
     option_text VARCHAR(255) NOT NULL,
     is_correct BOOLEAN DEFAULT FALSE,
     option_order INT NOT NULL
@@ -42,23 +58,22 @@ CREATE TABLE IF NOT EXISTS poll_options (
 
 -- 5. TABLE RESPONSES (jawaban peserta)
 CREATE TABLE IF NOT EXISTS responses (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    poll_id UUID NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
-    student_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+    poll_id UUID NOT NULL REFERENCES polls (id) ON DELETE CASCADE,
+    student_id UUID REFERENCES users (id) ON DELETE CASCADE,
+    participant_id UUID,
     participant_name VARCHAR(100),
     answer TEXT,
-    option_id UUID REFERENCES poll_options(id) ON DELETE
-    SET
-        NULL,
-        is_correct BOOLEAN,
-        submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    option_id UUID REFERENCES poll_options (id) ON DELETE SET NULL,
+    is_correct BOOLEAN,
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 6. TABLE QUESTIONS (Q&A kelas)
 CREATE TABLE IF NOT EXISTS questions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    session_id UUID NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
-    student_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+    session_id UUID NOT NULL REFERENCES sessions (id) ON DELETE CASCADE,
+    student_id UUID REFERENCES users (id) ON DELETE CASCADE,
     student_name VARCHAR(100) NOT NULL,
     text TEXT NOT NULL,
     upvotes INT DEFAULT 0,
@@ -70,17 +85,34 @@ CREATE TABLE IF NOT EXISTS questions (
 
 -- 7. TABLE QUESTION_VOTES (mencegah upvote ganda siswa pada pertanyaan yang sama)
 CREATE TABLE IF NOT EXISTS question_votes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    question_id UUID NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
-    student_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+    question_id UUID NOT NULL REFERENCES questions (id) ON DELETE CASCADE,
+    student_id UUID REFERENCES users (id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (question_id, student_id)
 );
+
+CREATE TABLE IF NOT EXISTS participants (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+    session_id UUID NOT NULL REFERENCES sessions (id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    absen VARCHAR(20) NOT NULL,
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (session_id, absen)
+);
+
+-- Tambahkan dukungan peserta anonim pada database yang sudah terlanjur dibuat.
+ALTER TABLE responses
+ADD COLUMN IF NOT EXISTS participant_id UUID REFERENCES participants (id) ON DELETE CASCADE;
 
 -- Cegah siswa yang login mengisi jawaban lebih dari sekali pada poll yang sama
 CREATE UNIQUE INDEX IF NOT EXISTS unique_response_per_student ON responses (poll_id, student_id)
 WHERE
     student_id IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS unique_response_per_participant ON responses (poll_id, participant_id)
+WHERE
+    participant_id IS NOT NULL;
 
 -- Percepat pencarian data berdasarkan poll
 CREATE INDEX IF NOT EXISTS idx_responses_poll ON responses (poll_id);

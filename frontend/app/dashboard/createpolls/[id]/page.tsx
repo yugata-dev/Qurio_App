@@ -37,7 +37,7 @@ function CreatePollsPage() {
     },
     shouldUnregister: true,
   });
-  const {fields, append, remove } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control,
     name: "option",
   });
@@ -120,8 +120,8 @@ function CreatePollsPage() {
           {successMessage}
         </div>
       )}
-      
-          <p>Type Soal Saat Ini {polls?.[0]?.type}</p>
+
+      <p>Type Soal Saat Ini {polls?.[0]?.type}</p>
       <div className="flex flex-col gap-3">
         <h2 className="text-2xl font-bold text-center">
           <p>buat soal di sesi dengan judul </p>

@@ -8,12 +8,12 @@ const router = express.Router()
 router.post("/sessions/:sessionId/polls", teacherLimit, createPoll)
 
 // get polls dalam session
-router.get("/sessions/:sessionId/polls", teacherLimit , getPollsBySession)
+router.get("/sessions/:sessionId/polls", teacherLimit, getPollsBySession)
 
 // get detail 1 poll
 router.get("/:pollId", getPoll)
 
-// update poll (guru)
-router.put("/:pollId", teacherLimit, updatePoll)
+// update quiz 
+router.patch("/:pollId/status", teacherLimit, updatePoll)
 
 export default router

@@ -1,8 +1,7 @@
 "use client";
-import { fetchUserRegister } from "@/lib/api";
+import { fetchUserParticipant, fetchUserRegister, Sessions } from "@/lib/api";
 import { useForm } from "react-hook-form";
 import RegisterPage from "./(auth)/register/page";
-
 import Link from "next/link";
 import { SubmitEvent, useEffect, useState } from "react";
 
@@ -19,6 +18,7 @@ import { cn } from "@/lib/utils";
 
 // import icon
 import { IconLogin2 } from "@tabler/icons-react";
+import { useRouter } from "next/navigation";
 
 const heroSlides = [
   {
@@ -58,14 +58,15 @@ const featureCards = [
   ],
 ];
 
-// function Logo() {
-//   return (
-
-//   );
-// }
+interface ParticipantFromData {
+  access_code: number;
+  name: string;
+  absen: number;
+}
 
 function HeroSlider() {
   const [active, setActive] = useState(0);
+
   useEffect(() => {
     const interval = window.setInterval(
       () => setActive((current) => (current + 1) % heroSlides.length),
@@ -73,6 +74,7 @@ function HeroSlider() {
     );
     return () => window.clearInterval(interval);
   }, []);
+
   return (
     <>
       <div
@@ -106,77 +108,124 @@ function HeroSlider() {
 }
 
 function AccessForm() {
-  const [message, setMessage] = useState("");
-  function submit(event: SubmitEvent<HTMLFormElement>): void {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const code = String(data.get("code") || "").trim();
-    const name = String(data.get("name") || "").trim();
-    setMessage(
-      code.length === 6 && name
-        ? "Kode siap! Menghubungkan Anda ke sesi."
-        : "Lengkapi kode 6 digit dan nama Anda.",
-    );
-  }
+  const router = useRouter();
+  const {
+    register,
+    handleSubmit,
+    control,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<ParticipantFromData>();
+
+  const handleInputFormParticipant = async (
+    dataParticipant: ParticipantFromData,
+  ) => {
+    try {
+      const logInToSession = await fetchUserParticipant(
+        dataParticipant.access_code,
+        dataParticipant.name,
+        dataParticipant.absen,
+      );
+      const idSession = logInToSession?.data?.session_id;
+      router.push(`/dashboard/play/${idSession}`);
+    } catch (error) {
+      console.error("Gagal membuat sesi:", error);
+    }
+  };
+
   return (
     <form
       id="access"
-      className="max-w-md mt-8 pt-8 px-8 pb-8 rounded-3xl bg-card text-card-foreground shadow-lg"
-      onSubmit={submit}
+      className="flex flex-col gap-5 w-full max-w-lg sm:w-4/5 sm:min-w-sm mt-8 pt-8 px-8 pb-8 rounded-3xl bg-card text-card-foreground shadow-lg text-left"
+      onSubmit={handleSubmit(handleInputFormParticipant, (errors) =>
+        console.log("Validation Errors:", errors),
+      )}
       aria-label="Form masuk ruang kelas"
     >
-      <h3 className="text-[18px] mb-7">Masuk Ruang Kelas Instan</h3>
+      <h3 className="text-[18px] mb-7 text-center">Masuk Ruang Kelas Instan</h3>
 
-      <label
-        htmlFor="code"
-        className="text-left block mb-2 text-muted-foreground uppercase tracking-[0.04em] text-xs font-extrabold"
-      >
-        Kode Akses 6-Digit <span>(Cth: A7B3K9)</span>
-      </label>
-      <input
-        id="code"
-        name="code"
-        inputMode="text"
-        maxLength={6}
-        placeholder="Masukkan kode akses"
-        className="w-full h-16 mb-5 px-4 border border-input rounded-xl bg-background text-foreground text-base outline-ring placeholder:text-muted-foreground"
-      />
+      {/* Kode Akses */}
+      <div>
+        <label
+          htmlFor="access_code"
+          className="text-left block mb-2 text-muted-foreground uppercase tracking-[0.04em] text-xs font-extrabold"
+        >
+          Kode Akses 6-Digit <span>(Cth: 123456)</span>
+        </label>
+        <input
+          {...register("access_code", { required: "Kode tidak sesuai!" })}
+          id="access_code"
+          inputMode="numeric"
+          maxLength={6}
+          placeholder="Masukkan kode akses"
+          className="w-full h-16 px-4 border border-input rounded-xl bg-background text-foreground text-base outline-ring placeholder:text-muted-foreground"
+        />
+        {errors.access_code && (
+          <div className="text-xs font-semibold mt-2 text-red-500">
+            {errors.access_code.message}
+          </div>
+        )}
+      </div>
 
-      <label
-        htmlFor="name"
-        className="text-left block mb-2 text-muted-foreground uppercase tracking-[0.04em] text-xs font-extrabold"
-      >
-        Nama Lengkap Kamu
-      </label>
-      <input
-        id="name"
-        name="name"
-        placeholder="Masukkan nama lengkap"
-        className="w-full h-16 mb-5 px-4 border border-input rounded-xl bg-background text-foreground text-base outline-ring placeholder:text-muted-foreground"
-      />
+      {/* Nama Lengkap */}
+      <div>
+        <label
+          htmlFor="name"
+          className="text-left block mb-2 text-muted-foreground uppercase tracking-[0.04em] text-xs font-extrabold"
+        >
+          Nama Lengkap Kamu
+        </label>
+        <input
+          {...register("name", { required: "Isi nama anda..." })}
+          id="name"
+          placeholder="Masukkan nama lengkap"
+          className="w-full h-16 px-4 border border-input rounded-xl bg-background text-foreground text-base outline-ring placeholder:text-muted-foreground"
+        />
+        {errors.name && (
+          <div className="text-xs font-semibold mt-2 text-red-500">
+            {errors.name.message}
+          </div>
+        )}
+      </div>
+
+      {/* Nomor Absen */}
+      <div>
+        <label
+          htmlFor="absen"
+          className="text-left block mb-2 text-muted-foreground uppercase tracking-[0.04em] text-xs font-extrabold"
+        >
+          Nomer Absen Kamu
+        </label>
+        <input
+          {...register("absen", { required: "Absen tidak sesuai!" })}
+          id="absen"
+          placeholder="Masukkan nomor absen"
+          className="w-full h-16 px-4 border border-input rounded-xl bg-background text-foreground text-base outline-ring placeholder:text-muted-foreground"
+        />
+        {errors.absen && (
+          <div className="text-xs font-semibold mt-2 text-red-500">
+            {errors.absen.message}
+          </div>
+        )}
+      </div>
 
       <Button
         className="w-full inline-flex items-center justify-center gap-3 rounded-[15px] px-6 py-6! border-0 font-extrabold text-base cursor-pointer transition-all duration-200 hover:-translate-y-0.5 bg-primary text-primary-foreground shadow-lg"
         type="submit"
+        disabled={isSubmitting}
       >
-        Gabung Sesi Sekarang <span aria-hidden="true">→</span>
+        {isSubmitting ? "Sedang memproses..." : "Masuk Sekarang"}{" "}
+        <span aria-hidden="true">→</span>
       </Button>
 
       <p className="mt-4 text-center text-muted-foreground text-xs">
         Tanpa perlu buat akun atau unduh aplikasi.
       </p>
-
-      {message && (
-        <p className="mt-3 text-primary text-[13px]" role="status">
-          {message}
-        </p>
-      )}
     </form>
   );
 }
 
 export default function App() {
-  const [demoOpen, setDemoOpen] = useState(false);
   return (
     <main id="top">
       <header className="sticky top-0 z-40 sm:h-20 h-18 border-b border-border/80 bg-background/80 shadow-sm backdrop-blur-sm">
@@ -206,7 +255,7 @@ export default function App() {
           {/* </div> */}
         </div>
       </header>
-      <section className="min-h-[calc(100vh-80px)] flex items-start justify-center overflow-hidden bg-[radial-gradient(circle_at_75%_22%,var(--secondary)_0,var(--background)_76%)] pt-18.75 pb-27.5 lg:pt-28 lg:pb-32">
+      <section className="min-h-[calc(100vh-80px)] flex items-start justify-center overflow-hidden bg-[radial-gradient(circle_at_50%_22%,color-mix(in_oklab,var(--primary)_20%,transparent)_0,var(--background)_76%)] pt-18.75 pb-27.5 lg:pt-28 lg:pb-32">
         <div className=".container-custom">
           <div className="max-w-205 mx-auto flex flex-col items-center text-center">
             <span className="inline-flex gap-2 items-center text-brand-green bg-brand-secondary border border-green-border rounded-[30px] px-4 py-2 text-sm font-bold mb-6">

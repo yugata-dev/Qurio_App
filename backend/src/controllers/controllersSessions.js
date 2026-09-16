@@ -136,6 +136,13 @@ export const updateSession = async (req, res) => {
     const { status } = req.body
 
     try {
+        if (status !== "active" && status !== "ended") {
+            return res.status(400).json({
+                success: false,
+                message: "Status sesi harus active atau ended."
+            })
+        }
+
         // Cek kepemilikan: hanya guru yang punya sesi ini yang boleh mengubahnya
         const ownerResult = await pool.query(
             "SELECT teacher_id FROM sessions WHERE id = $1",
@@ -156,13 +163,14 @@ export const updateSession = async (req, res) => {
             })
         }
 
+        const endedAt = status === "ended" ? new Date() : null
         const updatedSessionResult = await pool.query(
             `UPDATE sessions
              SET status = $1,
-                 ended_at = CASE WHEN $1 = 'ended' THEN CURRENT_TIMESTAMP ELSE ended_at END
-             WHERE id = $2
+                 ended_at = $2
+             WHERE id = $3
              RETURNING *`,
-            [status, id]
+            [status, endedAt, id]
         )
 
         const updatedSession = updatedSessionResult.rows[0]
@@ -178,7 +186,7 @@ export const updateSession = async (req, res) => {
 
         res.status(200).json({ success: true, data: updatedSession })
     } catch (error) {
-        console.error("Update session error:", error.message)
+        console.error("Update session error:", error)
         return res.status(500).json({
             success: false,
             message: "Gagal memperbarui status sesi"

@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "dev": "nodemon server.js",
+    "prestart": "node src/config/db/migrate.js",
     "start": "node server.js"
   },
   "keywords": [],

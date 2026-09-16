@@ -227,9 +227,9 @@ function CreateSessionsPage() {
                 </div>
               </div>
             )}
-            
+
             {errorOpsiPertama && <div className="text-xs font-semibold mt-1 text-red-500">
-              {errorOpsiPertama.message} 
+              {errorOpsiPertama.message}
             </div> || errors.correctIndex && <div className="text-xs font-semibold mt-1 text-red-500">
               {errors.correctIndex.message}
             </div>}

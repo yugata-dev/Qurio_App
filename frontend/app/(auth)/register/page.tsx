@@ -35,6 +35,7 @@ export default function RegisterPage() {
     register,
     handleSubmit,
     control,
+    setError,
     formState: { errors },
   } = useForm<RegisterFormData>();
 
@@ -44,8 +45,22 @@ export default function RegisterPage() {
       await fetchUserRegister(data.name, data.email, data.password, data.role);
       alert("Register berhasil");
       router.push("/dashboard");
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
+
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Terjadi kesalahan saat registrasi.";
+
+      if (message.toLowerCase().includes("email")) {
+        setError("email", {
+          type: "server",
+          message: "Email ini sudah terdaftar. Silakan gunakan email lain.",
+        });
+      } else {
+        alert(message);
+      }
     }
   };
 
