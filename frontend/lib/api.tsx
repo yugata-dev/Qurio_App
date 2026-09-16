@@ -416,7 +416,7 @@ export const fetchUserParticipant = async (
 
     // 3. Extract JSON dan kembalikan datanya
     const result = await response.json();
-    return result.data;
+    return result;
   } catch (error) {
     console.error("Gagal mengupdate status:", error);
     throw error;
