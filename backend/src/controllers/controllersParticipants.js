@@ -22,6 +22,22 @@ export const joinSession = async (req, res) => {
 
         const foundSessionId = sessionCodeAccess.rows[0]?.id
 
+        const statusCondition = await pool.query(
+            "SELECT status FROM sessions WHERE id = $1",
+            [foundSessionId]
+        );
+
+        const sessionStatus = statusCondition.rows[0]?.status;
+
+        if (sessionStatus !== "active") {
+            return res.status(403).json({
+                success: false,
+                message: sessionStatus === "ended"
+                    ? "Sesi kuis ini sudah berakhir!"
+                    : "Sesi belum diaktifkan oleh guru."
+            });
+        }
+
         const existingParticipants = await pool.query("SELECT * FROM participants WHERE session_id = $1 AND absen = $2", [foundSessionId, absen])
 
         if (existingParticipants.rows.length > 0) {

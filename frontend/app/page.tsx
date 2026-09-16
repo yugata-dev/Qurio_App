@@ -1,9 +1,6 @@
 "use client";
-import { fetchUserParticipant, fetchUserRegister, Sessions } from "@/lib/api";
-import { useForm } from "react-hook-form";
-import RegisterPage from "./(auth)/register/page";
 import Link from "next/link";
-import { SubmitEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
@@ -11,8 +8,7 @@ import { cn } from "@/lib/utils";
 
 // import icon
 import { IconLogin2 } from "@tabler/icons-react";
-import { useRouter } from "next/navigation";
-
+import { AccessForm } from "@/components/ui/AccessForm";
 
 const heroSlides = [
   {
@@ -51,11 +47,6 @@ const featureCards = [
     "Laporan evaluasi berbasis AI yang siap diunduh guru setelah kelas.",
   ],
 ];
-
-interface ParticipantFromData {
-  access_code: number, name: string, absen: number
-}
-
 function HeroSlider() {
   const [active, setActive] = useState(0);
 
@@ -99,135 +90,6 @@ function HeroSlider() {
   );
 }
 
-function AccessForm() {
-  const [message, setMessage] = useState("");
-  function submit(event: SubmitEvent<HTMLFormElement>): void {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const code = String(data.get("code") || "").trim();
-    const name = String(data.get("name") || "").trim();
-    const absen = String(data.get("absen") || "").trim();
-    setMessage(
-      code.length === 6 && name
-        ? "Kode siap! Menghubungkan Anda ke sesi."
-        : "Lengkapi kode 6 digit dan nama Anda.",
-    );
-  }
-  const router = useRouter();
-  const {
-    register,
-    handleSubmit,
-    control,
-    setError,
-    formState: { errors, isSubmitting },
-  } = useForm<ParticipantFromData>();
-
-  const handleInputFormParticipant = async (dataParticipant: ParticipantFromData) => {
-    try {
-      const logInToSession = await fetchUserParticipant(dataParticipant.access_code, dataParticipant.name, dataParticipant.absen)
-      const idSession = logInToSession?.data?.session_id
-      router.push(`/dashboard/play/${idSession}`)
-    } catch (error) {
-      console.error("Gagal membuat sesi:", error)
-    }
-  }
-
-  return (
-    <form
-      id="access"
-      className="max-w-md mt-8 pt-8 px-8 pb-8 rounded-3xl bg-white shadow-[0_22px_35px_rgba(30,44,70,0.14)]"
-      onSubmit={handleSubmit(handleInputFormParticipant, (errors) => console.log("Validation Errors:", errors))}
-      aria-label="Form masuk ruang kelas"
-    >
-      <h3 className="text-[18px] mb-7">Masuk Ruang Kelas Instan</h3>
-
-      {/* Kode Akses */}
-      <div>
-        <label
-          htmlFor="access_code"
-          className="text-left block mb-2 text-[#8fa0ba] uppercase tracking-[0.04em] text-xs font-extrabold"
-        >
-          Kode Akses 6-Digit <span>(Cth: 123456)</span>
-        </label>
-        <input
-          {...register("access_code", { required: "Kode tidak sesuai!" })}
-          id="access_code"
-          inputMode="numeric"
-          maxLength={6}
-          placeholder="Masukkan kode akses"
-          className="w-full h-16 mb-5 px-4 border border-[#dae3ef] rounded-xl bg-[#f8fafc] text-[#101a31] text-base outline-brand-purple"
-        />
-        {errors.access_code && (
-          <div className="text-xs font-semibold mt-1 text-red-500">
-            {errors.access_code.message}
-          </div>
-        )}
-      </div>
-
-      {/* Nama Lengkap */}
-      <div>
-        <label
-          htmlFor="name"
-          className="text-left block mb-2 text-[#8fa0ba] uppercase tracking-[0.04em] text-xs font-extrabold"
-        >
-          Nama Lengkap Kamu
-        </label>
-        <input
-          {...register("name", { required: "Isi nama anda..." })}
-          id="name"
-          placeholder="Masukkan nama lengkap"
-          className="w-full h-16 mb-5 px-4 border border-[#dae3ef] rounded-xl bg-[#f8fafc] text-[#101a31] text-base outline-brand-purple"
-        />
-        {errors.name && (
-          <div className="text-xs font-semibold mt-1 text-red-500">
-            {errors.name.message}
-          </div>
-        )}
-      </div>
-
-      {/* Nomor Absen */}
-      <div>
-        <label
-          htmlFor="absen"
-          className="text-left block mb-2 text-[#8fa0ba] uppercase tracking-[0.04em] text-xs font-extrabold"
-        >
-          Nomer Absen Kamu
-        </label>
-        <input
-          {...register("absen", { required: "Absen tidak sesuai!" })}
-          id="absen"
-          placeholder="Masukkan nomor absen"
-          className="w-full h-16 mb-5 px-4 border border-[#dae3ef] rounded-xl bg-[#f8fafc] text-[#101a31] text-base outline-brand-purple"
-        />
-        {errors.absen && (
-          <div className="text-xs font-semibold mt-1 text-red-500">
-            {errors.absen.message}
-          </div>
-        )}
-      </div>
-
-      <Button
-        className="w-full inline-flex items-center justify-center gap-3 rounded-[15px] px-6 py-6! border-0 font-extrabold text-base cursor-pointer transition-all duration-200 hover:-translate-y-0.5 bg-primary text-white shadow-[0_12px_25px_rgba(14,165,233,0.2)]"
-        type="submit"
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? "Sedang memproses..." : "Masuk Sekarang"}{" "}
-        <span aria-hidden="true">→</span>
-      </Button>
-
-      {message && (
-        <p className="mt-3 text-red-700 text-[13px]" role="status">
-          {message}
-        </p>
-      )}
-
-      <p className="mt-4 text-center text-[#8b9ab0] text-xs">
-        Tanpa perlu buat akun atau unduh aplikasi.
-      </p>
-    </form>
-  );
-}
-
 export default function App() {
   const [demoOpen, setDemoOpen] = useState(false);
   return (
@@ -268,7 +130,6 @@ export default function App() {
             </span>
 
             <HeroSlider />
-            <AccessForm />
             <a
               className="mt-6 text-brand-purple text-sm hover:underline"
               href="#cta"
@@ -277,6 +138,22 @@ export default function App() {
               <strong className="font-extrabold"> Buat Sesi Gratis →</strong>
             </a>
           </div>
+        </div>
+      </section>
+      <section id="cta" className="py-24 bg-[#eef4ff]">
+        <div className="w-full max-w-304 mx-auto px-6 grid gap-10 lg:grid-cols-[1fr_auto] items-center">
+          <div>
+            <span className="block text-brand-purple text-[13px] tracking-[0.12em] font-extrabold mb-5">
+              UNTUK SISWA
+            </span>
+            <h2 className="mt-0 text-3xl tracking-[-0.04em] mb-4">
+              Sudah punya kode kelas?
+            </h2>
+            <p className="mt-0 max-w-xl text-[#536682] text-lg leading-normal">
+              Masukkan kode akses, nama, dan nomor absen untuk langsung masuk ke ruang kelas.
+            </p>
+          </div>
+          <AccessForm />
         </div>
       </section>
       <section
