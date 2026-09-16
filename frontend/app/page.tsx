@@ -265,13 +265,14 @@ export default function App() {
 
             <HeroSlider />
             <AccessForm />
-            <a
+            <Link
               className="mt-6 text-primary text-sm hover:underline"
-              href="#cta"
+              // href="#cta"
+              href="/login"
             >
               Apakah Anda seorang Guru?
               <strong className="font-extrabold"> Buat Sesi Gratis →</strong>
-            </a>
+            </Link>
           </div>
         </div>
       </section>
