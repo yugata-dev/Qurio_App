@@ -3,7 +3,13 @@ import { Poll, SessionData } from "@/app/dashboard/session/[id]/page";
 interface LoginUserSuccess {
   success: true;
   data: {
-    user: { id: string; name: string; role: string; email: string };
+    user: {
+      id: string;
+      name: string;
+      role: string;
+      email: string;
+    };
+    token: string;
   };
 }
 
