@@ -323,8 +323,8 @@ export default function App() {
           {/* Responsif: 1 kolom di <620px, 2 kolom di 621-900px, 4 kolom di >900px */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {featureCards.map(([icon, title, copy]) => (
-              <article key={title}>
-                <Card className="p-7 min-h-68 border-border bg-card shadow-lg">
+              <article key={title} className="h-full">
+                <Card className="h-full p-7 min-h-68 border-border bg-card shadow-lg">
                   <span className="grid place-items-center w-16 h-16 mb-5 rounded-[15px] bg-secondary text-primary shadow-md text-[27px]">
                     {icon}
                   </span>
