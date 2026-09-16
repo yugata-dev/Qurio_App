@@ -4,7 +4,6 @@ interface LoginUserSuccess {
   success: true;
   data: {
     user: { id: string; name: string; role: string; email: string };
-    token: string;
   };
 }
 
@@ -54,10 +53,13 @@ interface PollOptionInput {
   option_order: number;
 }
 
-interface Sessions {
+export interface Sessions {
   id: string;
   success: boolean;
   title: string;
+  code_access: number
+  name: string
+  absen: number
   token: string;
 }
 
@@ -69,6 +71,17 @@ interface SessionDetailResponse {
     access_code: number;
     type: "quiz" | "qa" | "wordcloud"
     status: "active" | "ended"
+  };
+}
+
+interface JoinSessionResponse {
+  success: boolean;
+  message: string;
+  data: {
+    id: string;          // ID Participant
+    session_id: string;  // ID Sesi yang 
+    name: string;
+    absen: number;
   };
 }
 
@@ -283,6 +296,8 @@ const getDataSession = async (
   }
 };
 
+
+
 const getAllDataPolls = async (
   sessionId: string,
   token: string | null,
@@ -382,6 +397,36 @@ export const updateStatusSession = async (
     throw error;
   }
 };
+
+export const fetchUserParticipant = async (access_code: number, name: string, absen: number): Promise<JoinSessionResponse> => {
+  try {
+    const response = await fetch(
+      `${API_URL}/api/sessions/participants/join`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ access_code, nama: name, absen })
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.message ||
+        `Gagal memasuki sesi!`,
+      );
+    }
+
+    // 3. Extract JSON dan kembalikan datanya
+    const result = await response.json();
+    return result.data
+  } catch (error) {
+    console.error("Gagal mengupdate status:", error);
+    throw error;
+  }
+}
 
 
 export {

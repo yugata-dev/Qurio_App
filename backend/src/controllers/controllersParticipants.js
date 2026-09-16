@@ -1,29 +1,31 @@
 import pool from "../config/db/connection.js";
 
 export const joinSession = async (req, res) => {
-    const { sessionId } = req.params
-    const { nama, absen } = req.body
+    const { access_code, nama, absen } = req.body
     try {
-        if (!nama || !absen) {
+
+        if (!nama || !absen || !access_code) {
             return res.status(400).json({
                 success: false,
-                message: "Input nama dan absen wajib di isi."
+                message: "Input code, nama dan absen wajib di isi."
             })
         }
 
-        const sessionCheck = await pool.query("SELECT id FROM sessions WHERE id = $1", [sessionId])
+        const sessionCodeAccess = await pool.query("SELECT id FROM sessions WHERE access_code = $1", [access_code])
 
-        if (sessionCheck.rows.length === 0) {
+        if (sessionCodeAccess.rows.length === 0) {
             return res.status(404).json({
                 success: false,
-                message: "Sesi tidak ditemukan!"
+                message: "Kode tidak cocok!"
             })
         }
 
-        const existingParticipants = await pool.query("SELECT * FROM participants WHERE session_id = $1 AND absen = $2", [sessionId, absen])
+        const foundSessionId = sessionCodeAccess.rows[0]?.id
+
+        const existingParticipants = await pool.query("SELECT * FROM participants WHERE session_id = $1 AND absen = $2", [foundSessionId, absen])
 
         if (existingParticipants.rows.length > 0) {
-            return res.status(404).json({
+            return res.status(409).json({
                 success: false,
                 message: "Anda sudah bergabung dengan sesi ini!",
                 data: existingParticipants.rows[0]
@@ -31,7 +33,7 @@ export const joinSession = async (req, res) => {
         }
 
         const newParticipant = await pool.query("INSERT INTO participants (session_id, name, absen) VALUES ($1, $2, $3) RETURNING *",
-            [sessionId, nama, absen]
+            [foundSessionId, nama, absen]
         )
 
         return res.status(201).json({
@@ -57,3 +59,4 @@ export const joinSession = async (req, res) => {
 
     }
 }
+

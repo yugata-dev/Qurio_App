@@ -5,6 +5,9 @@ import { joinSession } from "../controllers/controllersParticipants.js"
 
 const router = express.Router()
 
+// join session (publik, tanpa token)
+router.post("/participants/join", joinSession)
+
 // create session baru (guru)
 router.post("/", teacherLimit, createSession)
 
@@ -13,8 +16,6 @@ router.get("/", teacherLimit, getSessions)
 
 // get detail 1 session
 router.get("/:id", teacherLimit, getSession)
-
-router.post("/:sessionId/participants/join", studentLimit, joinSession)
 
 // update session (guru pemilik)
 router.put("/:id", teacherLimit, updateSession)
