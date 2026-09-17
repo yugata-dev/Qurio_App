@@ -1,78 +1,99 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useParams, useRouter } from "next/navigation"
-import { useForm, useFieldArray, get } from "react-hook-form"
-import { createPolls, createSession } from "@/lib/api"
-import { useAuth } from "@/context/AuthContext"
+import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { Controller, useForm, useFieldArray } from "react-hook-form";
+import { createPolls, createSession } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 interface PollOption {
-  text: string
-  is_correct: boolean
-  option_order: number
+  text: string;
+  is_correct: boolean;
+  option_order: number;
 }
 
-type PollStatus = "draft" | "published" | "closed"
+type PollStatus = "draft" | "published" | "closed";
+
+const questionTypeItems = {
+  quiz: "Quiz",
+  wordcloud: "Wordcloud",
+  qa: "Tanya Jawab",
+};
 
 interface SessionFormInput {
-  title: string
-  type: string
-  question: string
-  correctIndex: number
-  option: PollOption[]
+  title: string;
+  type: string;
+  question: string;
+  correctIndex: number;
+  option: PollOption[];
 }
 
 function CreateSessionsPage() {
-  const router = useRouter()
-  const { user, token } = useAuth()
+  const router = useRouter();
+  const { user, token } = useAuth();
   const {
     register,
     watch,
     control,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<SessionFormInput>()
+  } = useForm<SessionFormInput>();
   const { fields, append, remove } = useFieldArray({
     control,
     name: "option",
-  })
-  const selectedType = watch("type")
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  });
+  const selectedType = watch("type");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const errorOpsiPertama = errors.option?.[0]?.text;
 
-  const buildOptionsPayload = (
-    options: PollOption[],
-    correctIndex: number,
-  ) =>
+  const buildOptionsPayload = (options: PollOption[], correctIndex: number) =>
     options.map((option, index) => ({
       text: option.text,
       is_correct: index === Number(correctIndex),
       option_order: index,
-    }))
+    }));
 
   const handleSubmitSession = async (formData: SessionFormInput) => {
     if (!user || !token) {
-      setErrorMessage("Anda harus login terlebih dahulu...")
-      return
+      setErrorMessage("Anda harus login terlebih dahulu...");
+      return;
     }
 
     try {
-      const createdSession = await createSession(formData.title, token)
-      const newSessionId = createdSession?.id
+      const createdSession = await createSession(formData.title, token);
+      const newSessionId = createdSession?.id;
 
       if (!newSessionId) {
-        throw new Error("Gagal mendapatkan ID Sesi dari backend")
+        throw new Error("Gagal mendapatkan ID Sesi dari backend");
       }
 
       try {
         const optionsPayload = buildOptionsPayload(
           formData.option,
           formData.correctIndex,
-        )
+        );
 
         const pollStatus: PollStatus =
-          formData.type === "quiz" ? "draft" : "published"
+          formData.type === "quiz" ? "draft" : "published";
 
         await createPolls(
           formData.type,
@@ -81,171 +102,220 @@ function CreateSessionsPage() {
           newSessionId,
           token,
           pollStatus,
-        )
+        );
 
-        setSuccessMessage("Sesi dan soal berhasil dibuat..")
-        router.push(`/dashboard/session/${newSessionId}`)
+        setSuccessMessage("Sesi dan soal berhasil dibuat..");
+        router.push(`/dashboard/session/${newSessionId}`);
       } catch (pollError) {
-        console.error("Gagal menyimpan poll pertama:", pollError)
+        console.error("Gagal menyimpan poll pertama:", pollError);
         setErrorMessage(
           "Sesi berhasil dibuat, tapi soal gagal disimpan. Tambahkan soal lewat halaman sesi.",
-        )
+        );
       }
     } catch (error) {
-      console.error("Gagal membuat sesi:", error)
-      setErrorMessage(`Gagal membuat sesi: ${error}`)
+      console.error("Gagal membuat sesi:", error);
+      setErrorMessage(`Gagal membuat sesi: ${error}`);
     }
-  }
+  };
 
   return (
-    <section className="flex flex-col items-center justify-center min-h-screen gap-4 p-4">
-      <div className="bg-amber-50 w-full max-w-4xl text-black flex flex-col items-center p-6 rounded-2xl font-bold shadow-md">
-        <h1 className="text-3xl font-bold mb-6">BUAT SESI & PERTANYAAN</h1>
-
-        {errorMessage && (
-          <div className="text-red-500 font-semibold text-sm mb-4">
-            {errorMessage}
-          </div>
-        )}
-        {successMessage && (
-          <div className="text-green-600 font-semibold text-sm mb-4">
-            {successMessage}
-          </div>
-        )}
-
-        <form
-          className="w-full max-w-2xl flex flex-col gap-4"
-          onSubmit={handleSubmit(handleSubmitSession)}
-        >
-          <div className="flex flex-col gap-1">
-            <label className="text-xl">Title Sesi:</label>
-            <input
-              {...register("title", { required: "Isi judul yang diinginkan..." })}
-              className="h-10 w-full p-2 text-[1.2rem] border-black border-2 rounded-[0.4rem] font-light bg-white"
-              type="text"
-            />
-            {errors.title && (
-              <div className="text-xs font-semibold mt-1 text-red-500">
-                {errors.title.message}
-              </div>
-            )}
-          </div>
-
-          <hr className="border-amber-200 my-4" />
-
-          <div className="flex flex-col gap-3">
-            <h2 className="text-2xl font-bold text-center">
-              Buat Pertanyaan Pertama
-            </h2>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-xl">Tipe Soal:</label>
-              <p className="font-light text-gray-400">
-                <span className="text-red-500 m-0.3">Alert:</span> Tipe soal
-                hanya bisa dipilih kali ini saja tidak bisa di ganti sepanjang
-                sesi...
-              </p>
-              <select
-                {...register("type", { required: "Pilih type soal.." })}
-                className="border-2 border-black w-full rounded-[5px] p-2 bg-white font-medium"
-              >
-                <option value="">Pilih Tipe Soal</option>
-                <option value="quiz">Quiz</option>
-                <option value="wordcloud">Wordcloud</option>
-                <option value="qa">Tanya Jawab</option>
-              </select>
-              {errors.type && (
-                <div className="text-xs font-semibold mt-1 text-red-500">
-                  {errors.type.message}
-                </div>
-              )}
+    <section className="flex min-h-screen flex-1 items-center justify-center bg-secondary/80 p-4 font-sans">
+      <Card className="w-full max-w-2xl shadow-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold text-primary">
+            Buat Sesi & Pertanyaan
+          </CardTitle>
+          <CardDescription>
+            Mulai sesi interaktif Anda dengan pertanyaan pertama.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {errorMessage && (
+            <div
+              role="alert"
+              className="mb-4 text-sm font-semibold text-destructive"
+            >
+              {errorMessage}
             </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="font-bold text-[1.2rem]">
-                Pertanyaan Anda:
-              </label>
-              <textarea
-                {...register("question", { required: "Pertanyaan wajib diisi" })}
-                className="w-full text-black bg-white rounded border-2 border-black h-32 text-base outline-none py-2 px-3 resize-none font-light"
-              />
-              {errors.question && (
-                <div className="text-xs font-semibold mt-1 text-red-500">
-                  {errors.question.message}
-                </div>
-              )}
+          )}
+          {successMessage && (
+            <div
+              role="status"
+              className="mb-4 text-sm font-semibold text-green-600"
+            >
+              {successMessage}
             </div>
+          )}
 
-            {selectedType === "quiz" && (
-              <div className="flex flex-col gap-2">
-                <label className="font-bold text-[1.2rem]">
-                  Opsi Jawaban:
-                </label>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full border-2 border-amber-600 p-4 rounded-xl">
-                  {fields.map((field, index) => (
-                    <div
-                      key={field.id}
-                      className="p-2 gap-2 flex items-center border-2 border-amber-400 rounded-lg bg-white"
-                    >
-                      <input
-                        {...register(`option.${index}.text`, {
-                          required: "Opsi wajib diisi",
-                        })}
-                        placeholder={`Opsi ${index + 1}`}
-                        className="text-black bg-gray-50 flex-1 rounded p-1 border font-light"
-                      />
-                      <input
-                        type="radio"
-                        value={index}
-                        {...register("correctIndex", { required: "Pilih jawaban yang benar..." })}
-                        className="w-4 h-4"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => remove(index)}
-                        className="text-red-500 text-sm hover:underline"
-                      >
-                        Hapus
-                      </button>
-                    </div>
-                  ))}
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      append({
-                        text: "",
-                        is_correct: false,
-                        option_order: fields.length,
-                      })
-                    }
-                    className="border-2 border-dashed border-amber-600 rounded-lg p-2 hover:bg-amber-100 text-amber-800 transition"
-                  >
-                    + Tambah Opsi
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {errorOpsiPertama && <div className="text-xs font-semibold mt-1 text-red-500">
-              {errorOpsiPertama.message}
-            </div> || errors.correctIndex && <div className="text-xs font-semibold mt-1 text-red-500">
-              {errors.correctIndex.message}
-            </div>}
-          </div>
-
-          <button
-            disabled={isSubmitting}
-            className="bg-amber-300 text-xl font-bold rounded-xl p-3 mt-4 hover:bg-amber-400 shadow transition w-full"
-            type="submit"
+          <form
+            className="flex w-full flex-col gap-5"
+            onSubmit={handleSubmit(handleSubmitSession)}
           >
-            {isSubmitting ? "Sedang memperoses..." : "Buat Sekarang"}
-          </button>
-        </form>
-      </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="session-title">Judul Sesi</Label>
+              <Input
+                id="session-title"
+                {...register("title", {
+                  required: "Isi judul yang diinginkan...",
+                })}
+                className="h-11"
+                type="text"
+              />
+              {errors.title && (
+                <div className="mt-1 text-xs font-semibold text-destructive">
+                  {errors.title.message}
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-border" />
+
+            <div className="flex flex-col gap-4">
+              <h2 className="text-xl font-bold text-primary">
+                Buat Pertanyaan Pertama
+              </h2>
+
+              <div className="flex flex-col gap-1.5">
+                <Label>Tipe Soal</Label>
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium text-destructive">
+                    Perhatian:{" "}
+                  </span>
+                  Tipe soal hanya bisa dipilih sekarang dan tidak dapat diubah
+                  sepanjang sesi.
+                </p>
+                <Controller
+                  name="type"
+                  control={control}
+                  rules={{ required: "Pilih type soal.." }}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value ?? ""}
+                      onValueChange={field.onChange}
+                      items={questionTypeItems}
+                    >
+                      <SelectTrigger
+                        className="h-11 w-full"
+                        aria-invalid={!!errors.type}
+                      >
+                        <SelectValue placeholder="Pilih Tipe Soal" />
+                      </SelectTrigger>
+                      <SelectContent
+                        side="bottom"
+                        sideOffset={4}
+                        alignItemWithTrigger={false}
+                      >
+                        <SelectItem value="quiz">Quiz</SelectItem>
+                        <SelectItem value="wordcloud">Wordcloud</SelectItem>
+                        <SelectItem value="qa">Tanya Jawab</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.type && (
+                  <div className="mt-1 text-xs font-semibold text-destructive">
+                    {errors.type.message}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="session-question">Pertanyaan Anda</Label>
+                <Textarea
+                  id="session-question"
+                  {...register("question", {
+                    required: "Pertanyaan wajib diisi",
+                  })}
+                  className="h-32 resize-none"
+                />
+                {errors.question && (
+                  <div className="mt-1 text-xs font-semibold text-destructive">
+                    {errors.question.message}
+                  </div>
+                )}
+              </div>
+
+              {selectedType === "quiz" && (
+                <div className="flex flex-col gap-2">
+                  <Label>Opsi Jawaban</Label>
+
+                  <div className="grid w-full grid-cols-1 gap-3 rounded-lg border border-border bg-muted/30 p-3 md:grid-cols-2">
+                    {fields.map((field, index) => (
+                      <div
+                        key={field.id}
+                        className="flex items-center gap-2 rounded-md border border-border bg-card p-2"
+                      >
+                        <Input
+                          {...register(`option.${index}.text`, {
+                            required: "Opsi wajib diisi",
+                          })}
+                          placeholder={`Opsi ${index + 1}`}
+                          className="h-9 flex-1"
+                        />
+                        <Input
+                          type="radio"
+                          value={index}
+                          {...register("correctIndex", {
+                            required: "Pilih jawaban yang benar...",
+                          })}
+                          className="h-4 w-4 shrink-0"
+                          aria-label={`Jawaban benar opsi ${index + 1}`}
+                        />
+                        <Button
+                          type="button"
+                          onClick={() => remove(index)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          Hapus
+                        </Button>
+                      </div>
+                    ))}
+
+                    <Button
+                      type="button"
+                      onClick={() =>
+                        append({
+                          text: "",
+                          is_correct: false,
+                          option_order: fields.length,
+                        })
+                      }
+                      variant="outline"
+                      className="h-auto min-h-11 border-dashed w-full"
+                    >
+                      Tambah Opsi
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {(errorOpsiPertama && (
+                <div className="mt-1 text-xs font-semibold text-destructive">
+                  {errorOpsiPertama.message}
+                </div>
+              )) ||
+                (errors.correctIndex && (
+                  <div className="mt-1 text-xs font-semibold text-destructive">
+                    {errors.correctIndex.message}
+                  </div>
+                ))}
+            </div>
+
+            <Button
+              disabled={isSubmitting}
+              size="lg"
+              className="mt-2 h-11 w-full"
+              type="submit"
+            >
+              {isSubmitting ? "Sedang memperoses..." : "Buat Sekarang"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </section>
-  )
+  );
 }
 
-export default CreateSessionsPage
+export default CreateSessionsPage;
