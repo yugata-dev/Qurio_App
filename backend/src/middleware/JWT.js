@@ -10,12 +10,17 @@ export function verifyToken(token) {
     return jwt.verify(token, process.env.JWT_SECRET)
 }
 
-export const authCookieOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 60 * 1000,
-    path: "/"
+export const getAuthCookieOptions = (req) => {
+    const forwardedProtocol = req.headers["x-forwarded-proto"]
+    const isHttps = req.secure || forwardedProtocol === "https" || process.env.NODE_ENV === "production"
+
+    return {
+        httpOnly: true,
+        secure: isHttps,
+        sameSite: isHttps ? "none" : "lax",
+        maxAge: 60 * 60 * 1000,
+        path: "/"
+    }
 }
 
 // Mengambil token dari header Authorization atau cookie HttpOnly

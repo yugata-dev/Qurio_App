@@ -1,7 +1,7 @@
 import pool from "../config/db/connection.js"
 import bcrypt from "bcrypt"
 import EmailValidator from "validator"
-import { authCookieOptions, generateCode } from "../middleware/JWT.js"
+import { generateCode, getAuthCookieOptions } from "../middleware/JWT.js"
 
 const VALID_ROLES = ["guru", "siswa"]
 
@@ -55,8 +55,9 @@ export const usersReg = async (req, res) => {
             email: user.email
         })
 
-        res.cookie("token", token, authCookieOptions)
-        res.cookie("role", user.role, authCookieOptions)
+        const cookieOptions = getAuthCookieOptions(req)
+        res.cookie("token", token, cookieOptions)
+        res.cookie("role", user.role, cookieOptions)
 
         res.status(201).json({
             success: true,
@@ -105,8 +106,9 @@ export const usersLog = async (req, res) => {
             email: user.email
         })
 
-        res.cookie("token", token, authCookieOptions)
-        res.cookie("role", user.role, authCookieOptions)
+        const cookieOptions = getAuthCookieOptions(req)
+        res.cookie("token", token, cookieOptions)
+        res.cookie("role", user.role, cookieOptions)
 
         res.status(200).json({
             success: true,
@@ -121,8 +123,9 @@ export const usersLog = async (req, res) => {
 }
 
 export const usersLogOut = (req, res) => {
-    res.clearCookie("token", authCookieOptions)
-    res.clearCookie("role", authCookieOptions)
+    const cookieOptions = getAuthCookieOptions(req)
+    res.clearCookie("token", cookieOptions)
+    res.clearCookie("role", cookieOptions)
     return res.status(204).send()
 }
 
