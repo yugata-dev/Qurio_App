@@ -78,3 +78,19 @@ export const studentLimit = (req, res, next) => {
         return res.status(403).json({ success: false, message: "Token palsu atau kadaluwarsa!" })
     }
 }
+
+// Middleware autentikasi umum untuk endpoint yang tidak membatasi role
+export const authLimit = (req, res, next) => {
+    const token = getTokenFromHeader(req)
+
+    if (!token) {
+        return res.status(401).json({ success: false, message: "Token tidak ada, akses ditolak!" })
+    }
+
+    try {
+        req.user = verifyToken(token)
+        next()
+    } catch (error) {
+        return res.status(401).json({ success: false, message: "Token palsu atau kadaluwarsa!" })
+    }
+}

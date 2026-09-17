@@ -56,7 +56,7 @@ export const usersReg = async (req, res) => {
         })
 
         res.cookie("token", token, authCookieOptions)
-        res.cookie("role", user.role, { ...authCookieOptions, httpOnly: false })
+        res.cookie("role", user.role, authCookieOptions)
 
         res.status(201).json({
             success: true,
@@ -106,7 +106,7 @@ export const usersLog = async (req, res) => {
         })
 
         res.cookie("token", token, authCookieOptions)
-        res.cookie("role", user.role, { ...authCookieOptions, httpOnly: false })
+        res.cookie("role", user.role, authCookieOptions)
 
         res.status(200).json({
             success: true,
@@ -122,7 +122,15 @@ export const usersLog = async (req, res) => {
 
 export const usersLogOut = (req, res) => {
     res.clearCookie("token", authCookieOptions)
-    res.clearCookie("role", { ...authCookieOptions, httpOnly: false })
+    res.clearCookie("role", authCookieOptions)
     return res.status(204).send()
+}
+
+export const getCurrentUser = (req, res) => {
+    const { id, name, role, email } = req.user
+    return res.status(200).json({
+        success: true,
+        data: { user: { id, name, role, email } }
+    })
 }
 

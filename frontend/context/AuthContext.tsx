@@ -7,11 +7,9 @@ import {
   createContext,
   ReactNode,
   useContext,
-  useSyncExternalStore,
+  useEffect,
+  useState,
 } from "react";
-
-// Library eksternal
-import Cookies from "js-cookie";
 
 // ============ TYPES ============
 
@@ -41,81 +39,51 @@ const emptyAuthState: AuthState = {
   isAutheticated: false,
 };
 
-const authListeners = new Set<() => void>();
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 ).replace(/\/api\/?$/, "");
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// ============ FUNGSI BANTU ============
-
-// Token autentikasi berada di cookie HttpOnly dan tidak dibaca oleh JavaScript.
-function getAuthSnapshot() {
-  // Saat SSR tidak ada localStorage
-  if (typeof window === "undefined") {
-    return JSON.stringify(emptyAuthState);
-  }
-
-  const storedUser = localStorage.getItem("user");
-  const storedRole = Cookies.get("role");
-
-  if (!storedUser || !storedRole) {
-    return JSON.stringify(emptyAuthState);
-  }
-
-  try {
-    return JSON.stringify({
-      user: storedUser ? JSON.parse(storedUser) : null,
-      isAutheticated: true,
-    });
-  } catch {
-    return JSON.stringify(emptyAuthState);
-  }
-}
-
-function subscribeToAuth(listener: () => void) {
-  authListeners.add(listener);
-  window.addEventListener("storage", listener);
-
-  // Cleanup saat komponen unmount
-  return () => {
-    authListeners.delete(listener);
-    window.removeEventListener("storage", listener);
-  };
-}
-
-function notifyAuthListeners() {
-  authListeners.forEach((listener) => listener());
-}
-
 // ============ PROVIDER ============
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Hook: baca state auth dari localStorage dan tetap sinkron saat berubah
-  const authState = JSON.parse(
-    useSyncExternalStore(
-      subscribeToAuth,
-      getAuthSnapshot,
-      () => JSON.stringify(emptyAuthState),
-    ),
-  ) as AuthState;
+  const [authState, setAuthState] = useState<AuthState>(emptyAuthState);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetch(`${API_URL}/api/users/me`, { credentials: "include" })
+      .then((response) => {
+        if (!response.ok) throw new Error("Unauthenticated");
+        return response.json() as Promise<{ data: { user: User } }>;
+      })
+      .then((response) => {
+        if (isMounted) {
+          setAuthState({ user: response.data.user, isAutheticated: true });
+        }
+      })
+      .catch(() => {
+        if (isMounted) setAuthState(emptyAuthState);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Handler login
   const login = (userData: User) => {
-    localStorage.setItem("user", JSON.stringify(userData));
-    notifyAuthListeners();
+    setAuthState({ user: userData, isAutheticated: true });
   };
 
   // Handler logout
   const logout = () => {
-    localStorage.removeItem("user");
-    Cookies.remove("role");
     void fetch(`${API_URL}/api/users/logout`, {
       method: "POST",
       credentials: "include",
     });
-    notifyAuthListeners();
+    setAuthState(emptyAuthState);
   };
 
   const authContextValue: AuthContextType = {
