@@ -7,6 +7,25 @@ export const getQuestionsBySession = async (req, res) => {
     const { sessionId } = req.params
 
     try {
+        const sessionResult = await pool.query(
+            "SELECT teacher_id FROM sessions WHERE id = $1",
+            [sessionId]
+        )
+
+        if (sessionResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Sesi tidak ditemukan."
+            })
+        }
+
+        if (sessionResult.rows[0].teacher_id !== req.user.id) {
+            return res.status(403).json({
+                success: false,
+                message: "Anda bukan pemilik sesi ini!"
+            })
+        }
+
         const result = await pool.query(
             `SELECT *
              FROM questions

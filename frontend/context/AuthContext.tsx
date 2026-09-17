@@ -24,15 +24,13 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   isAutheticated: boolean;
-  login: (user: User, token: string) => void;
+  login: (user: User) => void;
   logout: () => void;
 }
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   isAutheticated: boolean;
 }
 
@@ -40,49 +38,35 @@ interface AuthState {
 
 const emptyAuthState: AuthState = {
   user: null,
-  token: null,
   isAutheticated: false,
 };
 
 const authListeners = new Set<() => void>();
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+).replace(/\/api\/?$/, "");
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // ============ FUNGSI BANTU ============
 
-// Cek apakah token JWT sudah kedaluwarsa
-function isTokenExpired(token: string) {
-  try {
-    // Decode payload JWT (bagian tengah) lalu cek field "exp"
-    const jwtPayload = JSON.parse(
-      atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")),
-    );
-    return (
-      typeof jwtPayload.exp !== "number" || jwtPayload.exp * 1000 <= Date.now()
-    );
-  } catch {
-    return true;
-  }
-}
-
-// Ambil state auth terbaru dari localStorage
+// Token autentikasi berada di cookie HttpOnly dan tidak dibaca oleh JavaScript.
 function getAuthSnapshot() {
   // Saat SSR tidak ada localStorage
   if (typeof window === "undefined") {
     return JSON.stringify(emptyAuthState);
   }
 
-  const storedToken = localStorage.getItem("token");
   const storedUser = localStorage.getItem("user");
+  const storedRole = Cookies.get("role");
 
-  if (!storedToken || isTokenExpired(storedToken)) {
+  if (!storedUser || !storedRole) {
     return JSON.stringify(emptyAuthState);
   }
 
   try {
     return JSON.stringify({
       user: storedUser ? JSON.parse(storedUser) : null,
-      token: storedToken,
       isAutheticated: true,
     });
   } catch {
@@ -118,26 +102,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ) as AuthState;
 
   // Handler login
-  const login = (userData: User, tokenData: string) => {
-    if (tokenData) localStorage.setItem("token", tokenData);
+  const login = (userData: User) => {
     localStorage.setItem("user", JSON.stringify(userData));
-    Cookies.set("token", tokenData, { expires: 7 });
-    Cookies.set("role", userData.role, { expires: 1 });
     notifyAuthListeners();
   };
 
   // Handler logout
   const logout = () => {
-    localStorage.removeItem("token");
     localStorage.removeItem("user");
-    Cookies.remove("token");
     Cookies.remove("role");
+    void fetch(`${API_URL}/api/users/logout`, {
+      method: "POST",
+      credentials: "include",
+    });
     notifyAuthListeners();
   };
 
   const authContextValue: AuthContextType = {
     user: authState.user,
-    token: authState.token,
     isAutheticated: authState.isAutheticated,
     login,
     logout,

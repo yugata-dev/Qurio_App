@@ -1,6 +1,7 @@
 "use client";
 import { fetchUserRegister } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import { useForm, Controller } from "react-hook-form";
 import {
@@ -31,6 +32,7 @@ interface RegisterFormData {
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const {
     register,
     handleSubmit,
@@ -42,7 +44,8 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormData) => {
     console.log("Form data:", data);
     try {
-      await fetchUserRegister(data.name, data.email, data.password, data.role);
+      const response = await fetchUserRegister(data.name, data.email, data.password, data.role);
+      login(response.data.user);
       alert("Register berhasil");
       router.push("/dashboard");
     } catch (err) {

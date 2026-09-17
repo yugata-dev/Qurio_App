@@ -18,8 +18,6 @@ import { Label } from "@/components/ui/label";
 interface FormLogin {
   email: string;
   password: string;
-  // role: string;
-  // token: string;
 }
 
 function LoginPage() {
@@ -43,14 +41,11 @@ function LoginPage() {
       const response = await fetchUserLogin(
         data.email,
         data.password,
-        // data.token,
       );
 
       if (response.success && response.data) {
         const dataUser = response.data.user;
-        const dataToken = response.data.token;
-
-        login(dataUser, dataToken);
+        login(dataUser);
 
         alert("Login berhasil..");
       }

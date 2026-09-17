@@ -36,7 +36,7 @@ export interface Poll {
 function SessionPage() {
   const router = useRouter()
   const params = useParams()
-  const { token, login } = useAuth()
+  const { isAutheticated, login } = useAuth()
   const [session, setSession] = useState<SessionData | null>(null)
   const [polls, setPolls] = useState<Poll[] | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -44,10 +44,10 @@ function SessionPage() {
   const sessionId = params?.id as string
 
   useEffect(() => {
-    if (!token || !sessionId) return
+    if (!isAutheticated || !sessionId) return
     const fetchSessionData = async () => {
       try {
-        const sessionResponse = await getDataSession(sessionId, token)
+        const sessionResponse = await getDataSession(sessionId, null)
         setSession(sessionResponse.data)
       } catch {
         setErrorMessage("Sesi tidak ditemukan atau sudah tidak tersedia.")
@@ -55,7 +55,7 @@ function SessionPage() {
     }
     const fetchPollData = async () => {
       try {
-        const pollResponse = await getAllDataPolls(sessionId, token)
+        const pollResponse = await getAllDataPolls(sessionId, null)
         setPolls(Array.isArray(pollResponse) ? pollResponse : [])
       } catch {
         setErrorMessage("Gagal mengambil data poll")
@@ -63,15 +63,15 @@ function SessionPage() {
     }
     void fetchPollData()
     void fetchSessionData()
-  }, [sessionId, token])
+  }, [sessionId, isAutheticated])
 
   const onUpdateSingle = async (pollId: string, statusTarget: Poll["status"]) => {
-    if (!token || !login) {
+    if (!isAutheticated || !login) {
       setErrorMessage("Token tidak sesuai atau kedaluarsa..")
       return
     }
     try {
-      const updateSingle = await updateSinglePolls(pollId, statusTarget === "closed" ? "closed" : "published", token)
+      const updateSingle = await updateSinglePolls(pollId, statusTarget === "closed" ? "closed" : "published", null)
       setPolls((prev) => prev ? prev.map(p => p.id === updateSingle.id ? { ...updateSingle, options: updateSingle.options || p.options } : p) : null)
       setSuccessMessage(`Poll berhasil di-${statusTarget === 'closed' ? 'tutup' : 'publish'}.`)
       setTimeout(() => setSuccessMessage(null), 3000)
@@ -81,9 +81,9 @@ function SessionPage() {
   }
 
   const toggleSessionStatus = async (statusTarget: SessionData["status"]) => {
-    if (!token || !login) return setErrorMessage("Token tidak sesuai atau sudah kedaluwarsa.")
+    if (!isAutheticated || !login) return setErrorMessage("Sesi login tidak sesuai atau sudah kedaluwarsa.")
     try {
-      const updatedSession = await updateStatusSession(sessionId, statusTarget, token)
+      const updatedSession = await updateStatusSession(sessionId, statusTarget, null)
       setSession(updatedSession)
       setErrorMessage(null)
       setSuccessMessage(statusTarget === "ended" ? "Sesi berhasil diakhiri." : "Sesi berhasil diaktifkan.")

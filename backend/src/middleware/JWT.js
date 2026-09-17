@@ -10,13 +10,29 @@ export function verifyToken(token) {
     return jwt.verify(token, process.env.JWT_SECRET)
 }
 
-// Mengambil token dari header Authorization ("Bearer <token>")
+export const authCookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 1000,
+    path: "/"
+}
+
+// Mengambil token dari header Authorization atau cookie HttpOnly
 export const getTokenFromHeader = (req) => {
     const authHeader = req.headers["authorization"]
-    if (!authHeader) return null
+    if (authHeader) {
+        const [scheme, token] = authHeader.split(" ")
+        if (scheme === "Bearer" && token) return token
+    }
 
-    const [scheme, token] = authHeader.split(" ")
-    return scheme === "Bearer" && token ? token : null
+    const cookieHeader = req.headers.cookie || ""
+    const tokenCookie = cookieHeader
+        .split(";")
+        .map((cookie) => cookie.trim())
+        .find((cookie) => cookie.startsWith("token="))
+
+    return tokenCookie ? decodeURIComponent(tokenCookie.slice("token=".length)) : null
 }
 
 // Middleware: hanya guru yang boleh mengakses route berikutnya

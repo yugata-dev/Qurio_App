@@ -1,7 +1,7 @@
 import pool from "../config/db/connection.js"
 import bcrypt from "bcrypt"
 import EmailValidator from "validator"
-import { generateCode } from "../middleware/JWT.js"
+import { authCookieOptions, generateCode } from "../middleware/JWT.js"
 
 const VALID_ROLES = ["guru", "siswa"]
 
@@ -19,11 +19,11 @@ export const usersReg = async (req, res) => {
     }
 
     if (typeof password !== "string" || password.length < 8) {
-    return res.status(422).json({
-        success: false,
-        message: "Password minimal 8 karakter"
-    })
-}
+        return res.status(422).json({
+            success: false,
+            message: "Password minimal 8 karakter"
+        })
+    }
 
     if (!VALID_ROLES.includes(role)) {
         return res.status(422).json({ success: false, message: "Role harus 'guru' atau 'siswa'" })
@@ -55,11 +55,13 @@ export const usersReg = async (req, res) => {
             email: user.email
         })
 
+        res.cookie("token", token, authCookieOptions)
+        res.cookie("role", user.role, { ...authCookieOptions, httpOnly: false })
+
         res.status(201).json({
             success: true,
             data: {
-                user: { id: user.id, name: user.name, role: user.role, email: user.email },
-                token
+                user: { id: user.id, name: user.name, role: user.role, email: user.email }
             }
         })
     } catch (error) {
@@ -103,16 +105,24 @@ export const usersLog = async (req, res) => {
             email: user.email
         })
 
+        res.cookie("token", token, authCookieOptions)
+        res.cookie("role", user.role, { ...authCookieOptions, httpOnly: false })
+
         res.status(200).json({
             success: true,
             data: {
-                user: { id: user.id, name: user.name, role: user.role, email: user.email },
-                token
+                user: { id: user.id, name: user.name, role: user.role, email: user.email }
             }
         })
     } catch (error) {
         console.error("Login error:", error.message)
         res.status(500).json({ success: false, error: "Server Down" })
     }
+}
+
+export const usersLogOut = (req, res) => {
+    res.clearCookie("token", authCookieOptions)
+    res.clearCookie("role", { ...authCookieOptions, httpOnly: false })
+    return res.status(204).send()
 }
 
