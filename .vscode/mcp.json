@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "figma-local-bridge": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@gethopp/figma-mcp-bridge", "--connect"]
+    }
+  }
+}
