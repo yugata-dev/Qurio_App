@@ -35,6 +35,7 @@ const SOCKET_URL = (
 export default function QuizView({ sessionId }: QuizViewProps) {
     const [poll, setPoll] = useState<Poll | null>(null)
     const socketRef = useRef<Socket | null>(null)
+    const fetchRequestRef = useRef(0)
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
     useEffect(() => {
@@ -52,11 +53,15 @@ export default function QuizView({ sessionId }: QuizViewProps) {
 
         // Fungsi penarik data dipindahkan ke dalam scope agar bisa dipanggil tepat waktu
         const fetchDataCurrentPoll = async () => {
+            const requestId = ++fetchRequestRef.current
+
             try {
                 const responseCurrentData = await fetchCurrentPoll(sessionId)
+                if (requestId !== fetchRequestRef.current) return
                 setPoll(responseCurrentData)
                 setErrorMessage(null)
             } catch {
+                if (requestId !== fetchRequestRef.current) return
                 setPoll(null)
                 setErrorMessage(null)
             }
@@ -87,8 +92,8 @@ export default function QuizView({ sessionId }: QuizViewProps) {
                 return
             }
 
-            if (data.status === "closed") {
-                setPoll(null)
+            if (data.status === "closed" || data.status === "draft") {
+                void fetchDataCurrentPoll()
             }
         }
 
@@ -101,7 +106,7 @@ export default function QuizView({ sessionId }: QuizViewProps) {
             }
 
             if (data.status === "closed") {
-                setPoll(null)
+                void fetchDataCurrentPoll()
             }
         }
 

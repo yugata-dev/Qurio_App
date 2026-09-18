@@ -438,6 +438,7 @@ export const fetchCurrentPoll = async (sessionId: string): Promise<Poll> => {
         headers: {
           "Content-Type": "application/json"
         },
+        cache: "no-store",
       }
     );
 

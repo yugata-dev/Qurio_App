@@ -41,7 +41,7 @@ export const joinSession = async (req, res) => {
         const existingParticipants = await pool.query("SELECT * FROM participants WHERE session_id = $1 AND absen = $2", [foundSessionId, absen])
 
         if (existingParticipants.rows.length > 0) {
-            return res.status(409).json({
+            return res.status(200).json({
                 success: false,
                 message: "Anda sudah bergabung dengan sesi ini!",
                 data: existingParticipants.rows[0]
