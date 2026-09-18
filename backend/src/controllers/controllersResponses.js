@@ -45,18 +45,17 @@ export const getResponses = async (req, res) => {
     }
 }
 
-// ====================================================================
-// POST RESPONSE (Siswa submit jawaban untuk soal)
-// ====================================================================
 export const createResponse = async (req, res) => {
     const { pollId } = req.params
     const { option_id, answer, participant_id } = req.body
 
     try {
-        // Step 1: Pastikan soal sudah dipublikasikan
-        // Soal tidak boleh dijawab jika status masih "draft" atau "closed"
+        // 1. Pastikan soal sudah dipublikasikan
         const pollResult = await pool.query(
-            "SELECT id, type, session_id FROM polls WHERE id = $1 AND status = 'published'",
+            `SELECT id, type, session_id
+             FROM polls
+             WHERE id = $1
+             AND status = 'published'`,
             [pollId]
         )
 
@@ -69,6 +68,7 @@ export const createResponse = async (req, res) => {
 
         const poll = pollResult.rows[0]
 
+        // 2. Q&A punya endpoint sendiri
         if (poll.type === "qa") {
             return res.status(400).json({
                 success: false,
@@ -76,14 +76,39 @@ export const createResponse = async (req, res) => {
             })
         }
 
+        // 3. Word Cloud punya endpoint sendiri
         if (poll.type === "wordcloud") {
             return res.status(400).json({
                 success: false,
-                message: "Tipe wordcloud mengirim jawaban melalui POST /api/wordcloud/sessions/:sessionId/responses."
+                message: "Tipe wordcloud mengirim jawaban melalui endpoint wordcloud."
             })
         }
 
-        // Untuk tipe polling/quiz, harus ada pilihan opsi
+        // 4. Participant ID wajib
+        if (!participant_id) {
+            return res.status(400).json({
+                success: false,
+                message: "Participant ID wajib dikirim!"
+            })
+        }
+
+        // 5. Pastikan participant berasal dari session yang sama
+        const participantResult = await pool.query(
+            `SELECT id
+             FROM participants
+             WHERE id = $1
+             AND session_id = $2`,
+            [participant_id, poll.session_id]
+        )
+
+        if (participantResult.rows.length === 0) {
+            return res.status(403).json({
+                success: false,
+                message: "Peserta tidak valid untuk sesi ini!"
+            })
+        }
+
+        // 6. Quiz dan polling wajib memilih option
         if (poll.type === "polling" || poll.type === "quiz") {
             if (!option_id) {
                 return res.status(400).json({
@@ -91,16 +116,13 @@ export const createResponse = async (req, res) => {
                     message: "Opsi jawaban wajib dipilih!"
                 })
             }
-        }
 
-        // Step 3: Tentukan apakah jawaban benar atau salah (untuk quiz)
-        let isCorrect = null
-        const answerText = answer ? String(answer).trim() : null
-
-        // Jika ada opsi yang dipilih, cek apakah itu jawaban yang benar
-        if (option_id) {
+            // Pastikan option memang milik soal ini
             const optionResult = await pool.query(
-                "SELECT is_correct FROM poll_options WHERE id = $1 AND poll_id = $2",
+                `SELECT id
+                 FROM poll_options
+                 WHERE id = $1
+                 AND poll_id = $2`,
                 [option_id, pollId]
             )
 
@@ -110,46 +132,65 @@ export const createResponse = async (req, res) => {
                     message: "Opsi jawaban tidak valid untuk soal ini!"
                 })
             }
-
-            isCorrect = optionResult.rows[0].is_correct
         }
 
-        // Step 4: Cegah peserta yang sama menjawab soal yang sama dua kali
-        if (participant_id) {
-            const duplicateResult = await pool.query(
-                "SELECT id FROM responses WHERE poll_id = $1 AND participant_id = $2",
-                [pollId, participant_id]
-            )
+        // 7. Cegah peserta menjawab soal yang sama dua kali
+        const duplicateResult = await pool.query(
+            `SELECT id
+             FROM responses
+             WHERE poll_id = $1
+             AND participant_id = $2`,
+            [pollId, participant_id]
+        )
 
-            if (duplicateResult.rows.length > 0) {
-                return res.status(409).json({
-                    success: false,
-                    message: "Kamu sudah menjawab soal ini!"
-                })
-            }
+        if (duplicateResult.rows.length > 0) {
+            return res.status(409).json({
+                success: false,
+                message: "Kamu sudah menjawab soal ini!"
+            })
         }
 
-        // Step 5: Simpan jawaban ke database
+        // 8. Bersihkan jawaban teks jika ada
+        const answerText = answer
+            ? String(answer).trim()
+            : null
+
+        // 9. Simpan jawaban siswa
         const insertResult = await pool.query(
-            `INSERT INTO responses (poll_id, participant_id, answer, option_id, is_correct)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            `INSERT INTO responses (
+                poll_id,
+                participant_id,
+                answer,
+                option_id
+            )
+            VALUES ($1, $2, $3, $4)
             RETURNING *`,
-            [pollId, participant_id || null, answerText, option_id || null, isCorrect]
+            [
+                pollId,
+                participant_id,
+                answerText,
+                option_id || null
+            ]
         )
 
         const newResponse = insertResult.rows[0]
 
-        // Step 6: Broadcast jawaban baru ke semua peserta di ruang sesi via WebSocket
+        // 10. Broadcast response baru
         const io = req.app.get("io")
+
         if (io) {
-            io.to(`session:${poll.session_id}`).emit("response_created", newResponse)
+            io.to(`session:${poll.session_id}`)
+                .emit("response_created", newResponse)
         }
 
-        res.status(201).json({ success: true, data: newResponse })
+        return res.status(201).json({
+            success: true,
+            data: newResponse
+        })
+
     } catch (error) {
         console.error("Create response error:", error.message)
 
-        // Jika error kode 23505, berarti constraint unik di database tertrigger
         if (error.code === "23505") {
             return res.status(409).json({
                 success: false,
