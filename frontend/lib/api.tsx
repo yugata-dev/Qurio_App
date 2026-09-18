@@ -451,7 +451,7 @@ export const fetchCurrentPoll = async (sessionId: string): Promise<Poll> => {
 
     // 3. Extract JSON dan kembalikan datanya
     const result = await response.json();
-    return result
+    return result.data
   } catch (error) {
     console.error("Gagal mendapat soal:", error);
     throw error;
