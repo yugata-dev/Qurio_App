@@ -41,9 +41,21 @@ export const joinSession = async (req, res) => {
         const existingParticipants = await pool.query("SELECT * FROM participants WHERE session_id = $1 AND absen = $2", [foundSessionId, absen])
 
         if (existingParticipants.rows.length > 0) {
-            return res.status(409).json({
-                success: false,
-                message: "Anda sudah bergabung dengan sesi ini!",
+            const dbParticipant = existingParticipants.rows[0]
+            const clientParticipantId = req.body.participant_id;
+            if (dbParticipant.id !== clientParticipantId) {
+                return res.status(409).json({ // Menggunakan status 409 (Conflict) lebih standar
+                    success: false,
+                    message: "Nomor absen ini sudah digunakan oleh orang lain di sesi ini!",
+                    data: null
+                })
+            }
+        }
+
+        if (existingParticipants.rows.length > 0) {
+            return res.status(200).json({
+                success: true,
+                message: "Selamat datang kembali!",
                 data: existingParticipants.rows[0]
             })
         }

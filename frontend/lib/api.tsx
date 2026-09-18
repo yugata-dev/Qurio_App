@@ -24,7 +24,6 @@ interface RegisterUserResult {
   success: boolean;
   data: {
     user: { id: string; name: string; role: string; email: string };
-    token: string;
   };
 }
 
@@ -102,6 +101,7 @@ const fetchUserLogin = async (
   try {
     const response = await fetch(`${API_URL}/api/users/login`, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
@@ -127,6 +127,7 @@ const fetchUserRegister = async (
   try {
     const response = await fetch(`${API_URL}/api/users/register`, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, role, password }),
     });
@@ -162,8 +163,8 @@ const createPolls = async (
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
         body: JSON.stringify({ type, question, options, status }),
       },
     );
@@ -202,8 +203,8 @@ const postType = async (
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
         body: JSON.stringify({ type }),
       },
     );
@@ -233,8 +234,8 @@ const createSession = async (
       method: "POST",
       headers: {
         "content-type": "application/json",
-        Authorization: `Bearer ${token}`,
       },
+      credentials: "include",
       body: JSON.stringify({ title }),
     });
 
@@ -283,7 +284,7 @@ const getDataSession = async (
   try {
     const response = await fetch(`${API_URL}/api/sessions/${sessionId}`, {
       method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include",
     });
 
     if (!response.ok) {
@@ -310,7 +311,7 @@ const getAllDataPolls = async (
       `${API_URL}/api/polls/sessions/${sessionId}/polls`,
       {
         method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
       },
     );
 
@@ -341,8 +342,8 @@ export const updateSinglePolls = async (
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
       },
+      credentials: "include",
       body: JSON.stringify({ status }),
     });
 
@@ -372,8 +373,8 @@ export const updateStatusSession = async (
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
       },
+      credentials: "include",
       body: JSON.stringify({ status }),
     });
 
@@ -419,6 +420,33 @@ export const fetchUserParticipant = async (
     return result;
   } catch (error) {
     console.error("Gagal mengupdate status:", error);
+    throw error;
+  }
+};
+
+export const fetchCurrentPoll = async (sessionId: string): Promise<Poll> => {
+  try {
+    const response = await fetch(
+      `${API_URL}/api/polls/sessions/${sessionId}/current`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Gagal mendapatkan soal!`);
+    }
+
+    // 3. Extract JSON dan kembalikan datanya
+    const result = await response.json();
+    return result.data;
+  } catch (error) {
+    console.error("Gagal mendapat soal:", error);
     throw error;
   }
 };

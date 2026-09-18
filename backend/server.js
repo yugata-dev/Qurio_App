@@ -18,7 +18,7 @@ dotenv.config({ quiet: true })
 
 const app = express()
 const PORT = process.env.PORT || process.env.SERVER_PORT || 5000
-const FRONTEND_URLS = (process.env.FRONTEND_URL || "http://localhost:3000")
+const FRONTEND_URLS = (process.env.FRONTEND_URL || "http://localhost:3000,http://192.168.1.9:3000")
     .split(",")
     .map((url) => url.trim())
     .filter(Boolean)
@@ -29,7 +29,8 @@ const corsOptions = {
         } else {
             callback(new Error("Origin tidak diizinkan oleh CORS"))
         }
-    }
+    },
+    credentials: true
 }
 
 // =====================

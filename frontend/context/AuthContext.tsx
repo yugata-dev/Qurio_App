@@ -7,11 +7,9 @@ import {
   createContext,
   ReactNode,
   useContext,
-  useSyncExternalStore,
+  useEffect,
+  useState,
 } from "react";
-
-// Library eksternal
-import Cookies from "js-cookie";
 
 // ============ TYPES ============
 
@@ -24,15 +22,13 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   isAutheticated: boolean;
-  login: (user: User, token: string) => void;
+  login: (user: User) => void;
   logout: () => void;
 }
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   isAutheticated: boolean;
 }
 
@@ -40,104 +36,58 @@ interface AuthState {
 
 const emptyAuthState: AuthState = {
   user: null,
-  token: null,
   isAutheticated: false,
 };
 
-const authListeners = new Set<() => void>();
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+).replace(/\/api\/?$/, "");
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// ============ FUNGSI BANTU ============
-
-// Cek apakah token JWT sudah kedaluwarsa
-function isTokenExpired(token: string) {
-  try {
-    // Decode payload JWT (bagian tengah) lalu cek field "exp"
-    const jwtPayload = JSON.parse(
-      atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")),
-    );
-    return (
-      typeof jwtPayload.exp !== "number" || jwtPayload.exp * 1000 <= Date.now()
-    );
-  } catch {
-    return true;
-  }
-}
-
-// Ambil state auth terbaru dari localStorage
-function getAuthSnapshot() {
-  // Saat SSR tidak ada localStorage
-  if (typeof window === "undefined") {
-    return JSON.stringify(emptyAuthState);
-  }
-
-  const storedToken = localStorage.getItem("token");
-  const storedUser = localStorage.getItem("user");
-
-  if (!storedToken || isTokenExpired(storedToken)) {
-    return JSON.stringify(emptyAuthState);
-  }
-
-  try {
-    return JSON.stringify({
-      user: storedUser ? JSON.parse(storedUser) : null,
-      token: storedToken,
-      isAutheticated: true,
-    });
-  } catch {
-    return JSON.stringify(emptyAuthState);
-  }
-}
-
-function subscribeToAuth(listener: () => void) {
-  authListeners.add(listener);
-  window.addEventListener("storage", listener);
-
-  // Cleanup saat komponen unmount
-  return () => {
-    authListeners.delete(listener);
-    window.removeEventListener("storage", listener);
-  };
-}
-
-function notifyAuthListeners() {
-  authListeners.forEach((listener) => listener());
-}
 
 // ============ PROVIDER ============
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Hook: baca state auth dari localStorage dan tetap sinkron saat berubah
-  const authState = JSON.parse(
-    useSyncExternalStore(
-      subscribeToAuth,
-      getAuthSnapshot,
-      () => JSON.stringify(emptyAuthState),
-    ),
-  ) as AuthState;
+  const [authState, setAuthState] = useState<AuthState>(emptyAuthState);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetch(`${API_URL}/api/users/me`, { credentials: "include" })
+      .then((response) => {
+        if (!response.ok) throw new Error("Unauthenticated");
+        return response.json() as Promise<{ data: { user: User } }>;
+      })
+      .then((response) => {
+        if (isMounted) {
+          setAuthState({ user: response.data.user, isAutheticated: true });
+        }
+      })
+      .catch(() => {
+        if (isMounted) setAuthState(emptyAuthState);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Handler login
-  const login = (userData: User, tokenData: string) => {
-    if (tokenData) localStorage.setItem("token", tokenData);
-    localStorage.setItem("user", JSON.stringify(userData));
-    Cookies.set("token", tokenData, { expires: 7 });
-    Cookies.set("role", userData.role, { expires: 1 });
-    notifyAuthListeners();
+  const login = (userData: User) => {
+    setAuthState({ user: userData, isAutheticated: true });
   };
 
   // Handler logout
   const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    Cookies.remove("token");
-    Cookies.remove("role");
-    notifyAuthListeners();
+    void fetch(`${API_URL}/api/users/logout`, {
+      method: "POST",
+      credentials: "include",
+    });
+    setAuthState(emptyAuthState);
   };
 
   const authContextValue: AuthContextType = {
     user: authState.user,
-    token: authState.token,
     isAutheticated: authState.isAutheticated,
     login,
     logout,

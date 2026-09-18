@@ -19,7 +19,7 @@ interface formPolls {
 }
 
 function CreatePollsPage() {
-  const { user, token } = useAuth();
+  const { user, isAutheticated } = useAuth();
   const router = useRouter();
   const params = useParams();
   const {
@@ -49,12 +49,11 @@ function CreatePollsPage() {
   const type = polls?.[0]?.type as string
 
   useEffect(() => {
-    if (!token || !sessionId) return;
-    if (!token) return;
+    if (!isAutheticated || !sessionId) return;
 
     const fetchPollData = async () => {
       try {
-        const pollResponse = await getAllDataPolls(sessionId, token);
+        const pollResponse = await getAllDataPolls(sessionId, null);
         setPolls(Array.isArray(pollResponse) ? pollResponse : []);
       } catch (error: unknown) {
         setErrorMessage(
@@ -66,13 +65,13 @@ function CreatePollsPage() {
     };
 
     void fetchPollData();
-  }, [sessionId, token]);
+  }, [sessionId, isAutheticated]);
 
   const onSubmitPolls = async (dataPolls: formPolls) => {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    if (!user || !token) {
+    if (!user || !isAutheticated) {
       setErrorMessage("Anda harus login terlebih dahulu.");
       return;
     }
@@ -87,7 +86,7 @@ function CreatePollsPage() {
           option_order: index,
         })),
         sessionId,
-        token,
+        "",
         "published",
       );
 

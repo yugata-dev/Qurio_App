@@ -388,3 +388,72 @@ export const updatePoll = async (req, res) => {
         return res.status(500).json({ success: false, message: "Gagal mengubah status poll" });
     }
 };
+
+export const getPollsForStudent = async (req, res) => {
+    const { sessionId } = req.params;
+
+    try {
+        const getDataPoll = await pool.query(
+            `SELECT *
+             FROM polls
+             WHERE session_id = $1
+             AND status = 'published'
+             ORDER BY published_at DESC
+             LIMIT 1`,
+            [sessionId]
+        );
+
+        // Tidak ada poll aktif
+        if (getDataPoll.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Tidak ada soal aktif saat ini untuk sesi ini."
+            });
+        }
+
+        const currentPoll = getDataPoll.rows[0];
+
+        // Quiz membutuhkan options
+        if (currentPoll.type === "quiz") {
+
+            const getDataPollOption = await pool.query(
+                `SELECT
+                    id,
+                    poll_id,
+                    option_text,
+                    option_order
+                 FROM poll_options
+                 WHERE poll_id = $1
+                 ORDER BY option_order ASC`,
+                [currentPoll.id]
+            );
+
+            return res.status(200).json({
+                success: true,
+                message: "Poll berhasil didapat!",
+                data: {
+                    ...currentPoll,
+                    options: getDataPollOption.rows
+                }
+            });
+        }
+
+        // Poll selain quiz
+        return res.status(200).json({
+            success: true,
+            message: "Poll berhasil didapat!",
+            data: {
+                ...currentPoll,
+                options: []
+            }
+        });
+
+    } catch (error) {
+        console.error("Get data poll error:", error.message);
+
+        return res.status(500).json({
+            success: false,
+            message: "Gagal mengambil data Soal"
+        });
+    }
+};

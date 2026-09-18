@@ -7,14 +7,21 @@ export const getResponses = async (req, res) => {
     const { pollId } = req.params
 
     try {
-        // Step 1: Verifikasi bahwa soal (poll) ada
+        // Step 1: Verifikasi bahwa soal ada dan guru yang login memiliki sesinya
         const pollResult = await pool.query(
-            "SELECT id FROM polls WHERE id = $1",
+            `SELECT p.id, s.teacher_id
+             FROM polls p
+             JOIN sessions s ON s.id = p.session_id
+             WHERE p.id = $1`,
             [pollId]
         )
 
         if (pollResult.rows.length === 0) {
             return res.status(404).json({ success: false, message: "Soal tidak ditemukan" })
+        }
+
+        if (pollResult.rows[0].teacher_id !== req.user.id) {
+            return res.status(403).json({ success: false, message: "Anda bukan pemilik sesi ini!" })
         }
 
         // Step 2: Ambil semua jawaban peserta untuk soal ini

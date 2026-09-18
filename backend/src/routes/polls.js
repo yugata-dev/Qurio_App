@@ -1,5 +1,5 @@
 import express from "express"
-import { createPoll, getPoll, getPollsBySession, updatePoll } from "../controllers/controllersPolls.js"
+import { createPoll, getPoll, getPollsBySession, getPollsForStudent, updatePoll } from "../controllers/controllersPolls.js"
 import { teacherLimit } from "../middleware/JWT.js"
 
 const router = express.Router()
@@ -9,6 +9,9 @@ router.post("/sessions/:sessionId/polls", teacherLimit, createPoll)
 
 // get polls dalam session
 router.get("/sessions/:sessionId/polls", teacherLimit, getPollsBySession)
+
+// get polls untuk diliat siswa
+router.get("/sessions/:sessionId/current", getPollsForStudent)
 
 // get detail 1 poll
 router.get("/:pollId", getPoll)

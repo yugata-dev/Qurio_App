@@ -10,7 +10,7 @@ import { teacherLimit } from "../middleware/JWT.js"
 const router = express.Router()
 
 // Ambil semua pertanyaan dalam satu sesi
-router.get("/sessions/:sessionId", getQuestionsBySession)
+router.get("/sessions/:sessionId", teacherLimit, getQuestionsBySession)
 
 // Siswa mengirim pertanyaan baru
 router.post("/", createQuestion)

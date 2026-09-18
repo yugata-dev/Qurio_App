@@ -48,7 +48,7 @@ interface SessionFormInput {
 
 function CreateSessionsPage() {
   const router = useRouter();
-  const { user, token } = useAuth();
+  const { user, isAutheticated } = useAuth();
   const {
     register,
     watch,
@@ -73,13 +73,13 @@ function CreateSessionsPage() {
     }));
 
   const handleSubmitSession = async (formData: SessionFormInput) => {
-    if (!user || !token) {
+    if (!user || !isAutheticated) {
       setErrorMessage("Anda harus login terlebih dahulu...");
       return;
     }
 
     try {
-      const createdSession = await createSession(formData.title, token);
+      const createdSession = await createSession(formData.title, "");
       const newSessionId = createdSession?.id;
 
       if (!newSessionId) {
@@ -100,7 +100,7 @@ function CreateSessionsPage() {
           formData.question,
           optionsPayload,
           newSessionId,
-          token,
+          "",
           pollStatus,
         );
 
