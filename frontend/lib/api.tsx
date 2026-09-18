@@ -469,7 +469,7 @@ export const fetchCurrentPoll = async (sessionId: string): Promise<Poll> => {
   }
 }
 
-export const fetchResponsePoll = async (pollId: string | null | undefined, participant_id: string | null, answer: string, options_id: string | null | undefined): Promise<responseQuestions> => {
+export const fetchResponsePoll = async (pollId: string | null | undefined, participant_id: string | null, answer: string, option_id: string | null | undefined): Promise<responseQuestions> => {
   try {
     const response = await fetch(
       `${API_URL}/api/responses/${pollId}/responses`,
@@ -478,7 +478,7 @@ export const fetchResponsePoll = async (pollId: string | null | undefined, parti
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ participant_id, answer, options_id })
+        body: JSON.stringify({ participant_id, answer, option_id })
       }
     );
 
