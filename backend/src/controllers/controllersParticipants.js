@@ -42,7 +42,7 @@ export const joinSession = async (req, res) => {
 
         const participantId = existingParticipants.rows[0]?.id
 
-        if (participantId !== 0) {
+        if (participantId > 0) {
             return res.status(200).json({
                 success: false,
                 message: "Udah ada yang mengunakan ID ini!",
