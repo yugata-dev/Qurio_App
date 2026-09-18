@@ -1,11 +1,11 @@
 import express from "express"
 import { createResponse, getResponses } from "../controllers/controllersResponses.js"
-import { studentLimit, teacherLimit } from "../middleware/JWT.js"
+import { teacherLimit } from "../middleware/JWT.js"
 
 const router = express.Router()
 
 // peserta submit response
-router.post("/:pollId/responses", studentLimit, createResponse)
+router.post("/:pollId/responses", createResponse)
 
 // get semua responses untuk poll (guru)
 router.get("/:pollId/responses", teacherLimit, getResponses)
