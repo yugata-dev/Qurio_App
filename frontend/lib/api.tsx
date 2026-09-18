@@ -429,6 +429,35 @@ export const fetchUserParticipant = async (access_code: number, name: string, ab
   }
 }
 
+export const fetchCurrentPoll = async (sessionId: string): Promise<Poll> => {
+  try {
+    const response = await fetch(
+      `${API_URL}/api/polls/sessions/${sessionId}/current`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.message ||
+        `Gagal mendapatkan soal!`,
+      );
+    }
+
+    // 3. Extract JSON dan kembalikan datanya
+    const result = await response.json();
+    return result
+  } catch (error) {
+    console.error("Gagal mendapat soal:", error);
+    throw error;
+  }
+}
+
 
 export {
   fetchUserLogin,
