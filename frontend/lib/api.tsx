@@ -399,7 +399,7 @@ export const updateStatusSession = async (
   }
 };
 
-export const fetchUserParticipant = async (access_code: number, name: string, absen: number): Promise<JoinSessionResponse> => {
+export const fetchUserParticipant = async (access_code: number, name: string, absen: number, participant_id: string | null): Promise<JoinSessionResponse> => {
   try {
     const response = await fetch(
       `${API_URL}/api/sessions/participants/join`,
@@ -408,7 +408,7 @@ export const fetchUserParticipant = async (access_code: number, name: string, ab
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ access_code, nama: name, absen })
+        body: JSON.stringify({ access_code, nama: name, absen, participant_id })
       }
     );
 

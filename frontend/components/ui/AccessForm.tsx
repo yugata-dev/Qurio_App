@@ -10,6 +10,7 @@ interface ParticipantFormData {
     access_code: string;
     name: string;
     absen: string;
+    participant_id: string | null
 }
 
 export interface ParticipantFormProps {
@@ -29,10 +30,12 @@ export function AccessForm({ onSuccess }: ParticipantFormProps) {
     const handleInputFormParticipant = async (dataParticipant: ParticipantFormData) => {
         setMessage("");
         try {
+            const localId = localStorage.getItem("participant_id")
             const participant = await fetchUserParticipant(
                 Number(dataParticipant.access_code),
                 dataParticipant.name.trim(),
                 Number(dataParticipant.absen),
+                localId
             );
             const sessionId = participant.data?.session_id;
 

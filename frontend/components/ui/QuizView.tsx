@@ -3,6 +3,7 @@
 import { io, Socket } from "socket.io-client"
 import { useEffect, useRef, useState } from "react"
 import { fetchCurrentPoll } from "@/lib/api";
+import { useFieldArray, useForm } from "react-hook-form";
 
 interface QuizViewProps {
     sessionId: string;
@@ -33,10 +34,20 @@ const SOCKET_URL = (
 ).replace(/\/api\/?$/, "")
 
 export default function QuizView({ sessionId }: QuizViewProps) {
+    const {
+        register,
+        handleSubmit,
+        control,
+        formState: { errors, isSubmitting },
+    } = useForm()
     const [poll, setPoll] = useState<Poll | null>(null)
     const socketRef = useRef<Socket | null>(null)
     const fetchRequestRef = useRef(0)
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name: "option",
+    })
 
     useEffect(() => {
         if (!sessionId) return
@@ -158,13 +169,56 @@ export default function QuizView({ sessionId }: QuizViewProps) {
                 <div className="border rounded-xl p-5">
                     <p className="text-sm text-gray-500"> {poll.type} </p>
                     <h2 className="text-xl font-bold mt-2"> {poll.question} </h2>
+
                     {poll.options?.length > 0 && (
                         <div className="mt-4 space-y-2">
-                            {poll.options.map((option) => (
-                                <div key={option.id} className="border rounded-lg p-3" >
-                                    {option.option_text}
-                                </div>
-                            ))}
+                            <form >
+                                {errorMessage && (
+                                    <div className="mb-4 text-sm font-semibold text-red-600" role="alert">
+                                        {errorMessage}
+                                    </div>
+                                )}
+                                {poll.type !== "quiz" && (
+                                    <div className="mt-3 space-y-1.5">
+                                        <textarea
+                                            {...register("question", { required: "Pertanyaan wajib diisi" })}
+                                            className="w-full text-black bg-white rounded border-2 border-black h-32 text-base outline-none py-2 px-3 resize-none font-light"
+                                        />
+                                    </div>
+                                )}
+
+                                {poll.type === "quiz" && poll.options && (
+                                    <div className="mt-3 space-y-1.5">
+                                        {poll.options.sort((a, b) => a.option_order - b.option_order).map((opt) => {
+                                            const numToChar: number[] = [opt.option_order]
+                                            const char: string[] = numToChar.map((nums) => {
+                                                return String.fromCharCode(65 + nums - 1)
+                                            })
+
+                                            return <button key={opt.id} className={`text-sm px-3 py-2 flex rounded-lg border ${opt.is_correct ? 'bg-green-50 border-green-200 text-green-800' : 'bg-gray-50 border-gray-100 text-gray-700'}`}>
+                                                {char} {opt.option_text} {opt.is_correct && " ✔"}
+                                            </button>
+                                        })}
+                                    </div>
+                                )}
+
+                                {poll.type !== "quiz" && (
+                                    <div className="mt-3 space-y-1.5">
+                                        <textarea
+                                            {...register("question", { required: "Pertanyaan wajib diisi" })}
+                                            className="w-full text-black bg-white rounded border-2 border-black h-32 text-base outline-none py-2 px-3 resize-none font-light"
+                                        />
+                                    </div>
+                                )}
+
+                                <button
+                                    disabled={isSubmitting}
+                                    className="bg-amber-300 text-xl font-bold rounded-xl p-3 mt-4 hover:bg-amber-400 shadow transition w-full"
+                                    type="submit"
+                                >
+                                    {isSubmitting ? "Sedang memperoses..." : "Buat Sekarang"}
+                                </button>
+                            </form>
                         </div>
                     )}
                 </div>
