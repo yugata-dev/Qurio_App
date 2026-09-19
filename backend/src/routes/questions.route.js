@@ -4,8 +4,8 @@ import {
     createQuestion,
     getQuestionsBySession,
     upvoteQuestion
-} from "../controllers/controllersQuestions.js"
-import { teacherLimit } from "../middleware/JWT.js"
+} from "../controllers/questions.controller.js"
+import { teacherLimit } from "../middlewares/auth.middleware.js"
 
 const router = express.Router()
 

@@ -1,4 +1,4 @@
-import pool from "../config/db/connection.js"
+import pool from "../config/database/connection.js"
 
 const ALLOWED_POLL_TYPES = ["wordcloud", "polling", "qa", "quiz"]
 

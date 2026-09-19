@@ -1,7 +1,7 @@
 import express from "express"
-import { createSession, getSessions, getSession, updateSession } from "../controllers/controllersSessions.js"
-import { studentLimit, teacherLimit } from "../middleware/JWT.js"
-import { joinSession } from "../controllers/controllersParticipants.js"
+import { createSession, getSessions, getSession, updateSession } from "../controllers/sessions.controller.js"
+import { studentLimit, teacherLimit } from "../middlewares/auth.middleware.js"
+import { joinSession } from "../controllers/participants.controller.js"
 
 const router = express.Router()
 

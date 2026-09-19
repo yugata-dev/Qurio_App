@@ -1,4 +1,4 @@
-import pool from "../config/db/connection.js"
+import pool from "../config/database/connection.js"
 
 // ====================================================================
 // GET RESPONSES (Ambil semua jawaban peserta untuk satu soal)

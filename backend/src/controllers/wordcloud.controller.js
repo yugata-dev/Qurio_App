@@ -1,4 +1,4 @@
-import pool from "../config/db/connection.js"
+import pool from "../config/database/connection.js"
 
 // ------------------------------------------------------------
 // Helper: pecah teks jawaban menjadi kata-kata yang bisa dihitung

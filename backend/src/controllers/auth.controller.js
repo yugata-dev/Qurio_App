@@ -1,7 +1,7 @@
-import pool from "../config/db/connection.js"
+import pool from "../config/database/connection.js"
 import bcrypt from "bcrypt"
 import EmailValidator from "validator"
-import { generateCode, getAuthCookieOptions } from "../middleware/JWT.js"
+import { generateCode, getAuthCookieOptions } from "../middlewares/auth.middleware.js"
 
 const VALID_ROLES = ["guru", "siswa"]
 
