@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 // import icon
 import { IconLogin2 } from "@tabler/icons-react";
-import { AccessForm } from "@/components/ui/AccessForm";
+import { AccessForm } from "@/components/AccessForm";
 
 const heroSlides = [
   {
@@ -150,7 +150,8 @@ export default function App() {
               Sudah punya kode kelas?
             </h2>
             <p className="mt-0 max-w-xl text-[#536682] text-lg leading-normal">
-              Masukkan kode akses, nama, dan nomor absen untuk langsung masuk ke ruang kelas.
+              Masukkan kode akses, nama, dan nomor absen untuk langsung masuk ke
+              ruang kelas.
             </p>
           </div>
           <AccessForm />
