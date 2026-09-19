@@ -1,7 +1,7 @@
 "use client";
 
 import { AccessForm } from "@/components/AccessForm";
-import QuizView from "@/components/ui/QuizView";
+import QuizView from "@/components/QuizView";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 

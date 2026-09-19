@@ -90,6 +90,16 @@ interface JoinSessionResponse {
   };
 }
 
+export interface responseQuestions {
+  success: boolean;
+  data: {
+    poll_id: string;
+    participant_id: string;
+    answer: string;
+    option_id: string;
+  };
+}
+
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 ).replace(/\/api\/?$/, "");
@@ -400,6 +410,7 @@ export const fetchUserParticipant = async (
   access_code: number,
   name: string,
   absen: number,
+  participant_id: string | null,
 ): Promise<JoinSessionResponse> => {
   try {
     const response = await fetch(`${API_URL}/api/sessions/participants/join`, {
@@ -407,7 +418,7 @@ export const fetchUserParticipant = async (
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ access_code, nama: name, absen }),
+      body: JSON.stringify({ access_code, nama: name, absen, participant_id }),
     });
 
     if (!response.ok) {
@@ -447,6 +458,38 @@ export const fetchCurrentPoll = async (sessionId: string): Promise<Poll> => {
     return result.data;
   } catch (error) {
     console.error("Gagal mendapat soal:", error);
+    throw error;
+  }
+};
+
+export const fetchResponsePoll = async (
+  pollId: string | null | undefined,
+  participant_id: string | null,
+  answer: string,
+  option_id: string | null | undefined,
+): Promise<responseQuestions> => {
+  try {
+    const response = await fetch(
+      `${API_URL}/api/responses/${pollId}/responses`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ participant_id, answer, option_id }),
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Respon gagal`);
+    }
+
+    // 3. Extract JSON dan kembalikan datanya
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("Respon gagal dikirim:", error);
     throw error;
   }
 };

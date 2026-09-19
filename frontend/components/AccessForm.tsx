@@ -1,11 +1,11 @@
 "use client";
+
 import { fetchUserParticipant } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
-
-import { useRouter } from "next/navigation";
 interface ParticipantFormData {
   access_code: string;
   name: string;
@@ -30,11 +30,14 @@ export function AccessForm({ onSuccess }: ParticipantFormProps) {
     dataParticipant: ParticipantFormData,
   ) => {
     setMessage("");
+
     try {
+      const localId = localStorage.getItem("participant_id");
       const participant = await fetchUserParticipant(
         Number(dataParticipant.access_code),
         dataParticipant.name.trim(),
         Number(dataParticipant.absen),
+        localId,
       );
       const sessionId = participant.data?.session_id;
 
@@ -56,17 +59,19 @@ export function AccessForm({ onSuccess }: ParticipantFormProps) {
   return (
     <form
       id="access"
-      className="flex flex-col gap-5 w-full max-w-lg sm:w-4/5 sm:min-w-sm mt-8 pt-8 px-8 pb-8 rounded-3xl bg-card text-card-foreground shadow-lg text-left"
+      className="mt-8 flex w-full max-w-lg flex-col gap-5 rounded-3xl bg-card px-8 pb-8 pt-8 text-left text-card-foreground shadow-lg sm:w-4/5 sm:min-w-sm"
       onSubmit={handleSubmit(handleInputFormParticipant)}
       aria-label="Form masuk ruang kelas"
     >
-      <h3 className="text-[18px] mb-7 text-center">Masuk Ruang Kelas Instan</h3>
+      <h3 className="mb-7 text-center text-[18px]">
+        Masuk Ruang Kelas Instan
+      </h3>
 
       {/* Kode Akses */}
       <div>
         <label
           htmlFor="access_code"
-          className="text-left block mb-2 text-muted-foreground uppercase tracking-[0.04em] text-xs font-extrabold"
+          className="mb-2 block text-left text-xs font-extrabold uppercase tracking-[0.04em] text-muted-foreground"
         >
           Kode Akses 6-Digit <span>(Cth: 123456)</span>
         </label>
@@ -82,10 +87,10 @@ export function AccessForm({ onSuccess }: ParticipantFormProps) {
           inputMode="numeric"
           maxLength={6}
           placeholder="Masukkan kode akses"
-          className="w-full h-16 px-4 border border-input rounded-xl bg-background text-foreground text-base outline-ring placeholder:text-muted-foreground"
+          className="h-16 w-full rounded-xl border border-input bg-background px-4 text-base text-foreground outline-ring placeholder:text-muted-foreground"
         />
         {errors.access_code && (
-          <div className="text-xs font-semibold mt-2 text-red-500">
+          <div className="mt-2 text-xs font-semibold text-red-500">
             {errors.access_code.message}
           </div>
         )}
@@ -95,7 +100,7 @@ export function AccessForm({ onSuccess }: ParticipantFormProps) {
       <div>
         <label
           htmlFor="name"
-          className="text-left block mb-2 text-muted-foreground uppercase tracking-[0.04em] text-xs font-extrabold"
+          className="mb-2 block text-left text-xs font-extrabold uppercase tracking-[0.04em] text-muted-foreground"
         >
           Nama Lengkap Kamu
         </label>
@@ -103,10 +108,10 @@ export function AccessForm({ onSuccess }: ParticipantFormProps) {
           {...register("name", { required: "Isi nama anda" })}
           id="name"
           placeholder="Masukkan nama lengkap"
-          className="w-full h-16 px-4 border border-input rounded-xl bg-background text-foreground text-base outline-ring placeholder:text-muted-foreground"
+          className="h-16 w-full rounded-xl border border-input bg-background px-4 text-base text-foreground outline-ring placeholder:text-muted-foreground"
         />
         {errors.name && (
-          <div className="text-xs font-semibold mt-2 text-red-500">
+          <div className="mt-2 text-xs font-semibold text-red-500">
             {errors.name.message}
           </div>
         )}
@@ -116,7 +121,7 @@ export function AccessForm({ onSuccess }: ParticipantFormProps) {
       <div>
         <label
           htmlFor="absen"
-          className="text-left block mb-2 text-muted-foreground uppercase tracking-[0.04em] text-xs font-extrabold"
+          className="mb-2 block text-left text-xs font-extrabold uppercase tracking-[0.04em] text-muted-foreground"
         >
           Nomer Absen Kamu
         </label>
@@ -124,17 +129,17 @@ export function AccessForm({ onSuccess }: ParticipantFormProps) {
           {...register("absen", { required: "Nomor absen wajib diisi." })}
           id="absen"
           placeholder="Masukkan nomor absen"
-          className="w-full h-16 px-4 border border-input rounded-xl bg-background text-foreground text-base outline-ring placeholder:text-muted-foreground"
+          className="h-16 w-full rounded-xl border border-input bg-background px-4 text-base text-foreground outline-ring placeholder:text-muted-foreground"
         />
         {errors.absen && (
-          <div className="text-xs font-semibold mt-2 text-red-500">
+          <div className="mt-2 text-xs font-semibold text-red-500">
             {errors.absen.message}
           </div>
         )}
       </div>
 
       <Button
-        className="w-full inline-flex items-center justify-center gap-3 rounded-[15px] px-6 py-6! border-0 font-extrabold text-base cursor-pointer transition-all duration-200 hover:-translate-y-0.5 bg-primary text-primary-foreground shadow-lg"
+        className="inline-flex w-full cursor-pointer items-center justify-center gap-3 rounded-[15px] border-0 bg-primary px-6 py-6! text-base font-extrabold text-primary-foreground shadow-lg transition-all duration-200 hover:-translate-y-0.5"
         type="submit"
         disabled={isSubmitting}
       >
@@ -143,12 +148,12 @@ export function AccessForm({ onSuccess }: ParticipantFormProps) {
       </Button>
 
       {message && (
-        <p className="mt-3 text-red-700 text-[13px]" role="status">
+        <p className="mt-3 text-[13px] text-red-700" role="status">
           {message}
         </p>
       )}
 
-      <p className="mt-4 text-center text-muted-foreground text-xs">
+      <p className="mt-4 text-center text-xs text-muted-foreground">
         Tanpa perlu buat akun atau unduh aplikasi.
       </p>
     </form>

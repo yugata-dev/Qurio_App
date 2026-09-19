@@ -1,7 +1,7 @@
 import pool from "../config/db/connection.js";
 
 export const joinSession = async (req, res) => {
-    const { access_code, nama, absen } = req.body
+    const { access_code, nama, absen, participant_id } = req.body
     try {
 
         if (!nama || !absen || !access_code) {
@@ -42,9 +42,8 @@ export const joinSession = async (req, res) => {
 
         if (existingParticipants.rows.length > 0) {
             const dbParticipant = existingParticipants.rows[0]
-            const clientParticipantId = req.body.participant_id;
-            if (dbParticipant.id !== clientParticipantId) {
-                return res.status(409).json({ // Menggunakan status 409 (Conflict) lebih standar
+            if (dbParticipant.id !== participant_id) {
+                return res.status(409).json({
                     success: false,
                     message: "Nomor absen ini sudah digunakan oleh orang lain di sesi ini!",
                     data: null
