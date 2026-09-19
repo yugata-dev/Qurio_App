@@ -1,6 +1,6 @@
 import express from "express"
-import { getCurrentUser, usersLog, usersLogOut, usersReg } from "../controllers/controllersUsersRegLog.js";
-import { authLimit } from "../middleware/JWT.js"
+import { getCurrentUser, usersLog, usersLogOut, usersReg } from "../controllers/auth.controller.js";
+import { authLimit } from "../middlewares/auth.middleware.js"
 const router = express.Router()
 
 // membuat data registers

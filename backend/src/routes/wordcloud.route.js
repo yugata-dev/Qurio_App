@@ -2,7 +2,7 @@ import express from "express"
 import {
     getWordCloudResults,
     submitWordCloudResponse
-} from "../controllers/controllersWordCloud.js"
+} from "../controllers/wordcloud.controller.js"
 
 const router = express.Router()
 

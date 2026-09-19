@@ -1,6 +1,6 @@
 import express from "express"
-import { createPoll, getPoll, getPollsBySession, getPollsForStudent, updatePoll } from "../controllers/controllersPolls.js"
-import { teacherLimit } from "../middleware/JWT.js"
+import { createPoll, getPoll, getPollsBySession, getPollsForStudent, updatePoll } from "../controllers/polls.controller.js"
+import { teacherLimit } from "../middlewares/auth.middleware.js"
 
 const router = express.Router()
 

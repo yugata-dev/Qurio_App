@@ -1,6 +1,6 @@
 import express from "express"
-import { createResponse, getResponses } from "../controllers/controllersResponses.js"
-import { teacherLimit } from "../middleware/JWT.js"
+import { createResponse, getResponses } from "../controllers/responses.controller.js"
+import { teacherLimit } from "../middlewares/auth.middleware.js"
 
 const router = express.Router()
 

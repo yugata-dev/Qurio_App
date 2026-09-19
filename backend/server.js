@@ -6,13 +6,13 @@ import cors from "cors"
 import helmet from "helmet"
 import morgan from "morgan"
 
-import sessionsRouter from "./src/routes/sessions.js"
-import pollsRouter from "./src/routes/polls.js"
-import responsesRouter from "./src/routes/responses.js"
-import questionsRouter from "./src/routes/questions.js"
-import wordcloudRouter from "./src/routes/wordcloud.js"
-import usersRegLogRouter from "./src/routes/usersRegLog.js"
-// import participantsRouter from "./src/routes/participants.js"
+import sessionsRouter from "./src/routes/sessions.route.js"
+import pollsRouter from "./src/routes/polls.route.js"
+import responsesRouter from "./src/routes/responses.route.js"
+import questionsRouter from "./src/routes/questions.route.js"
+import wordcloudRouter from "./src/routes/wordcloud.route.js"
+import usersRegLogRouter from "./src/routes/auth.route.js"
+// import participantsRouter from "./src/routes/participants.route.js"
 
 dotenv.config({ quiet: true })
 

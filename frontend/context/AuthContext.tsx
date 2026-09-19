@@ -22,21 +22,21 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  isAutheticated: boolean;
+  isAuthenticated: boolean;
   login: (user: User) => void;
   logout: () => void;
 }
 
 interface AuthState {
   user: User | null;
-  isAutheticated: boolean;
+  isAuthenticated: boolean;
 }
 
 // ============ KONSTANTA ============
 
 const emptyAuthState: AuthState = {
   user: null,
-  isAutheticated: false,
+  isAuthenticated: false,
 };
 
 const API_URL = (
@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .then((response) => {
         if (isMounted) {
-          setAuthState({ user: response.data.user, isAutheticated: true });
+          setAuthState({ user: response.data.user, isAuthenticated: true });
         }
       })
       .catch(() => {
@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Handler login
   const login = (userData: User) => {
-    setAuthState({ user: userData, isAutheticated: true });
+    setAuthState({ user: userData, isAuthenticated: true });
   };
 
   // Handler logout
@@ -88,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const authContextValue: AuthContextType = {
     user: authState.user,
-    isAutheticated: authState.isAutheticated,
+    isAuthenticated: authState.isAuthenticated,
     login,
     logout,
   };

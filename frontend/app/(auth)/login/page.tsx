@@ -31,10 +31,10 @@ function LoginPage() {
   } = useForm<FormLogin>();
 
   //   useEffect(() => {
-  //     if (isAutheticated) {
+  //     if (isAuthenticated) {
   //       router.push("/dashboard");
   //     }
-  //   }, [isAutheticated, router]);
+  //   }, [isAuthenticated, router]);
 
   const onSubmit = async (data: FormLogin) => {
     try {

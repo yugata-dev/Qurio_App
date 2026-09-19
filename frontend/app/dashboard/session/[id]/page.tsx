@@ -36,7 +36,7 @@ export interface Poll {
 function SessionPage() {
   const router = useRouter()
   const params = useParams()
-  const { isAutheticated } = useAuth()
+  const { isAuthenticated } = useAuth()
   const [session, setSession] = useState<SessionData | null>(null)
   const [polls, setPolls] = useState<Poll[] | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -44,7 +44,7 @@ function SessionPage() {
   const sessionId = params?.id as string
 
   useEffect(() => {
-    if (!isAutheticated || !sessionId) return
+    if (!isAuthenticated || !sessionId) return
     const fetchSessionData = async () => {
       try {
         const sessionResponse = await getDataSession(sessionId, null)
@@ -63,10 +63,10 @@ function SessionPage() {
     }
     void fetchPollData()
     void fetchSessionData()
-  }, [sessionId, isAutheticated])
+  }, [sessionId, isAuthenticated])
 
   const onUpdateSingle = async (pollId: string, statusTarget: Poll["status"]) => {
-    if (!isAutheticated) {
+    if (!isAuthenticated) {
       setErrorMessage("Token tidak sesuai atau kedaluarsa..")
       return
     }
@@ -81,7 +81,7 @@ function SessionPage() {
   }
 
   const toggleSessionStatus = async (statusTarget: SessionData["status"]) => {
-    if (!isAutheticated) return setErrorMessage("Sesi login tidak sesuai atau sudah kedaluwarsa.")
+    if (!isAuthenticated) return setErrorMessage("Sesi login tidak sesuai atau sudah kedaluwarsa.")
     try {
       const updatedSession = await updateStatusSession(sessionId, statusTarget, null)
       setSession(updatedSession)

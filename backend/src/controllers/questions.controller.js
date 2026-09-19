@@ -1,4 +1,4 @@
-import pool from "../config/db/connection.js"
+import pool from "../config/database/connection.js"
 
 // ------------------------------------------------------------
 // 1) Ambil semua pertanyaan di satu sesi

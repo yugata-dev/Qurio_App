@@ -1,4 +1,4 @@
-import pool from "../config/db/connection.js"
+import pool from "../config/database/connection.js"
 
 // ====================================================================
 // Helper: Generate kode akses 6 digit acak untuk sesi

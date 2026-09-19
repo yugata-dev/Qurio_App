@@ -48,7 +48,7 @@ interface SessionFormInput {
 
 function CreateSessionsPage() {
   const router = useRouter();
-  const { user, isAutheticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const {
     register,
     watch,
@@ -73,7 +73,7 @@ function CreateSessionsPage() {
     }));
 
   const handleSubmitSession = async (formData: SessionFormInput) => {
-    if (!user || !isAutheticated) {
+    if (!user || !isAuthenticated) {
       setErrorMessage("Anda harus login terlebih dahulu...");
       return;
     }

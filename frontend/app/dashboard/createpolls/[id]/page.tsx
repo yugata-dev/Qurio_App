@@ -19,7 +19,7 @@ interface formPolls {
 }
 
 function CreatePollsPage() {
-  const { user, isAutheticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const router = useRouter();
   const params = useParams();
   const {
@@ -49,7 +49,7 @@ function CreatePollsPage() {
   const type = polls?.[0]?.type as string
 
   useEffect(() => {
-    if (!isAutheticated || !sessionId) return;
+    if (!isAuthenticated || !sessionId) return;
 
     const fetchPollData = async () => {
       try {
@@ -65,13 +65,13 @@ function CreatePollsPage() {
     };
 
     void fetchPollData();
-  }, [sessionId, isAutheticated]);
+  }, [sessionId, isAuthenticated]);
 
   const onSubmitPolls = async (dataPolls: formPolls) => {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    if (!user || !isAutheticated) {
+    if (!user || !isAuthenticated) {
       setErrorMessage("Anda harus login terlebih dahulu.");
       return;
     }
