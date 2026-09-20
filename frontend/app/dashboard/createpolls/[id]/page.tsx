@@ -1,10 +1,9 @@
 "use client";
-import { useState, useEffect } from "react";
-import { createPolls, getAllDataPolls } from "@/lib/api";
+import { useState } from "react";
+import { createPolls } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useFieldArray, useForm } from "react-hook-form";
 import { useParams } from "next/navigation";
-import { Poll } from "../../session/[id]/page";
 import { useRouter } from "next/navigation";
 
 interface pollOption {
@@ -13,10 +12,13 @@ interface pollOption {
 }
 
 interface formPolls {
+  type: PollType | "";
   question: string;
   option: pollOption[];
   correctIndex: string;
 }
+
+type PollType = "quiz" | "polling" | "qa" | "wordcloud";
 
 function CreatePollsPage() {
   const { user, isAutheticated } = useAuth();
@@ -24,11 +26,13 @@ function CreatePollsPage() {
   const params = useParams();
   const {
     register,
+    watch,
     handleSubmit,
     control,
     formState: { errors, isSubmitting },
   } = useForm<formPolls>({
     defaultValues: {
+      type: "",
       option: [
         { option_text: "", option_order: 0 },
         { option_text: "", option_order: 1 },
@@ -43,29 +47,9 @@ function CreatePollsPage() {
   });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [polls, setPolls] = useState<Poll[] | null>(null);
   const sessionId = params?.id as string;
-  const [isLoading, setIsLoading] = useState(true);
-  const type = polls?.[0]?.type as string
-
-  useEffect(() => {
-    if (!isAutheticated || !sessionId) return;
-
-    const fetchPollData = async () => {
-      try {
-        const pollResponse = await getAllDataPolls(sessionId, null);
-        setPolls(Array.isArray(pollResponse) ? pollResponse : []);
-      } catch (error: unknown) {
-        setErrorMessage(
-          error instanceof Error ? error.message : "Gagal mengambil data poll.",
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    void fetchPollData();
-  }, [sessionId, isAutheticated]);
+  const selectedType = watch("type");
+  const hasOptions = selectedType === "quiz" || selectedType === "polling";
 
   const onSubmitPolls = async (dataPolls: formPolls) => {
     setErrorMessage(null);
@@ -78,13 +62,17 @@ function CreatePollsPage() {
 
     try {
       await createPolls(
-        type,
+        dataPolls.type,
         dataPolls.question,
-        dataPolls.option.map((option, index) => ({
-          text: option.option_text,
-          is_correct: index === Number(dataPolls.correctIndex),
-          option_order: index,
-        })),
+        hasOptions
+          ? dataPolls.option.map((option, index) => ({
+            text: option.option_text,
+            is_correct:
+              dataPolls.type === "quiz" &&
+              index === Number(dataPolls.correctIndex),
+            option_order: index,
+          }))
+          : [],
         sessionId,
         "",
         "published",
@@ -99,11 +87,7 @@ function CreatePollsPage() {
     }
   };
 
-  const typeQuestion = polls?.[0]?.type;
-  const pollType = polls?.[0]?.type === "quiz"
-
   if (!sessionId) return <div role="alert">ID sesi tidak ditemukan.</div>;
-  if (isLoading) return <div>Memuat data poll...</div>;
   return (
     <form onSubmit={handleSubmit(onSubmitPolls)}>
       {errorMessage && (
@@ -120,14 +104,30 @@ function CreatePollsPage() {
         </div>
       )}
 
-      <p>Type Soal Saat Ini {polls?.[0]?.type}</p>
       <div className="flex flex-col gap-3">
         <h2 className="text-2xl font-bold text-center">
           <p>buat soal di sesi dengan judul </p>
           Buat Pertanyaan
         </h2>
 
-        <div className="flex flex-col gap-1"></div>
+        <div className="flex flex-col gap-1">
+          <label className="font-bold text-[1.2rem]">Tipe Soal:</label>
+          <select
+            {...register("type", { required: "Pilih tipe soal" })}
+            className="w-full rounded border-2 border-black bg-white p-2 text-black"
+          >
+            <option value="">Pilih tipe soal</option>
+            <option value="quiz">Quiz</option>
+            <option value="polling">Polling</option>
+            <option value="qa">Tanya Jawab</option>
+            <option value="wordcloud">Wordcloud</option>
+          </select>
+          {errors.type && (
+            <div className="text-xs font-semibold text-red-500">
+              {errors.type.message}
+            </div>
+          )}
+        </div>
 
         <div className="flex flex-col gap-1">
           <label className="font-bold text-[1.2rem]">Pertanyaan Anda:</label>
@@ -142,7 +142,7 @@ function CreatePollsPage() {
           )}
         </div>
 
-        {typeQuestion === "quiz" && (
+        {hasOptions && (
           <div className="flex flex-col gap-2">
             <label className="font-bold text-[1.2rem]">Opsi Jawaban:</label>
 
@@ -154,20 +154,22 @@ function CreatePollsPage() {
                 >
                   <input
                     {...register(`option.${index}.option_text`, {
-                      required: pollType ? "Opsi wajib diisi" : false,
+                      required: "Opsi wajib diisi",
                     })}
                     className="text-black bg-gray-50 flex-1 rounded p-1 border font-light"
                     placeholder={`Opsi ${index + 1}`}
                   />
-                  <input
-                    {...register("correctIndex", {
-                      required: pollType ? "Pilih jawaban benar" : false,
-                    })}
-                    type="radio"
-                    value={index}
-                    className="w-4 h-4"
-                    aria-label={`Tandai opsi ${index + 1} sebagai jawaban benar`}
-                  />
+                  {selectedType === "quiz" && (
+                    <input
+                      {...register("correctIndex", {
+                        required: "Pilih jawaban benar",
+                      })}
+                      type="radio"
+                      value={index}
+                      className="w-4 h-4"
+                      aria-label={`Tandai opsi ${index + 1} sebagai jawaban benar`}
+                    />
+                  )}
                   <button
                     type="button"
                     onClick={() => remove(index)}
@@ -176,7 +178,7 @@ function CreatePollsPage() {
                   >
                     Hapus
                   </button>
-                  {typeQuestion && errors.option?.[index]?.option_text && (
+                  {errors.option?.[index]?.option_text && (
                     <div className="basis-full text-xs font-semibold text-red-500">
                       {errors.option[index]?.option_text?.message}
                     </div>
@@ -194,7 +196,7 @@ function CreatePollsPage() {
                 + Tambah Opsi
               </button>
             </div>
-            {typeQuestion && errors.correctIndex && (
+            {selectedType === "quiz" && errors.correctIndex && (
               <div className="text-xs font-semibold text-red-500">
                 {errors.correctIndex.message}
               </div>
