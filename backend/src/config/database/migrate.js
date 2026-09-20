@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config();
 
-const files = [path.join(__dirname, "sql", "schema.sql")]
+const files = [path.join(__dirname, "..", "..", "db", "migrations", "001_schema.sql")]
 
 const readFiles = async () => {
     try {
