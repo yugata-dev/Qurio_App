@@ -38,10 +38,7 @@ function LoginPage() {
 
   const onSubmit = async (data: FormLogin) => {
     try {
-      const response = await fetchUserLogin(
-        data.email,
-        data.password,
-      );
+      const response = await fetchUserLogin(data.email, data.password);
 
       if (response.success && response.data) {
         const dataUser = response.data.user;
@@ -75,7 +72,7 @@ function LoginPage() {
             className="flex flex-col gap-3"
           >
             <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-semibold text-primary-foreground">
+              <Label className="text-sm font-semibold text-foreground">
                 Email
               </Label>
               <Input
@@ -98,7 +95,7 @@ function LoginPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-semibold text-primary-foreground">
+              <Label className="text-sm font-semibold text-foreground">
                 Password
               </Label>
               <Input

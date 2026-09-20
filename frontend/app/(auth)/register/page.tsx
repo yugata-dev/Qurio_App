@@ -44,7 +44,12 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormData) => {
     console.log("Form data:", data);
     try {
-      const response = await fetchUserRegister(data.name, data.email, data.password, data.role);
+      const response = await fetchUserRegister(
+        data.name,
+        data.email,
+        data.password,
+        data.role,
+      );
       login(response.data.user);
       alert("Register berhasil");
       router.push("/dashboard");
@@ -84,7 +89,7 @@ export default function RegisterPage() {
             className="flex flex-col gap-3"
           >
             <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-semibold text-primary-foreground">
+              <Label className="text-sm font-semibold text-foreground">
                 Nama Lengkap
               </Label>
               <Input
@@ -100,7 +105,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-semibold text-primary-foreground">
+              <Label className="text-sm font-semibold text-foreground">
                 Email
               </Label>
               <Input
@@ -123,7 +128,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-semibold text-primary-foreground">
+              <Label className="text-sm font-semibold text-foreground">
                 Password
               </Label>
               <Input
@@ -146,7 +151,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-semibold text-primary-foreground">
+              <Label className="text-sm font-semibold text-foreground">
                 Role
               </Label>
               <Controller
