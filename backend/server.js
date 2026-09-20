@@ -12,7 +12,6 @@ import responsesRouter from "./src/routes/responses.route.js"
 import questionsRouter from "./src/routes/questions.route.js"
 import wordcloudRouter from "./src/routes/wordcloud.route.js"
 import usersRegLogRouter from "./src/routes/auth.route.js"
-// import participantsRouter from "./src/routes/participants.route.js"
 
 dotenv.config({ quiet: true })
 
