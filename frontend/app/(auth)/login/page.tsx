@@ -38,6 +38,7 @@ function LoginPage() {
 
   const onSubmit = async (data: FormLogin) => {
     try {
+      console.log("login data:", data);
       const response = await fetchUserLogin(data.email, data.password);
 
       if (response.success && response.data) {
