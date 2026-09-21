@@ -94,6 +94,21 @@ export interface responseQuestions {
   }
 }
 
+export interface responseAnswer {
+  success: boolean
+  data: Array<{
+    id: string
+    poll_id: string
+    student_id?: string
+    participant_name?: string
+    answer: string
+    option_id: string | null
+    participant_id: string
+    option_text?: string
+    submitted_at?: string
+  }>
+}
+
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 ).replace(/\/api\/?$/, "");
@@ -479,6 +494,34 @@ export const fetchResponsePoll = async (pollId: string | null | undefined, parti
           "Content-Type": "application/json"
         },
         body: JSON.stringify({ participant_id, answer, option_id })
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.message ||
+        `Respon gagal`,
+      );
+    }
+
+    // 3. Extract JSON dan kembalikan datanya
+    const result = await response.json();
+    return result
+  } catch (error) {
+    console.error("Respon gagal dikirim:", error);
+    throw error;
+  }
+}
+
+export const fetchResponseGetPoll = async (pollId: string): Promise<responseAnswer> => {
+  try {
+    const response = await fetch(
+      `${API_URL}/api/responses/${pollId}/responses`,
+      {
+        method: "GET",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" }
       }
     );
 

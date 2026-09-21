@@ -1,7 +1,7 @@
 "use client"
 
 import { useAuth } from "@/context/AuthContext"
-import { getAllDataPolls, getDataSession, updateSinglePolls, updateStatusSession } from "@/lib/api"
+import { fetchResponseGetPoll, getAllDataPolls, getDataSession, responseAnswer, updateSinglePolls, updateStatusSession } from "@/lib/api"
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 
@@ -41,10 +41,12 @@ function SessionPage() {
   const [polls, setPolls] = useState<Poll[] | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [resultAnswer, setResultAnswer] = useState<responseAnswer | null>(null)
   const sessionId = params?.id as string
+  const answerRows = resultAnswer?.data ?? []
 
   useEffect(() => {
-    if (!isAutheticated || !sessionId) return
+    if (!isAutheticated || !sessionId) return;
     const fetchSessionData = async () => {
       try {
         const sessionResponse = await getDataSession(sessionId, null)
@@ -53,14 +55,30 @@ function SessionPage() {
         setErrorMessage("Sesi tidak ditemukan atau sudah tidak tersedia.")
       }
     }
+
+    const fetchAnswerStudent = async (pollId: string) => {
+      try {
+        const answerResponse = await fetchResponseGetPoll(pollId)
+        setResultAnswer(answerResponse)
+      } catch (error) {
+        console.error("terjadi error pengabilan data:", error)
+      }
+    }
+
     const fetchPollData = async () => {
       try {
         const pollResponse = await getAllDataPolls(sessionId, null)
-        setPolls(Array.isArray(pollResponse) ? pollResponse : [])
+        const loadedPolls = Array.isArray(pollResponse) ? pollResponse : []
+        setPolls(loadedPolls)
+
+        if (loadedPolls.length > 0) {
+          await fetchAnswerStudent(loadedPolls[0].id)
+        }
       } catch {
         setErrorMessage("Gagal mengambil data poll")
       }
     }
+
     void fetchPollData()
     void fetchSessionData()
   }, [sessionId, isAutheticated])
@@ -95,7 +113,6 @@ function SessionPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-3xl mx-auto space-y-6">
-
         {/* Header Sesi */}
         <div className="bg-white border rounded-xl p-5">
           <div className="flex justify-between items-start">
@@ -112,6 +129,7 @@ function SessionPage() {
             <button onClick={() => void toggleSessionStatus("active")} disabled={session?.status === "active"} className="text-sm px-4 py-2 rounded-lg bg-blue-700">Aktifkan</button>
             <button onClick={() => void toggleSessionStatus("ended")} disabled={session?.status === "ended"} className="text-sm px-4 py-2 rounded-lg bg-gray-900 text-white hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed">Akhiri Sesi</button>
             <button onClick={() => router.push(`/dashboard/createpolls/${session?.id}`)} className="text-sm px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 ml-auto">+ Buat Soal</button>
+            {/* <p>{answerRows.length > 0 ? answerRows[0].poll_id : "Belum ada jawaban"}</p> */}
           </div>
         </div>
 
@@ -121,7 +139,25 @@ function SessionPage() {
 
         {/* List Poll */}
         <div>
-          <h2 className="font-semibold text-gray-800 mb-3">Daftar Pertanyaan ({polls?.length || 0})</h2>
+          <h2 className="font-semibold text-gray-800 mb-3">Daftar Jawaban ({answerRows.length})</h2>
+
+          {answerRows.length === 0 ? (
+            <div className="bg-white border border-dashed rounded-xl p-10 text-center text-gray-500 text-sm">
+              Belum ada jawaban untuk soal ini.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {answerRows.map((answer, index) => (
+                <div key={answer.id} className="bg-white border rounded-xl p-4">
+                  <p className="text-xs text-gray-500 mb-1">#{index + 1}</p>
+                  <p className="font-medium text-gray-900">Peserta: {answer.participant_name || answer.participant_id}</p>
+                  <p className="text-sm text-gray-700 mt-1">Jawaban: {answer.answer || answer.option_text || "-"}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <h2 className="font-semibold text-gray-800 mb-3 mt-8">Daftar Pertanyaan ({polls?.length || 0})</h2>
 
           {!polls || polls.length === 0 ? (
             <div className="bg-white border border-dashed rounded-xl p-10 text-center text-gray-500 text-sm">

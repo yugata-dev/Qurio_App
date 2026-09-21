@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { useParams, useRouter } from "next/navigation"
-import { useForm, useFieldArray, get } from "react-hook-form"
+import { useRouter } from "next/navigation"
+import { useForm, useFieldArray } from "react-hook-form"
 import { createPolls, createSession } from "@/lib/api"
 import { useAuth } from "@/context/AuthContext"
 
@@ -36,6 +36,7 @@ function CreateSessionsPage() {
     control,
     name: "option",
   })
+
   const selectedType = watch("type")
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)

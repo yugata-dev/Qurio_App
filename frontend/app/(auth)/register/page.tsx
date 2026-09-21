@@ -11,7 +11,8 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-
+import { email, z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,12 +24,25 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface RegisterFormData {
-  name: string;
-  email: string;
-  password: string;
-  role: "guru" | "siswa";
-}
+
+// interface RegisterFormData {
+//   name: string;
+//   email: string;
+//   password: string;
+//   role: "guru" | "siswa";
+// }
+
+const formSchema = z.object({
+  name: z.string().min(1, "Nama wajib diisi"),
+  email: z
+    .string()
+    .email('Email tidak valid')
+    .endsWith('gmail.com', 'Isi input dengan format (gmail.com) '),
+  password: z.string().min(9, "Password minimal 8 karakter"),
+  role: z.string()
+})
+
+type RegisterFormData = z.infer<typeof formSchema>;
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -39,7 +53,7 @@ export default function RegisterPage() {
     control,
     setError,
     formState: { errors },
-  } = useForm<RegisterFormData>();
+  } = useForm<RegisterFormData>({ resolver: zodResolver(formSchema) });
 
   const onSubmit = async (data: RegisterFormData) => {
     console.log("Form data:", data);
