@@ -1,100 +1,172 @@
-'use client'
+"use client";
 
-import { useEffect, useMemo, useState } from "react"
-import { useParams } from "next/navigation"
-import { fetchWordcloudList } from "@/lib/api"
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
+import { fetchWordcloudList } from "@/lib/api";
 
-interface WordcloudItem {
-  id?: string
-  poll_id?: string
-  participant_id?: string
-  word?: string
-  count?: number
-  created_at?: string
+type WordcloudItem = { text: string; value: number };
+type PositionedWord = WordcloudItem & {
+  x: number; // persen (0-100) dari lebar container
+  y: number; // persen (0-100) dari tinggi container
+  fontSize: number; // px
+  color: string;
+};
+
+// Ruang virtual untuk perhitungan tata letak (dikonversi ke % saat render)
+const CANVAS_W = 1000;
+const CANVAS_H = 560;
+
+const MIN_FONT = 18;
+const MAX_FONT = 56;
+const PADDING = 10; // jarak minimal antar kata (px virtual)
+
+const COLORS = ["#0f172a", "#0f766e", "#7c3aed", "#ea580c", "#be185d", "#1d4ed8"];
+
+/** Hitung posisi semua kata: kata terbesar di tengah, sisanya spiral keluar tanpa tumpang tindih. */
+function layoutWords(items: WordcloudItem[]): PositionedWord[] {
+  if (!items.length) return [];
+
+  const values = items.map((i) => i.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+
+  const sorted = [...items].sort((a, b) => b.value - a.value);
+  const placed: { x: number; y: number; w: number; h: number }[] = [];
+  const result: PositionedWord[] = [];
+
+  sorted.forEach((item, index) => {
+    const norm = max === min ? 0.5 : (item.value - min) / (max - min);
+    const fontSize = MIN_FONT + norm * (MAX_FONT - MIN_FONT);
+
+    // Perkiraan ukuran kotak kata (font black ≈ 0.62em per huruf)
+    const w = item.text.length * fontSize * 0.62 + PADDING * 2;
+    const h = fontSize * 1.2 + PADDING;
+
+    let angle = 0;
+    for (let step = 0; step < 4000; step++) {
+      const r = 3 * angle;
+      const x = CANVAS_W / 2 + r * Math.cos(angle) * 1.8; // dilebarkan untuk layout landscape
+      const y = CANVAS_H / 2 + r * Math.sin(angle);
+      angle += 0.2;
+
+      const inside =
+        x - w / 2 >= 0 && x + w / 2 <= CANVAS_W && y - h / 2 >= 0 && y + h / 2 <= CANVAS_H;
+      if (!inside) continue;
+
+      const collide = placed.some(
+        (p) => Math.abs(x - p.x) < (w + p.w) / 2 && Math.abs(y - p.y) < (h + p.h) / 2
+      );
+      if (collide) continue;
+
+      placed.push({ x, y, w, h });
+      result.push({
+        ...item,
+        x: (x / CANVAS_W) * 100,
+        y: (y / CANVAS_H) * 100,
+        fontSize,
+        color: COLORS[index % COLORS.length],
+      });
+      break;
+    }
+    // Jika tidak ada ruang tersisa, kata dilewati.
+  });
+
+  return result;
 }
 
-export default function WordcloudPollPage() {
-  const params = useParams()
-  const sessionId = params?.id as string
-  const pollId = params?.pollId as string
-  const [items, setItems] = useState<WordcloudItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+export default function WordcloudPage() {
+  const params = useParams();
+  const pollId = params.pollId as string;
+  const sessionId = params.id as string;
+
+  const [items, setItems] = useState<WordcloudItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!pollId) return
+    let ignore = false;
 
-    const loadWordcloud = async () => {
+    const load = async () => {
       try {
-        setLoading(true)
-        const response = await fetchWordcloudList(pollId)
-        const data = Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : []
-        setItems(data)
-        setError(null)
+        const data = await fetchWordcloudList(pollId);
+        const list = Array.isArray(data)
+          ? data
+          : (data as any)?.items || (data as any)?.data || [];
+
+        if (ignore) return;
+
+        // Gabungkan kata yang sama (case-insensitive) dan jumlahkan nilainya
+        const map = new Map<string, number>();
+        (list as any[]).forEach((item: any) => {
+          const t = String(item.text ?? item.word ?? item).trim().toLowerCase();
+          if (!t) return;
+          const v = Number(item.value ?? item.count ?? 1) || 1;
+          map.set(t, (map.get(t) || 0) + v);
+        });
+
+        setItems(Array.from(map.entries()).map(([text, value]) => ({ text, value })));
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Gagal mengambil data wordcloud")
+        console.error("Gagal memuat wordcloud:", err);
       } finally {
-        setLoading(false)
+        if (!ignore) setLoading(false);
       }
-    }
+    };
 
-    void loadWordcloud()
-  }, [pollId])
+    if (pollId) load();
+    return () => {
+      ignore = true;
+    };
+  }, [pollId]);
 
-  const words = useMemo(() => {
-    const map = new Map<string, number>()
-
-    items.forEach((item) => {
-      const text = (item.word || "").trim()
-      if (!text) return
-      map.set(text, (map.get(text) || 0) + (item.count || 1))
-    })
-
-    return Array.from(map.entries()).map(([text, count]) => ({ text, count }))
-  }, [items])
-
-  const maxCount = Math.max(...words.map((word) => word.count), 1)
+  const positionedWords = useMemo(() => layoutWords(items), [items]);
+  const hiddenCount = items.length - positionedWords.length;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="bg-white border rounded-xl p-5">
-          <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Session {sessionId}</p>
-          <h1 className="mt-2 text-2xl font-black text-gray-900">Wordcloud Response</h1>
+    <div className="w-full min-h-screen bg-slate-50 p-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-4 bg-white border rounded-xl p-5">
+          <p className="text-sm uppercase tracking-[0.2em] text-slate-500">SESSION {sessionId}</p>
+          <h1 className="mt-2 text-3xl font-black text-slate-800">Wordcloud Response</h1>
         </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm p-3 rounded-lg">{error}</div>
-        )}
-
-        {loading ? (
-          <div className="bg-white border rounded-xl p-8 text-center text-gray-500 text-sm">Memuat wordcloud...</div>
-        ) : words.length === 0 ? (
-          <div className="bg-white border-dashed rounded-xl p-10 text-center text-gray-500 text-sm">
-            Belum ada kata yang dikirim untuk poll ini.
-          </div>
-        ) : (
-          <div className="bg-white border rounded-xl p-6">
-            <div className="flex flex-wrap items-center justify-center gap-3 min-h-[260px] rounded-2xl bg-gradient-to-br from-slate-50 via-white to-amber-50 p-5">
-              {words.map((word, index) => (
-                <span
-                  key={`${word.text}-${index}`}
-                  style={{
-                    fontSize: `${0.9 + (word.count / maxCount) * 2.6}rem`,
-                    fontWeight: 700,
-                    color: ["#111827", "#1d4ed8", "#7c3aed", "#ea580c", "#0f766e", "#be185d"][index % 6],
-                    transform: `rotate(${(index % 5) - 2}deg)`,
-                    lineHeight: 1,
-                  }}
-                  className="inline-flex select-none"
-                >
-                  {word.text}
-                </span>
-              ))}
+        {/* Rasio tetap 1000:560 supaya posisi persen selalu proporsional */}
+        <div
+          className="relative w-full overflow-hidden rounded-2xl border bg-white isolate"
+          style={{ aspectRatio: `${CANVAS_W} / ${CANVAS_H}`, minHeight: 320 }}
+        >
+          {loading ? (
+            <div className="absolute inset-0 flex items-center justify-center text-slate-500">
+              Loading...
             </div>
-          </div>
+          ) : positionedWords.length === 0 ? (
+            <div className="absolute inset-0 flex items-center justify-center text-slate-500">
+              Belum ada jawaban.
+            </div>
+          ) : (
+            positionedWords.map((word) => (
+              <span
+                key={word.text}
+                title={`${word.text} (${word.value})`}
+                className="absolute font-black whitespace-nowrap select-none leading-none"
+                style={{
+                  left: `${word.x}%`,
+                  top: `${word.y}%`,
+                  transform: "translate(-50%, -50%)",
+                  fontSize: `${word.fontSize}px`,
+                  color: word.color,
+                }}
+              >
+                {word.text}
+              </span>
+            ))
+          )}
+        </div>
+
+        {!loading && hiddenCount > 0 && (
+          <p className="mt-2 text-sm text-slate-500">
+            {hiddenCount} kata tidak ditampilkan karena ruang penuh.
+          </p>
         )}
       </div>
     </div>
-  )
+  );
 }
