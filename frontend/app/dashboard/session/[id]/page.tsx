@@ -174,12 +174,14 @@ function SessionPage() {
           <div className="space-y-3">
             {polls.map((poll, index) => {
               const stats = getPollStats(poll.id)
+
               return (
                 <div key={poll.id} className="bg-white border rounded-xl p-4">
                   <div className="flex justify-between items-start gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <p className="text-xs text-gray-500">#{index + 1} • {poll.type.toUpperCase()}</p>
+                        {poll.type !== "qa" && <p className="text-xs text-gray-500">#{index + 1} • {poll.type.toUpperCase()}</p>}
+                        {poll.type === "qa" && <p className="text-xs text-gray-500">#{index + 1} • TANYA JAWAB</p>}
                         <span className={`text-xs px-2 py-0.5 rounded-full ${poll.status === 'published' ? 'bg-green-100 text-green-700' : poll.status === 'closed' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
                           {poll.status}
                         </span>
@@ -218,6 +220,18 @@ function SessionPage() {
                   <div className="flex gap-2 mt-4">
                     <button onClick={() => void onUpdateSingle(poll.id, "published")} className="text-xs px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50" disabled={poll.status === 'published'}>Publish</button>
                     <button onClick={() => void onUpdateSingle(poll.id, "closed")} className="text-xs px-3 py-1.5 rounded-lg bg-white border text-gray-700 hover:bg-gray-50 disabled:opacity-50" disabled={poll.status === 'closed'}>Tutup</button>
+                    {(poll.type === "qa" || poll.type === "wordcloud") && (
+                      <button
+                        onClick={() => {
+                          const basePath = `/dashboard/session/${sessionId}/poll/${poll.id}`
+                          if (poll.type === "qa") router.push(`${basePath}/qa`)
+                          else if (poll.type === "wordcloud") router.push(`${basePath}/wordcloud`)
+                        }}
+                        className="text-xs px-3 py-1.5 rounded-lg bg-gray-900 text-white hover:bg-black ml-auto"
+                      >
+                        Lihat detail
+                      </button>
+                    )}
                   </div>
                 </div>
               )

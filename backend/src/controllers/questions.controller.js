@@ -1,8 +1,61 @@
 import pool from "../config/database/connection.js"
 
-// ------------------------------------------------------------
-// 1) Ambil semua pertanyaan di satu sesi
-// ------------------------------------------------------------
+const toQuestionPayload = (row, pollId) => ({
+    id: row.id,
+    poll_id: pollId,
+    participant_id: row.student_id || row.participant_id || null,
+    participant_name: row.student_name || row.participant_name || null,
+    question_text: row.question_text || row.text,
+    created_at: row.created_at,
+    answered: row.answered,
+    answer: row.answer,
+})
+
+export const getQuestionsByPollId = async (req, res) => {
+    const { poll_id: pollId } = req.query
+
+    if (!pollId) {
+        return res.status(400).json({
+            success: false,
+            message: "poll_id wajib diisi."
+        })
+    }
+
+    try {
+        const pollResult = await pool.query(
+            "SELECT id, session_id, type FROM polls WHERE id = $1",
+            [pollId]
+        )
+
+        if (pollResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Poll tidak ditemukan."
+            })
+        }
+
+        const sessionId = pollResult.rows[0].session_id
+        const result = await pool.query(
+            `SELECT *
+             FROM questions
+             WHERE session_id = $1
+             ORDER BY created_at ASC`,
+            [sessionId]
+        )
+
+        return res.status(200).json({
+            success: true,
+            data: result.rows.map((row) => toQuestionPayload(row, pollId))
+        })
+    } catch (error) {
+        console.error("Get questions by poll error:", error.message)
+        return res.status(500).json({
+            success: false,
+            message: "Gagal mengambil pertanyaan untuk poll ini."
+        })
+    }
+}
+
 export const getQuestionsBySession = async (req, res) => {
     const { sessionId } = req.params
 
@@ -36,7 +89,13 @@ export const getQuestionsBySession = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            data: result.rows
+            data: result.rows.map((row) => ({
+                ...row,
+                question_text: row.text,
+                participant_id: row.student_id,
+                participant_name: row.student_name,
+                poll_id: null,
+            }))
         })
     } catch (error) {
         console.error("Get questions error:", error.message)
@@ -47,62 +106,62 @@ export const getQuestionsBySession = async (req, res) => {
     }
 }
 
-// ------------------------------------------------------------
-// 2) Siswa mengirimkan pertanyaan baru ke sesi
-// ------------------------------------------------------------
 export const createQuestion = async (req, res) => {
     const body = req.body || {}
-    const session_id = body.session_id ?? body.sessionId
-    const student_id = body.student_id ?? body.studentId ?? null
-    const student_name = body.student_name ?? body.studentName ?? body.name
-    const text = body.text ?? body.question ?? ""
-    const cleanText = String(text || "").trim()
+    const pollId = body.poll_id ?? body.pollId
+    const participantId = body.participant_id ?? body.participantId ?? null
+    const questionText = body.question_text ?? body.questionText ?? body.question ?? body.text ?? ""
+    const cleanText = String(questionText || "").trim()
 
     try {
-        // Validasi dasar agar input tidak kosong
-        if (!session_id) {
-            return res.status(400).json({ success: false, message: "session_id wajib diisi." })
-        }
-
-        if (!student_name || !String(student_name).trim()) {
-            return res.status(400).json({ success: false, message: "Nama siswa wajib diisi." })
+        if (!pollId) {
+            return res.status(400).json({ success: false, message: "poll_id wajib diisi." })
         }
 
         if (!cleanText) {
             return res.status(400).json({ success: false, message: "Pertanyaan tidak boleh kosong." })
         }
 
-        // Pastikan sesi memang ada sebelum menyimpan pertanyaan
-        const sessionCheck = await pool.query(
-            "SELECT id FROM sessions WHERE id = $1",
-            [session_id]
+        const pollResult = await pool.query(
+            "SELECT id, session_id, type, status FROM polls WHERE id = $1",
+            [pollId]
         )
 
-        if (sessionCheck.rows.length === 0) {
+        if (pollResult.rows.length === 0) {
             return res.status(404).json({
                 success: false,
-                message: "Sesi tidak ditemukan."
+                message: "Poll tidak ditemukan."
             })
         }
+
+        const poll = pollResult.rows[0]
+        if (poll.type !== "qa") {
+            return res.status(400).json({
+                success: false,
+                message: "Endpoint ini hanya untuk tipe qa."
+            })
+        }
+
+        const participantName = body.participant_name ?? body.name ?? (participantId ? "Siswa" : "Anonim")
 
         const insertResult = await pool.query(
             `INSERT INTO questions (session_id, student_id, student_name, text, upvotes, answered, answer)
              VALUES ($1, $2, $3, $4, 0, false, NULL)
              RETURNING *`,
-            [session_id, student_id || null, String(student_name).trim(), cleanText]
+            [poll.session_id, participantId || null, String(participantName).trim() || "Anonim", cleanText]
         )
 
         const newQuestion = insertResult.rows[0]
+        const responseData = toQuestionPayload(newQuestion, pollId)
 
-        // Emit ke semua peserta di room sesi agar guru dan siswa melihat pertanyaan baru
         const io = req.app.get("io")
         if (io) {
-            io.to(`session:${session_id}`).emit("question_created", newQuestion)
+            io.to(`session:${poll.session_id}`).emit("question_created", responseData)
         }
 
         return res.status(201).json({
             success: true,
-            data: newQuestion,
+            data: responseData,
             message: "Pertanyaan berhasil dikirim."
         })
     } catch (error) {
@@ -114,9 +173,6 @@ export const createQuestion = async (req, res) => {
     }
 }
 
-// ------------------------------------------------------------
-// 3) Siswa lain memberi upvote pada pertanyaan
-// ------------------------------------------------------------
 export const upvoteQuestion = async (req, res) => {
     const { id } = req.params
     const { student_id } = req.body
@@ -129,7 +185,6 @@ export const upvoteQuestion = async (req, res) => {
             })
         }
 
-        // Cek apakah pertanyaan ada
         const questionResult = await pool.query(
             "SELECT * FROM questions WHERE id = $1",
             [id]
@@ -144,7 +199,6 @@ export const upvoteQuestion = async (req, res) => {
 
         const question = questionResult.rows[0]
 
-        // Cegah pengguna mengulang vote untuk pertanyaan yang sama
         const voteCheck = await pool.query(
             "SELECT id FROM question_votes WHERE question_id = $1 AND student_id = $2",
             [id, student_id]
@@ -197,9 +251,6 @@ export const upvoteQuestion = async (req, res) => {
     }
 }
 
-// ------------------------------------------------------------
-// 4) Guru menandai pertanyaan telah dijawab
-// ------------------------------------------------------------
 export const answerQuestion = async (req, res) => {
     const { id } = req.params
     const { answer } = req.body
@@ -227,7 +278,6 @@ export const answerQuestion = async (req, res) => {
 
         const question = questionResult.rows[0]
 
-        // Hanya guru pemilik sesi yang boleh menandai jawaban
         const sessionResult = await pool.query(
             "SELECT teacher_id FROM sessions WHERE id = $1",
             [question.session_id]

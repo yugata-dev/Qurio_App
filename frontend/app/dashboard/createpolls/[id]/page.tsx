@@ -18,7 +18,7 @@ interface formPolls {
   correctIndex: string;
 }
 
-type PollType = "quiz" | "polling" | "qa" | "wordcloud";
+type PollType = "quiz" | "qa" | "wordcloud";
 
 function CreatePollsPage() {
   const { user, isAutheticated } = useAuth();
@@ -49,7 +49,7 @@ function CreatePollsPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const sessionId = params?.id as string;
   const selectedType = watch("type");
-  const hasOptions = selectedType === "quiz" || selectedType === "polling";
+  const hasOptions = selectedType === "quiz";
 
   const onSubmitPolls = async (dataPolls: formPolls) => {
     setErrorMessage(null);
@@ -118,7 +118,6 @@ function CreatePollsPage() {
           >
             <option value="">Pilih tipe soal</option>
             <option value="quiz">Quiz</option>
-            <option value="polling">Polling</option>
             <option value="qa">Tanya Jawab</option>
             <option value="wordcloud">Wordcloud</option>
           </select>

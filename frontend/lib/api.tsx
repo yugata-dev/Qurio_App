@@ -509,6 +509,76 @@ export const fetchResponsePoll = async (pollId: string | null | undefined, parti
   }
 }
 
+export const fetchQuestionPoll = async (pollId: string, participantId: string, questionText: string) => {
+  const response = await fetch(`${API_URL}/api/questions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      poll_id: pollId,
+      participant_id: participantId,
+      question_text: questionText,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Tipe qa mengirim pertanyaan melalui POST /api/questions");
+  }
+
+  return response.json();
+};
+
+export const fetchWordcloudPoll = async (pollId: string, participantId: string, word: string) => {
+  const response = await fetch(`${API_URL}/api/wordcloud/responses`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      poll_id: pollId,
+      participant_id: participantId,
+      word,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Gagal kirim wordcloud");
+  }
+
+  return response.json();
+};
+
+export const fetchQuestionList = async (pollId: string) => {
+  const response = await fetch(`${API_URL}/api/questions?poll_id=${encodeURIComponent(pollId)}`, {
+    method: "GET",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Gagal mengambil daftar pertanyaan");
+  }
+
+  return response.json();
+};
+
+export const fetchWordcloudList = async (pollId: string) => {
+  const response = await fetch(`${API_URL}/api/wordcloud/${encodeURIComponent(pollId)}/responses`, {
+    method: "GET",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Gagal mengambil data wordcloud");
+  }
+
+  return response.json();
+};
+
 export const fetchResponseGetPoll = async (pollId: string): Promise<responseAnswer> => {
   try {
     const response = await fetch(

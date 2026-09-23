@@ -2,7 +2,7 @@
 
 import { io, Socket } from "socket.io-client"
 import { useEffect, useRef, useState } from "react"
-import { fetchCurrentPoll, fetchResponsePoll, getDataSession } from "@/lib/api"
+import { fetchCurrentPoll, fetchQuestionPoll, fetchResponsePoll, fetchWordcloudPoll, getDataSession } from "@/lib/api"
 import { useForm } from "react-hook-form"
 import { SessionData } from "@/app/dashboard/session/[id]/page"
 
@@ -133,14 +133,20 @@ export default function QuizView({ sessionId }: QuizViewProps) {
             if (!poll) throw new Error("Poll tidak ditemukan")
             const participantId = localStorage.getItem("participant_id")
             if (!participantId) throw new Error("Participant ID tidak ditemukan")
-            if (poll.type === "quiz" && !selected) throw new Error("Pilih salah satu jawaban")
 
-            await fetchResponsePoll(poll.id, participantId, data.answerStudent, poll.type === "quiz" ? selected : undefined)
+            if (poll.type === "quiz") {
+                if (!selected) throw new Error("Pilih salah satu jawaban")
+                await fetchResponsePoll(poll.id, participantId, data.answerStudent, selected)
+            } else if (poll.type === "qa") {
+                if (!data.answerStudent?.trim()) throw new Error("Jawaban wajib diisi")
+                await fetchQuestionPoll(poll.id, participantId, data.answerStudent.trim())
+            } else if (poll.type === "wordcloud") {
+                if (!data.answerStudent?.trim()) throw new Error("Kata wajib diisi")
+                await fetchWordcloudPoll(poll.id, participantId, data.answerStudent.trim())
+            }
 
-            // SIMPAN STATUS SUBMIT PER POLL ID
             localStorage.setItem(getSubmittedKey(poll.id), "true")
             setSubmitted(true)
-
         } catch (err) {
             setErrorMessage(err instanceof Error ? err.message : "Gagal mengirim jawaban")
         }
