@@ -28,12 +28,23 @@ export const getResponses = async (req, res) => {
         // LEFT JOIN dengan poll_options untuk mendapat teks opsi yang dipilih
         const responsesResult = await pool.query(
             `SELECT
-                r.*,
-                po.option_text
-            FROM responses r
-            LEFT JOIN poll_options po ON po.id = r.option_id
-            WHERE r.poll_id = $1
-            ORDER BY r.submitted_at ASC`,
+    r.id,
+    r.poll_id,
+    r.student_id,
+    r.participant_id,
+    COALESCE(p.name, r.participant_name) AS participant_name,
+    r.answer,
+    r.option_id,
+    r.is_correct,
+    r.submitted_at,
+    po.option_text
+    FROM responses r
+    LEFT JOIN participants p
+    ON p.id = r.participant_id
+    LEFT JOIN poll_options po
+    ON po.id = r.option_id
+    WHERE r.poll_id = $1
+    ORDER BY r.submitted_at ASC`,
             [pollId]
         )
 
