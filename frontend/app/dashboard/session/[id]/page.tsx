@@ -37,14 +37,13 @@ export interface Poll {
 function SessionPage() {
   const router = useRouter()
   const params = useParams()
-  const { isAutheticated } = useAuth()
+  const { isAutheticated } = useAuth() // typo: harusnya isAuthenticated
   const [session, setSession] = useState<SessionData | null>(null)
   const [polls, setPolls] = useState<Poll[] | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [resultAnswer, setResultAnswer] = useState<responseAnswer | null>(null)
   const sessionId = params?.id as string
-  const quizPolls = polls?.filter((poll) => poll.type === "quiz") ?? []
 
   useEffect(() => {
     if (!isAutheticated || !sessionId) return;
@@ -130,6 +129,15 @@ function SessionPage() {
     }
   }
 
+  const getPollStats = (pollId: string) => {
+    const pollResult = resultAnswer?.data.find((answer: any) => answer.poll_id === pollId)
+    return {
+      correct: pollResult?.correct_count ?? 0,
+      wrong: pollResult?.incorrect_count ?? 0,
+      total: (pollResult?.correct_count ?? 0) + (pollResult?.incorrect_count ?? 0)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-3xl mx-auto space-y-6">
@@ -145,91 +153,79 @@ function SessionPage() {
           </div>
 
           <div className="flex gap-2 mt-4">
-            <button onClick={() => void toggleSessionStatus("active")} disabled={session?.status === "active"} className="text-sm px-4 py-2 rounded-lg bg-blue-700">Aktifkan</button>
+            <button onClick={() => void toggleSessionStatus("active")} disabled={session?.status === "active"} className="text-sm px-4 py-2 rounded-lg bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed">Aktifkan</button>
             <button onClick={() => void toggleSessionStatus("ended")} disabled={session?.status === "ended"} className="text-sm px-4 py-2 rounded-lg bg-gray-900 text-white hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed">Akhiri Sesi</button>
             <button onClick={() => router.push(`/dashboard/createpolls/${session?.id}`)} className="text-sm px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 ml-auto">+ Buat Soal</button>
-            {/* <p>{answerRows.length > 0 ? answerRows[0].poll_id : "Belum ada jawaban"}</p> */}
           </div>
         </div>
 
         {/* Alert */}
         {errorMessage && <div className="bg-red-50 border border-red-200 text-red-700 text-sm p-3 rounded-lg">{errorMessage}</div>}
-        {successMessage && <div className="bg-green-50 border border-green-200 text-green-700 text-sm p-3 rounded-lg">{successMessage}</div>}
+        {successMessage && <div className="bg-green-50 border-green-200 text-green-700 text-sm p-3 rounded-lg">{successMessage}</div>}
 
-        {/* List Poll */}
-        <div>
-          <h2 className="font-semibold text-gray-800 mb-3">Ringkasan Jawaban Quiz</h2>
-
-          {quizPolls.length === 0 ? (
-            <div className="bg-white border border-dashed rounded-xl p-10 text-center text-gray-500 text-sm">
-              Belum ada soal quiz di sesi ini.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {quizPolls.map((poll, index) => {
-                const pollResult = resultAnswer?.data.find((answer) => answer.poll_id === poll.id)
-                const correctAnswers = pollResult?.correct_count ?? 0
-                const wrongAnswers = pollResult?.incorrect_count ?? 0
-
-                return (
-                  <div key={poll.id} className="bg-white border rounded-xl p-4">
-                    <p className="text-xs text-gray-500 mb-1">#{index + 1} • QUIZ</p>
-                    <p className="font-medium text-gray-900">{poll.question}</p>
-                    <div className="grid grid-cols-2 gap-3 mt-4">
-                      <div className="rounded-lg border border-green-200 bg-green-50 p-3">
-                        <p className="text-xs text-green-700">Jawaban benar</p>
-                        <p className="text-2xl font-bold text-green-800">{correctAnswers}</p>
-                      </div>
-                      <div className="rounded-lg border border-red-200 bg-red-50 p-3">
-                        <p className="text-xs text-red-700">Jawaban salah</p>
-                        <p className="text-2xl font-bold text-red-800">{wrongAnswers}</p>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
-
-        <h2 className="font-semibold text-gray-800 mb-3 mt-8">Daftar Pertanyaan ({polls?.length || 0})</h2>
+        {/* List Poll - Udah gabung sama statistik */}
+        <h2 className="font-semibold text-gray-800 mb-3">Daftar Pertanyaan ({polls?.length || 0})</h2>
 
         {!polls || polls.length === 0 ? (
-          <div className="bg-white border border-dashed rounded-xl p-10 text-center text-gray-500 text-sm">
+          <div className="bg-white border-dashed rounded-xl p-10 text-center text-gray-500 text-sm">
             Belum ada pertanyaan di sesi ini.
           </div>
         ) : (
           <div className="space-y-3">
-            {polls.map((poll, index) => (
-              <div key={poll.id} className="bg-white border rounded-xl p-4">
-                <div className="flex justify-between items-start gap-4">
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-500 mb-1">#{index + 1} • {poll.type.toUpperCase()} • <span className={poll.status === 'published' ? 'text-green-600' : poll.status === 'closed' ? 'text-red-600' : 'text-gray-500'}>{poll.status}</span></p>
-                    <p className="font-medium text-gray-900">{poll.question}</p>
+            {polls.map((poll, index) => {
+              const stats = getPollStats(poll.id)
+              return (
+                <div key={poll.id} className="bg-white border rounded-xl p-4">
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <p className="text-xs text-gray-500">#{index + 1} • {poll.type.toUpperCase()}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${poll.status === 'published' ? 'bg-green-100 text-green-700' : poll.status === 'closed' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
+                          {poll.status}
+                        </span>
 
-                    {poll.type === "quiz" && poll.options && (
-                      <div className="mt-3 space-y-1.5">
-                        {poll.options.sort((a, b) => a.option_order - b.option_order).map((opt) => (
-                          <div key={opt.id} className={`text-sm px-3 py-2 rounded-lg border ${opt.is_correct ? 'bg-green-50 border-green-200 text-green-800' : 'bg-gray-50 border-gray-100 text-gray-700'}`}>
-                            {opt.option_text} {opt.is_correct && " ✔"}
+                        {/* Stats langsung di header card untuk quiz */}
+                        {poll.type === "quiz" && stats.total > 0 && (
+                          <div className="flex items-center gap-2 ml-2">
+                            <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full border-green-200">
+                              Benar: {stats.correct}
+                            </span>
+                            <span className="text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded-full border border-red-200">
+                              Salah: {stats.wrong}
+                            </span>
                           </div>
-                        ))}
+                        )}
                       </div>
-                    )}
+
+                      <p className="font-medium text-gray-900">{poll.question}</p>
+
+                      {poll.type === "quiz" && poll.options && (
+                        <div className="mt-3 space-y-1.5">
+                          {poll.options.sort((a, b) => a.option_order - b.option_order).map((opt) => (
+                            <div key={opt.id} className={`text-sm px-3 py-2 rounded-lg border ${opt.is_correct ? 'bg-green-50 border-green-200 text-green-800' : 'bg-gray-50 border-gray-100 text-gray-700'}`}>
+                              {opt.option_text} {opt.is_correct && " ✔"}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {poll.type === "quiz" && stats.total === 0 && (
+                        <p className="text-xs text-gray-400 mt-2">Belum ada jawaban masuk</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 mt-4">
+                    <button onClick={() => void onUpdateSingle(poll.id, "published")} className="text-xs px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50" disabled={poll.status === 'published'}>Publish</button>
+                    <button onClick={() => void onUpdateSingle(poll.id, "closed")} className="text-xs px-3 py-1.5 rounded-lg bg-white border text-gray-700 hover:bg-gray-50 disabled:opacity-50" disabled={poll.status === 'closed'}>Tutup</button>
                   </div>
                 </div>
-
-                <div className="flex gap-2 mt-4">
-                  <button onClick={() => void onUpdateSingle(poll.id, "published")} className="text-xs px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50" disabled={poll.status === 'published'}>Publish</button>
-                  <button onClick={() => void onUpdateSingle(poll.id, "closed")} className="text-xs px-3 py-1.5 rounded-lg bg-white border text-gray-700 hover:bg-gray-50 disabled:opacity-50" disabled={poll.status === 'closed'}>Tutup</button>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
     </div>
-
   )
 }
 

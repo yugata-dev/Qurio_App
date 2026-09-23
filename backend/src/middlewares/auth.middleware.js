@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken"
 
 // Membuat token JWT
 export const generateCode = (data) => {
-    return jwt.sign(data, process.env.JWT_SECRET, { expiresIn: "1h" })
+    return jwt.sign(data, process.env.JWT_SECRET, { expiresIn: "7d" })
 }
 
 // Memverifikasi token JWT
@@ -18,7 +18,7 @@ export const getAuthCookieOptions = (req) => {
         httpOnly: true,
         secure: isHttps,
         sameSite: isHttps ? "none" : "lax",
-        maxAge: 60 * 60 * 1000,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
         path: "/"
     }
 }
