@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext"
 import { fetchResponseGetPoll, getAllDataPolls, getDataSession, responseAnswer, updateSinglePolls, updateStatusSession } from "@/lib/api"
+import { io } from "socket.io-client"
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 
@@ -43,10 +44,13 @@ function SessionPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [resultAnswer, setResultAnswer] = useState<responseAnswer | null>(null)
   const sessionId = params?.id as string
-  const answerRows = resultAnswer?.data ?? []
+  const quizPolls = polls?.filter((poll) => poll.type === "quiz") ?? []
 
   useEffect(() => {
     if (!isAutheticated || !sessionId) return;
+    const socketUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001").replace(/\/api\/?$/, "")
+    const socket = io(socketUrl, { withCredentials: true })
+
     const fetchSessionData = async () => {
       try {
         const sessionResponse = await getDataSession(sessionId, null)
@@ -56,10 +60,15 @@ function SessionPage() {
       }
     }
 
-    const fetchAnswerStudent = async (pollId: string) => {
+    const fetchAnswerStudent = async (pollList: Poll[]) => {
       try {
-        const answerResponse = await fetchResponseGetPoll(pollId)
-        setResultAnswer(answerResponse)
+        const answerResponses = await Promise.all(
+          pollList.map((poll) => fetchResponseGetPoll(poll.id)),
+        )
+        setResultAnswer({
+          success: answerResponses.every((response) => response.success),
+          data: answerResponses.flatMap((response) => response.data),
+        })
       } catch (error) {
         console.error("terjadi error pengabilan data:", error)
       }
@@ -70,10 +79,7 @@ function SessionPage() {
         const pollResponse = await getAllDataPolls(sessionId, null)
         const loadedPolls = Array.isArray(pollResponse) ? pollResponse : []
         setPolls(loadedPolls)
-
-        if (loadedPolls.length > 0) {
-          await fetchAnswerStudent(loadedPolls[0].id)
-        }
+        await fetchAnswerStudent(loadedPolls)
       } catch {
         setErrorMessage("Gagal mengambil data poll")
       }
@@ -81,6 +87,20 @@ function SessionPage() {
 
     void fetchPollData()
     void fetchSessionData()
+
+    socket.emit("join_session", sessionId)
+    socket.on("response_created", () => {
+      void fetchPollData()
+    })
+    const refreshTimer = setInterval(() => {
+      void fetchPollData()
+    }, 3000)
+
+    return () => {
+      socket.emit("leave_session", sessionId)
+      socket.disconnect()
+      clearInterval(refreshTimer)
+    }
   }, [sessionId, isAutheticated])
 
   const onUpdateSingle = async (pollId: string, statusTarget: Poll["status"]) => {
@@ -117,7 +137,6 @@ function SessionPage() {
         <div className="bg-white border rounded-xl p-5">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">{session?.title || `Sesi ${session?.id}`}</h1>
               <p className="text-sm text-gray-500 mt-1">ID: {session?.id} • Kode: <span className="font-mono font-semibold bg-gray-100 px-2 py-0.5 rounded">{session?.access_code}</span></p>
             </div>
             <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${session?.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
@@ -139,62 +158,78 @@ function SessionPage() {
 
         {/* List Poll */}
         <div>
-          <h2 className="font-semibold text-gray-800 mb-3">Daftar Jawaban ({answerRows.length})</h2>
+          <h2 className="font-semibold text-gray-800 mb-3">Ringkasan Jawaban Quiz</h2>
 
-          {answerRows.length === 0 ? (
+          {quizPolls.length === 0 ? (
             <div className="bg-white border border-dashed rounded-xl p-10 text-center text-gray-500 text-sm">
-              Belum ada jawaban untuk soal ini.
+              Belum ada soal quiz di sesi ini.
             </div>
           ) : (
             <div className="space-y-3">
-              {answerRows.map((answer, index) => (
-                <div key={answer.id} className="bg-white border rounded-xl p-4">
-                  <p className="text-xs text-gray-500 mb-1">#{index + 1}</p>
-                  <p className="font-medium text-gray-900">Peserta: {answer.participant_name || answer.participant_id}</p>
-                  <p className="text-sm text-gray-700 mt-1">Jawaban: {answer.answer || answer.option_text || "-"}</p>
-                </div>
-              ))}
-            </div>
-          )}
+              {quizPolls.map((poll, index) => {
+                const pollResult = resultAnswer?.data.find((answer) => answer.poll_id === poll.id)
+                const correctAnswers = pollResult?.correct_count ?? 0
+                const wrongAnswers = pollResult?.incorrect_count ?? 0
 
-          <h2 className="font-semibold text-gray-800 mb-3 mt-8">Daftar Pertanyaan ({polls?.length || 0})</h2>
-
-          {!polls || polls.length === 0 ? (
-            <div className="bg-white border border-dashed rounded-xl p-10 text-center text-gray-500 text-sm">
-              Belum ada pertanyaan di sesi ini.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {polls.map((poll, index) => (
-                <div key={poll.id} className="bg-white border rounded-xl p-4">
-                  <div className="flex justify-between items-start gap-4">
-                    <div className="flex-1">
-                      <p className="text-xs text-gray-500 mb-1">#{index + 1} • {poll.type.toUpperCase()} • <span className={poll.status === 'published' ? 'text-green-600' : poll.status === 'closed' ? 'text-red-600' : 'text-gray-500'}>{poll.status}</span></p>
-                      <p className="font-medium text-gray-900">{poll.question}</p>
-
-                      {poll.type === "quiz" && poll.options && (
-                        <div className="mt-3 space-y-1.5">
-                          {poll.options.sort((a, b) => a.option_order - b.option_order).map((opt) => (
-                            <div key={opt.id} className={`text-sm px-3 py-2 rounded-lg border ${opt.is_correct ? 'bg-green-50 border-green-200 text-green-800' : 'bg-gray-50 border-gray-100 text-gray-700'}`}>
-                              {opt.option_text} {opt.is_correct && " ✔"}
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                return (
+                  <div key={poll.id} className="bg-white border rounded-xl p-4">
+                    <p className="text-xs text-gray-500 mb-1">#{index + 1} • QUIZ</p>
+                    <p className="font-medium text-gray-900">{poll.question}</p>
+                    <div className="grid grid-cols-2 gap-3 mt-4">
+                      <div className="rounded-lg border border-green-200 bg-green-50 p-3">
+                        <p className="text-xs text-green-700">Jawaban benar</p>
+                        <p className="text-2xl font-bold text-green-800">{correctAnswers}</p>
+                      </div>
+                      <div className="rounded-lg border border-red-200 bg-red-50 p-3">
+                        <p className="text-xs text-red-700">Jawaban salah</p>
+                        <p className="text-2xl font-bold text-red-800">{wrongAnswers}</p>
+                      </div>
                     </div>
                   </div>
-
-                  <div className="flex gap-2 mt-4">
-                    <button onClick={() => void onUpdateSingle(poll.id, "published")} className="text-xs px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50" disabled={poll.status === 'published'}>Publish</button>
-                    <button onClick={() => void onUpdateSingle(poll.id, "closed")} className="text-xs px-3 py-1.5 rounded-lg bg-white border text-gray-700 hover:bg-gray-50 disabled:opacity-50" disabled={poll.status === 'closed'}>Tutup</button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
+
+        <h2 className="font-semibold text-gray-800 mb-3 mt-8">Daftar Pertanyaan ({polls?.length || 0})</h2>
+
+        {!polls || polls.length === 0 ? (
+          <div className="bg-white border border-dashed rounded-xl p-10 text-center text-gray-500 text-sm">
+            Belum ada pertanyaan di sesi ini.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {polls.map((poll, index) => (
+              <div key={poll.id} className="bg-white border rounded-xl p-4">
+                <div className="flex justify-between items-start gap-4">
+                  <div className="flex-1">
+                    <p className="text-xs text-gray-500 mb-1">#{index + 1} • {poll.type.toUpperCase()} • <span className={poll.status === 'published' ? 'text-green-600' : poll.status === 'closed' ? 'text-red-600' : 'text-gray-500'}>{poll.status}</span></p>
+                    <p className="font-medium text-gray-900">{poll.question}</p>
+
+                    {poll.type === "quiz" && poll.options && (
+                      <div className="mt-3 space-y-1.5">
+                        {poll.options.sort((a, b) => a.option_order - b.option_order).map((opt) => (
+                          <div key={opt.id} className={`text-sm px-3 py-2 rounded-lg border ${opt.is_correct ? 'bg-green-50 border-green-200 text-green-800' : 'bg-gray-50 border-gray-100 text-gray-700'}`}>
+                            {opt.option_text} {opt.is_correct && " ✔"}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex gap-2 mt-4">
+                  <button onClick={() => void onUpdateSingle(poll.id, "published")} className="text-xs px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50" disabled={poll.status === 'published'}>Publish</button>
+                  <button onClick={() => void onUpdateSingle(poll.id, "closed")} className="text-xs px-3 py-1.5 rounded-lg bg-white border text-gray-700 hover:bg-gray-50 disabled:opacity-50" disabled={poll.status === 'closed'}>Tutup</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
+
   )
 }
 

@@ -97,15 +97,10 @@ export interface responseQuestions {
 export interface responseAnswer {
   success: boolean
   data: Array<{
-    id: string
     poll_id: string
-    student_id?: string
-    participant_name?: string
-    answer: string
-    option_id: string | null
-    participant_id: string
-    option_text?: string
-    submitted_at?: string
+    correct_count: number
+    incorrect_count: number
+    total_count: number
   }>
 }
 

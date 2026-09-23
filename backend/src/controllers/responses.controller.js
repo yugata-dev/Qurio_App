@@ -24,27 +24,18 @@ export const getResponses = async (req, res) => {
             return res.status(403).json({ success: false, message: "Anda bukan pemilik sesi ini!" })
         }
 
-        // Step 2: Ambil semua jawaban peserta untuk soal ini
-        // LEFT JOIN dengan poll_options untuk mendapat teks opsi yang dipilih
+        // Step 2: Hitung hasil di server tanpa mengirim kunci jawaban ke client.
         const responsesResult = await pool.query(
             `SELECT
-    r.id,
     r.poll_id,
-    r.student_id,
-    r.participant_id,
-    COALESCE(p.name, r.participant_name) AS participant_name,
-    r.answer,
-    r.option_id,
-    r.is_correct,
-    r.submitted_at,
-    po.option_text
+    COUNT(*) FILTER (WHERE po.is_correct = TRUE)::int AS correct_count,
+    COUNT(*) FILTER (WHERE po.is_correct = FALSE)::int AS incorrect_count,
+    COUNT(*)::int AS total_count
     FROM responses r
-    LEFT JOIN participants p
-    ON p.id = r.participant_id
     LEFT JOIN poll_options po
     ON po.id = r.option_id
     WHERE r.poll_id = $1
-    ORDER BY r.submitted_at ASC`,
+    GROUP BY r.poll_id`,
             [pollId]
         )
 
@@ -78,6 +69,7 @@ export const createResponse = async (req, res) => {
         }
 
         const poll = pollResult.rows[0]
+        let isCorrect = null
 
         // 2. Q&A punya endpoint sendiri
         if (poll.type === "qa") {
@@ -130,7 +122,7 @@ export const createResponse = async (req, res) => {
 
             // Pastikan option memang milik soal ini
             const optionResult = await pool.query(
-                `SELECT id
+                `SELECT id, is_correct
                  FROM poll_options
                  WHERE id = $1
                  AND poll_id = $2`,
@@ -143,6 +135,8 @@ export const createResponse = async (req, res) => {
                     message: "Opsi jawaban tidak valid untuk soal ini!"
                 })
             }
+
+            isCorrect = optionResult.rows[0].is_correct
         }
 
         // 7. Cegah peserta menjawab soal yang sama dua kali
@@ -172,15 +166,17 @@ export const createResponse = async (req, res) => {
                 poll_id,
                 participant_id,
                 answer,
-                option_id
+                option_id,
+                is_correct
             )
-            VALUES ($1, $2, $3, $4)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING *`,
             [
                 pollId,
                 participant_id,
                 answerText,
-                option_id || null
+                option_id || null,
+                isCorrect
             ]
         )
 
