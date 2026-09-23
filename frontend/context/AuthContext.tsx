@@ -39,6 +39,7 @@ const emptyAuthState: AuthState = {
   isAutheticated: false,
 };
 
+
 const API_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 ).replace(/\/api\/?$/, "");
@@ -85,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     setAuthState(emptyAuthState);
   };
+
 
   const authContextValue: AuthContextType = {
     user: authState.user,

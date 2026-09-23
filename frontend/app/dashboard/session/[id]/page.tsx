@@ -130,7 +130,7 @@ function SessionPage() {
   }
 
   const getPollStats = (pollId: string) => {
-    const pollResult = resultAnswer?.data.find((answer: any) => answer.poll_id === pollId)
+    const pollResult = resultAnswer?.data.find((answer) => answer.poll_id === pollId)
     return {
       correct: pollResult?.correct_count ?? 0,
       wrong: pollResult?.incorrect_count ?? 0,
@@ -145,7 +145,7 @@ function SessionPage() {
         <div className="bg-white border rounded-xl p-5">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm text-gray-500 mt-1">ID: {session?.id} • Kode: <span className="font-mono font-semibold bg-gray-100 px-2 py-0.5 rounded">{session?.access_code}</span></p>
+              <p className="text-sm text-gray-500 mt-1">Title: {session?.title} • Kode: <span className="font-mono font-semibold bg-gray-100 px-2 py-0.5 rounded">{session?.access_code}</span></p>
             </div>
             <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${session?.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
               {session?.status === "ended" ? "Selesai" : "Aktif"}
