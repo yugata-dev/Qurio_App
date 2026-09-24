@@ -40,7 +40,9 @@ const emptyAuthState: AuthState = {
 };
 
 const API_URL = (
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+  process.env.NODE_ENV === "production" && process.env.NEXT_PUBLIC_API_URL
+    ? process.env.NEXT_PUBLIC_API_URL
+    : "http://localhost:5000"
 ).replace(/\/api\/?$/, "");
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

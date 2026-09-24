@@ -114,7 +114,7 @@ function CreatePollsPage() {
           <label className="font-bold text-[1.2rem]">Tipe Soal:</label>
           <select
             {...register("type", { required: "Pilih tipe soal" })}
-            className="w-full rounded border-2 border-black bg-white p-2 text-black"
+            className="w-full rounded border-2 border-input bg-background p-2 text-foreground"
           >
             <option value="">Pilih tipe soal</option>
             <option value="quiz">Quiz</option>
@@ -133,7 +133,7 @@ function CreatePollsPage() {
           <label className="font-bold text-[1.2rem]">Pertanyaan Anda:</label>
           <textarea
             {...register("question", { required: "Pertanyaan wajib diisi" })}
-            className="w-full text-black bg-white rounded border-2 border-black h-32 text-base outline-none py-2 px-3 resize-none font-light"
+            className="w-full rounded border-2 border-input bg-background px-3 py-2 text-base font-light text-foreground outline-none resize-none"
           />
           {errors.question && (
             <div className="text-xs font-semibold text-red-500">
@@ -150,13 +150,13 @@ function CreatePollsPage() {
               {fields.map((field, index) => (
                 <div
                   key={field.id}
-                  className="p-2 gap-2 flex items-center border-2 border-amber-400 rounded-lg bg-white"
+                  className="flex items-center gap-2 rounded-lg border-2 border-amber-400 bg-background p-2"
                 >
                   <input
                     {...register(`option.${index}.option_text`, {
                       required: "Opsi wajib diisi",
                     })}
-                    className="text-black bg-gray-50 flex-1 rounded p-1 border font-light"
+                    className="flex-1 rounded border border-input bg-muted p-1 font-light text-foreground"
                     placeholder={`Opsi ${index + 1}`}
                   />
                   {selectedType === "quiz" && (

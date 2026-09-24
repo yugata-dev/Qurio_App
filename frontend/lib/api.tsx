@@ -68,6 +68,21 @@ export interface Sessions {
   token: string;
 }
 
+export interface SessionListItem {
+  id: string;
+  teacher_id: string;
+  title: string;
+  access_code: string;
+  status: "active" | "ended";
+  created_at: string;
+  ended_at: string | null;
+}
+
+interface SessionListResponse {
+  success: boolean;
+  data: SessionListItem[];
+}
+
 interface SessionDetailResponse {
   success: boolean;
   data: {
@@ -264,6 +279,24 @@ const createSession = async (
     console.error("Gagal membuat sesi:", error);
     throw error;
   }
+};
+
+export const getSessions = async (): Promise<SessionListItem[]> => {
+  const response = await fetch(`${API_URL}/api/sessions`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  const result = (await response.json()) as SessionListResponse & {
+    message?: string;
+    error?: string;
+  };
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || result.error || "Sesi gagal dimuat");
+  }
+
+  return result.data;
 };
 
 const getDataType = async (sessionId: string): Promise<Sessions> => {
