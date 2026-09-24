@@ -8,7 +8,8 @@ interface QuestionItem {
   id: string
   poll_id: string
   participant_id: string
-  question_text: string
+  text?: string
+  question_text?: string
   created_at?: string
   participant_name?: string
   answered?: boolean
@@ -66,26 +67,30 @@ export default function QaPollPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {questions.map((item, index) => (
-              <div key={item.id || `${item.participant_id}-${index}`} className="bg-white border rounded-xl p-4 shadow-sm">
-                <div className="flex justify-between items-start gap-3">
-                  <div>
-                    <p className="text-xs text-gray-500">#{index + 1} • {item.participant_name || item.participant_id}</p>
-                    <p className="mt-2 text-base font-medium text-gray-900">{item.question_text}</p>
+            {questions.map((item, index) => {
+              const questionText = item.text ?? item.question_text ?? "Pertanyaan tidak tersedia"
+
+              return (
+                <div key={item.id || `${item.participant_id}-${index}`} className="bg-white border rounded-xl p-4 shadow-sm">
+                  <div className="flex justify-between items-start gap-3">
+                    <div>
+                      <p className="text-xs text-gray-500">#{index + 1} • {item.participant_name || item.participant_id}</p>
+                      <p className="mt-2 text-base font-medium text-gray-900">{questionText}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => markAsAnswered(item.id)}
+                      className={`text-xs px-3 py-1.5 rounded-full border ${item.answered ? "bg-green-100 text-green-700 border-green-200" : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"}`}
+                    >
+                      {item.answered ? "Answered" : "Mark as answered"}
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => markAsAnswered(item.id)}
-                    className={`text-xs px-3 py-1.5 rounded-full border ${item.answered ? "bg-green-100 text-green-700 border-green-200" : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"}`}
-                  >
-                    {item.answered ? "Answered" : "Mark as answered"}
-                  </button>
+                  {item.created_at && (
+                    <p className="mt-3 text-xs text-gray-400">{new Date(item.created_at).toLocaleString("id-ID")}</p>
+                  )}
                 </div>
-                {item.created_at && (
-                  <p className="mt-3 text-xs text-gray-400">{new Date(item.created_at).toLocaleString("id-ID")}</p>
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
