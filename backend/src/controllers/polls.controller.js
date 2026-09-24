@@ -445,37 +445,53 @@ export const updatePoll = async (req, res) => {
 export const getPollsForStudent = async (req, res) => {
     const { sessionId } = req.params;
 
+    let client
+
     try {
-        const getDataPoll = await pool.query(
+        client = await pool.connect()
+        await client.query("BEGIN")
+
+        const publishedPollsRes = await client.query(
             `SELECT *
              FROM polls
              WHERE session_id = $1
-             AND status = 'published'`,
+             AND status = 'published'
+             ORDER BY published_at DESC NULLS LAST, created_at DESC`,
             [sessionId]
-        );
+        )
 
         // Tidak ada poll aktif
-        if (getDataPoll.rows.length === 0) {
+        if (publishedPollsRes.rows.length === 0) {
+            await client.query("COMMIT")
             return res.status(404).json({
                 success: false,
                 message: "Tidak ada soal aktif saat ini untuk sesi ini."
-            });
-        }
-
-        if (getDataPoll.rows.length > 1) {
-            console.error("Multiple published polls found for session:", sessionId)
-            return res.status(500).json({
-                success: false,
-                message: "Status poll sesi tidak valid."
             })
         }
 
-        const currentPoll = getDataPoll.rows[0];
+        const canonicalPoll = publishedPollsRes.rows[0]
+
+        if (publishedPollsRes.rows.length > 1) {
+            const stalePollIds = publishedPollsRes.rows.slice(1).map(poll => poll.id)
+
+            if (stalePollIds.length > 0) {
+                await client.query(
+                    `UPDATE polls
+                     SET status = 'closed',
+                         closed_at = CURRENT_TIMESTAMP
+                     WHERE session_id = $1
+                       AND status = 'published'
+                       AND id = ANY($2)`,
+                    [sessionId, stalePollIds]
+                )
+            }
+        }
+
+        await client.query("COMMIT")
 
         // Quiz dan polling membutuhkan options
-        if (currentPoll.type === "quiz" || currentPoll.type === "polling") {
-
-            const getDataPollOption = await pool.query(
+        if (canonicalPoll.type === "quiz" || canonicalPoll.type === "polling") {
+            const getDataPollOption = await client.query(
                 `SELECT
                     id,
                     poll_id,
@@ -484,17 +500,17 @@ export const getPollsForStudent = async (req, res) => {
                  FROM poll_options
                  WHERE poll_id = $1
                  ORDER BY option_order ASC`,
-                [currentPoll.id]
-            );
+                [canonicalPoll.id]
+            )
 
             return res.status(200).json({
                 success: true,
                 message: "Poll berhasil didapat!",
                 data: {
-                    ...currentPoll,
+                    ...canonicalPoll,
                     options: getDataPollOption.rows
                 }
-            });
+            })
         }
 
         // Poll selain quiz
@@ -502,17 +518,25 @@ export const getPollsForStudent = async (req, res) => {
             success: true,
             message: "Poll berhasil didapat!",
             data: {
-                ...currentPoll,
+                ...canonicalPoll,
                 options: []
             }
-        });
+        })
 
     } catch (error) {
-        console.error("Get data poll error:", error.message);
+        if (client) {
+            await client.query("ROLLBACK").catch(() => { })
+        }
+
+        console.error("Get data poll error:", error.message)
 
         return res.status(500).json({
             success: false,
             message: "Gagal mengambil data Soal"
-        });
+        })
+    } finally {
+        if (client) {
+            client.release()
+        }
     }
 };
