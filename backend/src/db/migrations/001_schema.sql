@@ -117,6 +117,18 @@ WHERE
 -- Percepat pencarian data berdasarkan poll
 CREATE INDEX IF NOT EXISTS idx_responses_poll ON responses (poll_id);
 
+CREATE TABLE IF NOT EXISTS wordcloud_word_counts (
+    poll_id UUID NOT NULL REFERENCES polls (id) ON DELETE CASCADE,
+    word VARCHAR(255) NOT NULL,
+    count INT NOT NULL DEFAULT 0 CHECK (count >= 0),
+    PRIMARY KEY (poll_id, word)
+);
+
+CREATE TABLE IF NOT EXISTS wordcloud_count_initializations (
+    poll_id UUID PRIMARY KEY REFERENCES polls (id) ON DELETE CASCADE,
+    initialized_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX IF NOT EXISTS idx_poll_options_poll ON poll_options (poll_id);
 
 CREATE INDEX IF NOT EXISTS idx_questions_session ON questions (session_id);

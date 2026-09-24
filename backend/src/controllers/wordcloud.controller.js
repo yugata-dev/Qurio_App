@@ -22,24 +22,82 @@ const buildWordCounts = (text) => {
         .filter((word) => word.length > 2 && !stopWords.has(word))
 }
 
+const initializeWordCloudCounts = async (pollId) => {
+    const client = await pool.connect()
+
+    try {
+        await client.query("BEGIN")
+        await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [pollId])
+
+        const initialized = await client.query(
+            "INSERT INTO wordcloud_count_initializations (poll_id) VALUES ($1) ON CONFLICT DO NOTHING RETURNING poll_id",
+            [pollId]
+        )
+
+        if (initialized.rows.length === 0) {
+            await client.query("COMMIT")
+            return
+        }
+
+        const responses = await client.query(
+            "SELECT answer FROM responses WHERE poll_id = $1 AND answer IS NOT NULL",
+            [pollId]
+        )
+        const counts = {}
+
+        for (const row of responses.rows) {
+            for (const word of buildWordCounts(row.answer)) {
+                counts[word] = (counts[word] || 0) + 1
+            }
+        }
+
+        for (const [word, count] of Object.entries(counts)) {
+            await client.query(
+                `INSERT INTO wordcloud_word_counts (poll_id, word, count)
+                 VALUES ($1, $2, $3)
+                 ON CONFLICT (poll_id, word) DO NOTHING`,
+                [pollId, word, count]
+            )
+        }
+
+        await client.query("COMMIT")
+    } catch (error) {
+        await client.query("ROLLBACK")
+        throw error
+    } finally {
+        client.release()
+    }
+}
+
+const updateWordCloudCounts = async (pollId, text) => {
+    await initializeWordCloudCounts(pollId)
+    const words = buildWordCounts(text)
+
+    if (words.length === 0) {
+        return
+    }
+
+    await pool.query(
+        `INSERT INTO wordcloud_word_counts (poll_id, word, count)
+         SELECT $1, words.word, COUNT(*)
+         FROM UNNEST($2::text[]) AS words(word)
+         GROUP BY words.word
+         ON CONFLICT (poll_id, word)
+         DO UPDATE SET count = wordcloud_word_counts.count + EXCLUDED.count`,
+        [pollId, words]
+    )
+}
+
 const calculateWordCloud = async (pollId) => {
     const result = await pool.query(
-        "SELECT answer FROM responses WHERE poll_id = $1 AND answer IS NOT NULL",
+        `SELECT word, count
+         FROM wordcloud_word_counts
+         WHERE poll_id = $1
+         ORDER BY count DESC, word ASC`,
         [pollId]
     )
 
-    const counts = {}
-
-    for (const row of result.rows) {
-        const words = buildWordCounts(row.answer)
-        for (const word of words) {
-            counts[word] = (counts[word] || 0) + 1
-        }
-    }
-
-    return Object.entries(counts)
-        .map(([word, count]) => ({ word, count }))
-        .sort((a, b) => b.count - a.count)
+    return result.rows
 }
 
 export const submitWordCloudResponse = async (req, res) => {
@@ -111,6 +169,8 @@ export const submitWordCloudResponse = async (req, res) => {
             })
         }
 
+        await initializeWordCloudCounts(pollId)
+
         const insertResult = await pool.query(
             `INSERT INTO responses (poll_id, participant_id, answer, option_id, is_correct)
              VALUES ($1, $2, $3, NULL, NULL)
@@ -118,6 +178,7 @@ export const submitWordCloudResponse = async (req, res) => {
             [pollId, participantId || null, cleanWord]
         )
 
+        await updateWordCloudCounts(pollId, cleanWord)
         const words = await calculateWordCloud(pollId)
 
         const io = req.app.get("io")
@@ -129,6 +190,7 @@ export const submitWordCloudResponse = async (req, res) => {
             })
         }
 
+        await initializeWordCloudCounts(poll.id)
         return res.status(201).json({
             success: true,
             data: {
@@ -201,6 +263,7 @@ export const getWordCloudResults = async (req, res) => {
         }
 
         const poll = pollResult.rows[0]
+        await initializeWordCloudCounts(poll.id)
         const words = await calculateWordCloud(poll.id)
 
         return res.status(200).json({

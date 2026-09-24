@@ -349,10 +349,6 @@ export const updatePoll = async (req, res) => {
             return res.status(403).json({ success: false, message: "Anda bukan pemilik sesi ini!" });
         }
 
-        if (poll.type !== 'quiz') {
-            return res.status(400).json({ success: false, message: "Poll bukan type quiz." });
-        }
-
         // Step 4: Update — TODO: mirip query bulk, tapi WHERE id = $2 (bukan session_id)
         let query = "UPDATE polls SET status = $1";
         if (status === "published") {

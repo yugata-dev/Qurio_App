@@ -54,10 +54,11 @@ export const createResponse = async (req, res) => {
     try {
         // 1. Pastikan soal sudah dipublikasikan
         const pollResult = await pool.query(
-            `SELECT id, type, session_id
-             FROM polls
-             WHERE id = $1
-             AND status = 'published'`,
+            `SELECT p.id, p.type, p.session_id, s.teacher_id
+             FROM polls p
+             JOIN sessions s ON s.id = p.session_id
+             WHERE p.id = $1
+             AND p.status = 'published'`,
             [pollId]
         )
 
@@ -186,7 +187,7 @@ export const createResponse = async (req, res) => {
         const io = req.app.get("io")
 
         if (io) {
-            io.to(`session:${poll.session_id}`)
+            io.to(`teacher:${poll.teacher_id}`)
                 .emit("response_created", newResponse)
         }
 
