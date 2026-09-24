@@ -35,14 +35,29 @@ export const getQuestionsByPollId = async (req, res) => {
             })
         }
 
-        const sessionId = pollResult.rows[0].session_id
-        const result = await pool.query(
-            `SELECT *
-             FROM questions
-             WHERE session_id = $1
-             ORDER BY created_at ASC`,
-            [sessionId]
+        const hasPollIdColumn = await pool.query(
+            `SELECT 1
+             FROM information_schema.columns
+             WHERE table_schema = 'public'
+               AND table_name = 'questions'
+               AND column_name = 'poll_id'`
         )
+
+        const result = hasPollIdColumn.rows.length > 0
+            ? await pool.query(
+                `SELECT *
+                 FROM questions
+                 WHERE poll_id = $1
+                 ORDER BY created_at DESC`,
+                [pollId]
+            )
+            : await pool.query(
+                `SELECT *
+                 FROM questions
+                 WHERE session_id = $1
+                 ORDER BY created_at DESC`,
+                [pollResult.rows[0].session_id]
+            )
 
         return res.status(200).json({
             success: true,
@@ -160,12 +175,27 @@ export const createQuestion = async (req, res) => {
 
         const participantName = body.participant_name ?? body.name ?? (participantId ? "Siswa" : "Anonim")
 
-        const insertResult = await pool.query(
-            `INSERT INTO questions (session_id, student_id, participant_id, student_name, text, upvotes, answered, answer)
-             VALUES ($1, NULL, $2, $3, $4, 0, false, NULL)
-             RETURNING *`,
-            [poll.session_id, participantId || null, String(participantName).trim() || "Anonim", cleanText]
+        const hasPollIdColumn = await pool.query(
+            `SELECT 1
+             FROM information_schema.columns
+             WHERE table_schema = 'public'
+               AND table_name = 'questions'
+               AND column_name = 'poll_id'`
         )
+
+        const insertResult = hasPollIdColumn.rows.length > 0
+            ? await pool.query(
+                `INSERT INTO questions (poll_id, session_id, student_id, participant_id, student_name, text, upvotes, answered, answer)
+                 VALUES ($1, $2, NULL, $3, $4, $5, 0, false, NULL)
+                 RETURNING *`,
+                [pollId, poll.session_id, participantId || null, String(participantName).trim() || "Anonim", cleanText]
+            )
+            : await pool.query(
+                `INSERT INTO questions (session_id, student_id, participant_id, student_name, text, upvotes, answered, answer)
+                 VALUES ($1, NULL, $2, $3, $4, 0, false, NULL)
+                 RETURNING *`,
+                [poll.session_id, participantId || null, String(participantName).trim() || "Anonim", cleanText]
+            )
 
         const newQuestion = insertResult.rows[0]
         const responseData = toQuestionPayload(newQuestion, pollId)
