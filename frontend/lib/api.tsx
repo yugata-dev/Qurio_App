@@ -35,7 +35,7 @@ export interface Polls {
     poll: {
       id: string;
       sessionId: number;
-      type: "quiz" | "qa" | "wordcloud";
+      type: "quiz" | "polling" | "qa" | "wordcloud";
       question: string;
       status: "draft" | "published" | "closed";
       created_at: string;
@@ -68,7 +68,7 @@ interface SessionDetailResponse {
     id: string;
     title: string;
     access_code: number;
-    type: "quiz" | "qa" | "wordcloud"
+    type: "quiz" | "polling" | "qa" | "wordcloud"
     status: "active" | "ended"
   };
 }

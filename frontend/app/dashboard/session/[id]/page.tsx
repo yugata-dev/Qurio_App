@@ -16,7 +16,7 @@ export interface SessionData {
   id: string
   title: string
   access_code: string | number
-  type: "quiz" | "qa" | "wordcloud"
+  type: "quiz" | "polling" | "qa" | "wordcloud"
   status: "active" | "ended"
 }
 

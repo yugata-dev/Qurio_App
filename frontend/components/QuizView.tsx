@@ -134,7 +134,7 @@ export default function QuizView({ sessionId }: QuizViewProps) {
             const participantId = localStorage.getItem("participant_id")
             if (!participantId) throw new Error("Participant ID tidak ditemukan")
 
-            if (poll.type === "quiz") {
+            if (poll.type === "quiz" || poll.type === "polling") {
                 if (!selected) throw new Error("Pilih salah satu jawaban")
                 await fetchResponsePoll(poll.id, participantId, data.answerStudent, selected)
             } else if (poll.type === "qa") {
@@ -210,7 +210,7 @@ export default function QuizView({ sessionId }: QuizViewProps) {
                         </div>
                         <div className="px-6 md:px-8 pb-8">
                             <form onSubmit={handleSubmit(onSubmitResponse)} className="space-y-3">
-                                {poll.type !== "quiz" ? (
+                                {poll.type !== "quiz" && poll.type !== "polling" ? (
                                     <div>
                                         <textarea {...register("answerStudent", { required: "Jawaban wajib diisi" })} placeholder="Tulis jawabanmu disini..." className="mt-2 w-full bg-zinc-50 border-2 border-zinc-100 focus:border-zinc-900 focus:bg-white rounded-2xl h-36 text-sm outline-none py-4 px-4 resize-none transition-all" />
                                         {errors.answerStudent && <p className="text-xs text-red-500 mt-1">{errors.answerStudent.message}</p>}

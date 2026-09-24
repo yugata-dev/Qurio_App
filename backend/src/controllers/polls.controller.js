@@ -392,7 +392,7 @@ export const getPollsForStudent = async (req, res) => {
              FROM polls
              WHERE session_id = $1
              AND status = 'published'
-             ORDER BY published_at DESC
+             ORDER BY published_at DESC NULLS LAST, created_at DESC
              LIMIT 1`,
             [sessionId]
         );
@@ -407,8 +407,8 @@ export const getPollsForStudent = async (req, res) => {
 
         const currentPoll = getDataPoll.rows[0];
 
-        // Quiz membutuhkan options
-        if (currentPoll.type === "quiz") {
+        // Quiz dan polling membutuhkan options
+        if (currentPoll.type === "quiz" || currentPoll.type === "polling") {
 
             const getDataPollOption = await pool.query(
                 `SELECT
