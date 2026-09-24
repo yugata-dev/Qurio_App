@@ -1,5 +1,12 @@
 import express from "express"
-import { createPoll, getPoll, getPollsBySession, getPollsForStudent, updatePoll } from "../controllers/polls.controller.js"
+import {
+    createPoll,
+    getPoll,
+    getPollsBySession,
+    getPollsForStudent,
+    updateAllPollsBySession,
+    updatePoll
+} from "../controllers/polls.controller.js"
 import { teacherLimit } from "../middlewares/auth.middleware.js"
 
 const router = express.Router()
@@ -26,7 +33,10 @@ router.get("/sessions/:sessionId/current", getPollsForStudent)
 // get detail 1 poll
 router.get("/:pollId", getPoll)
 
-// update quiz 
+// update semua poll dalam satu sesi
+router.patch("/sessions/:sessionId/polls/status", teacherLimit, updateAllPollsBySession)
+
+// update satu poll
 router.patch("/:pollId/status", teacherLimit, updatePoll)
 
 export default router

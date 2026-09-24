@@ -61,16 +61,8 @@ export const createPoll = async (req, res) => {
         return res.status(400).json({ success: false, message: validationError })
     }
 
-    let status
-    let publishedAt
-
-    if (type === "quiz") {
-        status = "draft"
-        publishedAt = null
-    } else {
-        status = "published"
-        publishedAt = new Date()
-    }
+    const status = "published"
+    const publishedAt = new Date()
 
     // Step 2: Ambil koneksi database untuk transaksi
     let client
@@ -268,13 +260,14 @@ export const updateAllPollsBySession = async (req, res) => {
         // Step 2: Bulk Update SEMUA poll yang ada di dalam session_id tersebut
         let query = "UPDATE polls SET status = $1";
         if (status === "published") {
-            query += ", published_at = CURRENT_TIMESTAMP";
+            query += ", published_at = CURRENT_TIMESTAMP, closed_at = NULL";
         } else if (status === "closed") {
             query += ", closed_at = CURRENT_TIMESTAMP";
+        } else {
+            query += ", published_at = NULL, closed_at = NULL";
         }
 
-        // Filter berdasarkan session_id dan type = 'quiz'
-        query += " WHERE session_id = $2 AND type = 'quiz' RETURNING *";
+        query += " WHERE session_id = $2 RETURNING *";
 
         const updatedPollsRes = await pool.query(query, [status, sessionId]);
         const updatedPolls = updatedPollsRes.rows; // Berisi ARRAY seluruh poll yang ter-update
@@ -282,7 +275,7 @@ export const updateAllPollsBySession = async (req, res) => {
         if (updatedPolls.length === 0) {
             return res.status(404).json({
                 success: false,
-                message: "Tidak ada poll bertipe 'quiz' yang ditemukan di sesi ini."
+                message: "Tidak ada poll yang ditemukan di sesi ini."
             });
         }
 
@@ -352,13 +345,18 @@ export const updatePoll = async (req, res) => {
         // Step 4: Update — TODO: mirip query bulk, tapi WHERE id = $2 (bukan session_id)
         let query = "UPDATE polls SET status = $1";
         if (status === "published") {
-            query += ", published_at = CURRENT_TIMESTAMP";
+            query += ", published_at = CURRENT_TIMESTAMP, closed_at = NULL";
         } else if (status === "closed") {
             query += ", closed_at = CURRENT_TIMESTAMP";
+        } else {
+            query += ", published_at = NULL, closed_at = NULL";
         }
-        query += " WHERE id = $2 AND type = 'quiz' RETURNING *";
+        query += " WHERE id = $2 RETURNING *";
 
         const updatedRes = await pool.query(query, [status, pollId]);
+        if (updatedRes.rows.length === 0) {
+            return res.status(404).json({ success: false, message: "Poll tidak ditemukan." });
+        }
         const updatedPoll = updatedRes.rows[0];
 
         // Step 5: Broadcast socket — TODO: emit ke room session, nama event bebas
