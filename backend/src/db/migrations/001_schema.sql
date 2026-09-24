@@ -101,6 +101,9 @@ CREATE TABLE IF NOT EXISTS participants (
     UNIQUE (session_id, absen)
 );
 
+ALTER TABLE questions
+ADD COLUMN IF NOT EXISTS participant_id UUID REFERENCES participants (id) ON DELETE CASCADE;
+
 -- Tambahkan dukungan peserta anonim pada database yang sudah terlanjur dibuat.
 ALTER TABLE responses
 ADD COLUMN IF NOT EXISTS participant_id UUID REFERENCES participants (id) ON DELETE CASCADE;

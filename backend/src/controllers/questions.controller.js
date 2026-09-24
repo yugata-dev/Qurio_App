@@ -142,11 +142,25 @@ export const createQuestion = async (req, res) => {
             })
         }
 
+        if (participantId) {
+            const participantResult = await pool.query(
+                "SELECT id, name FROM participants WHERE id = $1 AND session_id = $2",
+                [participantId, poll.session_id]
+            )
+
+            if (participantResult.rows.length === 0) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Peserta tidak terdaftar pada sesi ini. Silakan masuk kembali ke sesi."
+                })
+            }
+        }
+
         const participantName = body.participant_name ?? body.name ?? (participantId ? "Siswa" : "Anonim")
 
         const insertResult = await pool.query(
-            `INSERT INTO questions (session_id, student_id, student_name, text, upvotes, answered, answer)
-             VALUES ($1, $2, $3, $4, 0, false, NULL)
+            `INSERT INTO questions (session_id, student_id, participant_id, student_name, text, upvotes, answered, answer)
+             VALUES ($1, NULL, $2, $3, $4, 0, false, NULL)
              RETURNING *`,
             [poll.session_id, participantId || null, String(participantName).trim() || "Anonim", cleanText]
         )
@@ -168,7 +182,7 @@ export const createQuestion = async (req, res) => {
         console.error("Create question error:", error.message)
         return res.status(500).json({
             success: false,
-            message: error.message || "Pertanyaan gagal dikirim."
+            message: "Pertanyaan gagal dikirim. Silakan coba lagi."
         })
     }
 }

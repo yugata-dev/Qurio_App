@@ -18,7 +18,7 @@ export interface ParticipantFormProps {
     onSuccess?: () => void;
 }
 
-export function AccessForm({ onSuccess }: ParticipantFormProps) {
+export function AccessForm({ sessionId, onSuccess }: ParticipantFormProps) {
     const [message, setMessage] = useState("");
     const router = useRouter();
     const {
@@ -37,16 +37,21 @@ export function AccessForm({ onSuccess }: ParticipantFormProps) {
                 Number(dataParticipant.absen),
                 localId
             );
-            const sessionId = participant.data?.session_id;
+            const joinedSessionId = participant.data?.session_id;
 
-            if (!sessionId) {
+            if (!joinedSessionId) {
                 throw new Error("Sesi tidak ditemukan setelah berhasil bergabung.");
+            }
+
+            if (sessionId && sessionId !== joinedSessionId) {
+                throw new Error("Peserta tidak terdaftar pada sesi ini.");
             }
 
             localStorage.setItem("participant", JSON.stringify(participant));
             localStorage.setItem("participant_id", String(participant.data.id));
+            localStorage.setItem("participant_session_id", joinedSessionId);
             onSuccess?.();
-            router.push(`/play/${sessionId}`);
+            router.push(`/play/${joinedSessionId}`);
         } catch (error) {
             setMessage(error instanceof Error ? error.message : "Gagal bergabung ke sesi.");
         }

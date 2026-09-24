@@ -317,6 +317,28 @@ const getDataSession = async (
   }
 };
 
+export interface PublicSession {
+  id: string;
+  title: string;
+  access_code: number;
+  status: "active" | "ended";
+}
+
+export const getPublicSession = async (sessionId: string): Promise<PublicSession> => {
+  const response = await fetch(`${API_URL}/api/sessions/${sessionId}/public`, {
+    method: "GET",
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Sesi tidak ditemukan.");
+  }
+
+  const result = await response.json() as { data: PublicSession };
+  return result.data;
+};
+
 
 
 const getAllDataPolls = async (
@@ -523,7 +545,9 @@ export const fetchQuestionPoll = async (pollId: string, participantId: string, q
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || "Tipe qa mengirim pertanyaan melalui POST /api/questions");
+    const error = new Error(errorData.message || "Pertanyaan gagal dikirim. Silakan coba lagi.");
+    (error as Error & { status?: number }).status = response.status;
+    throw error;
   }
 
   return response.json();

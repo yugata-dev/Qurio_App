@@ -1,5 +1,5 @@
 import express from "express"
-import { createSession, getSessions, getSession, updateSession } from "../controllers/sessions.controller.js"
+import { createSession, getSessions, getSession, getPublicSession, updateSession } from "../controllers/sessions.controller.js"
 import { studentLimit, teacherLimit } from "../middlewares/auth.middleware.js"
 import { joinSession, joinSessionById } from "../controllers/participants.controller.js"
 
@@ -15,6 +15,9 @@ router.get("/:sessionId/current-poll", async (req, res) => {
     req.params = { ...req.params, sessionId: req.params.sessionId }
     return getPollsForStudent(req, res)
 })
+
+// metadata sesi untuk siswa yang sudah bergabung
+router.get("/:id/public", getPublicSession)
 
 // create session baru (guru)
 router.post("/", teacherLimit, createSession)
