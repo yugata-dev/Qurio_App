@@ -486,10 +486,12 @@ export const fetchCurrentPoll = async (sessionId: string): Promise<Poll> => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(
+      const error = new Error(
         errorData.message ||
         `Gagal mendapatkan soal!`,
       );
+      (error as Error & { status?: number }).status = response.status;
+      throw error;
     }
 
     // 3. Extract JSON dan kembalikan datanya

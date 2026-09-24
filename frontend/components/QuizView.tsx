@@ -30,14 +30,6 @@ export interface Poll {
     options: PollOption[]
 }
 
-interface SessionType {
-    id: string;
-    title: string;
-    access_code: number;
-    type: "quiz" | "polling" | "qa" | "wordcloud"
-    status: "active" | "ended"
-}
-
 const SOCKET_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/api\/?$/, "")
 type FormValues = { answerStudent: string }
 
@@ -125,8 +117,14 @@ export default function QuizView({ sessionId, onInvalidParticipant }: QuizViewPr
                 const data = await fetchCurrentPoll(sessionId)
                 if (cancelled || reqId !== fetchRequestRef.current) return
                 applyPoll(data && data.status === "published" ? data : null)
-            } catch {
-                // gagal jaringan: biarkan tampilan terakhir, jangan dikosongkan
+            } catch (error) {
+                if (cancelled || reqId !== fetchRequestRef.current) return
+
+                const status = (error as { status?: number }).status
+                if (status === 404) {
+                    applyPoll(null)
+                }
+                // Error jaringan/server lain mempertahankan tampilan terakhir.
             }
         }
 
@@ -140,7 +138,7 @@ export default function QuizView({ sessionId, onInvalidParticipant }: QuizViewPr
         }
 
         const onPollCreated = (created: Poll) => {
-            if (created.status !== "published") return
+            if (created.status !== "published" || created.session_id !== sessionId) return
             fetchRequestRef.current++ // batalkan fetch lama yang masih terbang
             applyPoll(created)
         }
@@ -223,7 +221,7 @@ export default function QuizView({ sessionId, onInvalidParticipant }: QuizViewPr
     return (
         <div className="min-h-screen bg-[#fafaf9] p-4 md:p-8">
             <div className="max-w-2xl mx-auto">
-                <Header title="Sesi langsung" />
+                <Header title={sessionData?.title ?? "Sesi langsung"} />
 
                 {submitError && <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm">{submitError}</div>}
 

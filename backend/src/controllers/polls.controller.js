@@ -62,20 +62,22 @@ export const createPoll = async (req, res) => {
     }
 
     const status = "published"
-    const publishedAt = new Date()
 
     // Step 2: Ambil koneksi database untuk transaksi
     let client
     try {
         client = await pool.connect()
 
-        // Step 3: Cek apakah sesi ada dan milik guru yang login
+        await client.query("BEGIN")
+
+        // Serialize lifecycle changes for this session.
         const sessionRes = await client.query(
-            "SELECT teacher_id FROM sessions WHERE id = $1",
+            "SELECT teacher_id FROM sessions WHERE id = $1 FOR UPDATE",
             [sessionId]
         )
 
         if (sessionRes.rows.length === 0) {
+            await client.query("ROLLBACK")
             return res.status(404).json({ success: false, message: "Sesi tidak ditemukan!" })
         }
 
@@ -84,18 +86,23 @@ export const createPoll = async (req, res) => {
         const teacherId = sessionRes.rows[0].teacher_id
         const loggedInTeacherId = req.user ? req.user.id : null
         if (teacherId !== loggedInTeacherId) {
+            await client.query("ROLLBACK")
             return res.status(403).json({ success: false, message: "Anda bukan pemilik sesi ini!" })
         }
 
-        // Step 4: Mulai transaksi database untuk menjaga konsistensi data
-        await client.query("BEGIN")
+        await client.query(
+            `UPDATE polls
+             SET status = 'closed', closed_at = CURRENT_TIMESTAMP
+             WHERE session_id = $1 AND status = 'published'`,
+            [sessionId]
+        )
 
         // Step 5: Simpan poll ke database
         const pollRes = await client.query(
             `INSERT INTO polls (session_id, type, question, status, published_at)
              VALUES ($1, $2, $3, $4, $5)
              RETURNING *`,
-            [sessionId, type, question, status, publishedAt]
+            [sessionId, type, question, status, new Date()]
         )
         const newPoll = pollRes.rows[0]
         const savedOptions = []
@@ -239,14 +246,26 @@ export const updateAllPollsBySession = async (req, res) => {
         return res.status(400).json({ success: false, message: "Status tidak valid! (draft/published/closed)" });
     }
 
+    if (status === "published") {
+        return res.status(400).json({
+            success: false,
+            message: "Publish harus dilakukan untuk satu poll, bukan seluruh sesi."
+        });
+    }
+
+    let client
     try {
+        client = await pool.connect()
+        await client.query("BEGIN")
+
         // Step 1: Cek apakah sesi ada & verifikasi pemilik sesi (Cukup query tabel sessions)
-        const sessionRes = await pool.query(
-            `SELECT id, teacher_id FROM sessions WHERE id = $1`,
+        const sessionRes = await client.query(
+            `SELECT id, teacher_id FROM sessions WHERE id = $1 FOR UPDATE`,
             [sessionId]
         );
 
         if (sessionRes.rows.length === 0) {
+            await client.query("ROLLBACK")
             return res.status(404).json({ success: false, message: "Sesi tidak ditemukan." });
         }
 
@@ -254,6 +273,7 @@ export const updateAllPollsBySession = async (req, res) => {
         const loggedInTeacherId = req.user ? req.user.id : null;
 
         if (teacherId !== loggedInTeacherId) {
+            await client.query("ROLLBACK")
             return res.status(403).json({ success: false, message: "Anda bukan pemilik sesi ini!" });
         }
 
@@ -269,15 +289,18 @@ export const updateAllPollsBySession = async (req, res) => {
 
         query += " WHERE session_id = $2 RETURNING *";
 
-        const updatedPollsRes = await pool.query(query, [status, sessionId]);
+        const updatedPollsRes = await client.query(query, [status, sessionId]);
         const updatedPolls = updatedPollsRes.rows; // Berisi ARRAY seluruh poll yang ter-update
 
         if (updatedPolls.length === 0) {
+            await client.query("ROLLBACK")
             return res.status(404).json({
                 success: false,
                 message: "Tidak ada poll yang ditemukan di sesi ini."
             });
         }
+
+        await client.query("COMMIT")
 
         // Step 3: Broadcast event via Socket.io ke semua peserta di room sesi
         const io = req.app.get("io");
@@ -297,8 +320,11 @@ export const updateAllPollsBySession = async (req, res) => {
         });
 
     } catch (error) {
+        if (client) await client.query("ROLLBACK").catch(() => { })
         console.error("Bulk update poll error:", error.message);
         return res.status(500).json({ success: false, message: "Gagal mengubah status semua poll" });
+    } finally {
+        if (client) client.release()
     }
 };
 
@@ -312,19 +338,26 @@ export const updatePoll = async (req, res) => {
         return res.status(400).json({ success: false, message: "Status tidak valid! (draft/published/closed)" });
     }
 
+    let client
     try {
+        client = await pool.connect()
+        await client.query("BEGIN")
+
         // Step 1: Cek poll ada, sekalian ambil session_id + teacher_id buat verifikasi kepemilikan
         // TODO: query JOIN polls ke sessions, ambil: p.id, p.type, p.session_id, s.teacher_id
         // Petunjuk: SELECT p.id, p.type, p.session_id, s.teacher_id
         //           FROM polls p JOIN sessions s ON p.session_id = s.id
         //           WHERE p.id = $1
-        const pollRes = await pool.query(
-            `SELECT p.id, p.type, p.session_id, s.teacher_id FROM polls p JOIN sessions s ON 
-            p.session_id = s.id WHERE p.id = $1`,
+        const pollRes = await client.query(
+            `SELECT p.id, p.type, p.session_id, s.teacher_id
+             FROM polls p
+             JOIN sessions s ON p.session_id = s.id
+             WHERE p.id = $1`,
             [pollId]
         );
 
         if (pollRes.rows.length === 0) {
+            await client.query("ROLLBACK")
             return res.status(404).json({ success: false, message: "Poll tidak ditemukan." });
         }
 
@@ -339,7 +372,28 @@ export const updatePoll = async (req, res) => {
         const loggedInTeacherId = req.user ? req.user.id : null;
 
         if (teacherId !== loggedInTeacherId) {
+            await client.query("ROLLBACK")
             return res.status(403).json({ success: false, message: "Anda bukan pemilik sesi ini!" });
+        }
+
+        await client.query("SELECT id FROM sessions WHERE id = $1 FOR UPDATE", [poll.session_id])
+        const lockedPollRes = await client.query(
+            "SELECT id FROM polls WHERE id = $1 FOR UPDATE",
+            [pollId]
+        )
+
+        if (lockedPollRes.rows.length === 0) {
+            await client.query("ROLLBACK")
+            return res.status(404).json({ success: false, message: "Poll tidak ditemukan." });
+        }
+
+        if (status === "published") {
+            await client.query(
+                `UPDATE polls
+                 SET status = 'closed', closed_at = CURRENT_TIMESTAMP
+                 WHERE session_id = $1 AND status = 'published' AND id <> $2`,
+                [poll.session_id, pollId]
+            )
         }
 
         // Step 4: Update — TODO: mirip query bulk, tapi WHERE id = $2 (bukan session_id)
@@ -353,11 +407,13 @@ export const updatePoll = async (req, res) => {
         }
         query += " WHERE id = $2 RETURNING *";
 
-        const updatedRes = await pool.query(query, [status, pollId]);
+        const updatedRes = await client.query(query, [status, pollId]);
         if (updatedRes.rows.length === 0) {
+            await client.query("ROLLBACK")
             return res.status(404).json({ success: false, message: "Poll tidak ditemukan." });
         }
         const updatedPoll = updatedRes.rows[0];
+        await client.query("COMMIT");
 
         // Step 5: Broadcast socket — TODO: emit ke room session, nama event bebas
         // tapi HARUS beda dari "all_polls_updated" biar frontend bisa bedain
@@ -378,8 +434,11 @@ export const updatePoll = async (req, res) => {
         });
 
     } catch (error) {
+        if (client) await client.query("ROLLBACK").catch(() => { })
         console.error("Update single poll error:", error.message);
         return res.status(500).json({ success: false, message: "Gagal mengubah status poll" });
+    } finally {
+        if (client) client.release()
     }
 };
 
@@ -391,9 +450,7 @@ export const getPollsForStudent = async (req, res) => {
             `SELECT *
              FROM polls
              WHERE session_id = $1
-             AND status = 'published'
-             ORDER BY published_at DESC NULLS LAST, created_at DESC
-             LIMIT 1`,
+             AND status = 'published'`,
             [sessionId]
         );
 
@@ -403,6 +460,14 @@ export const getPollsForStudent = async (req, res) => {
                 success: false,
                 message: "Tidak ada soal aktif saat ini untuk sesi ini."
             });
+        }
+
+        if (getDataPoll.rows.length > 1) {
+            console.error("Multiple published polls found for session:", sessionId)
+            return res.status(500).json({
+                success: false,
+                message: "Status poll sesi tidak valid."
+            })
         }
 
         const currentPoll = getDataPoll.rows[0];
