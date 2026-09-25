@@ -128,6 +128,32 @@ export const getSession = async (req, res) => {
     }
 }
 
+export const getPublicSession = async (req, res) => {
+    const { id } = req.params
+
+    try {
+        const result = await pool.query(
+            "SELECT id, title, access_code, status FROM sessions WHERE id = $1",
+            [id]
+        )
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Sesi tidak ditemukan!"
+            })
+        }
+
+        return res.status(200).json({ success: true, data: result.rows[0] })
+    } catch (error) {
+        console.error("Get public session error:", error.message)
+        return res.status(500).json({
+            success: false,
+            message: "Sesi gagal dimuat!"
+        })
+    }
+}
+
 // ====================================================================
 // PUT SESSION (Ubah status sesi: active/ended, hanya guru pemilik)
 // ====================================================================

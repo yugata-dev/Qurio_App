@@ -1,5 +1,69 @@
 import pool from "../config/database/connection.js";
 
+const resolveSessionName = (body = {}) => body.name ?? body.nama ?? body.student_name ?? body.participant_name ?? "Siswa";
+const resolveSessionAbsen = (body = {}) => body.absen ?? body.student_number ?? body.no_absen ?? `bot-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+
+export const joinSessionById = async (req, res) => {
+    const sessionId = req.params?.sessionId || req.body?.session_id || req.body?.sessionId
+    const name = resolveSessionName(req.body)
+    const absen = resolveSessionAbsen(req.body)
+
+    if (!sessionId) {
+        return res.status(400).json({ success: false, message: "sessionId wajib diisi." })
+    }
+
+    try {
+        const sessionCheck = await pool.query(
+            "SELECT id, status FROM sessions WHERE id = $1",
+            [sessionId]
+        )
+
+        if (sessionCheck.rows.length === 0) {
+            return res.status(404).json({ success: false, message: "Sesi tidak ditemukan." })
+        }
+
+        const sessionStatus = sessionCheck.rows[0].status
+        if (sessionStatus !== "active") {
+            return res.status(403).json({
+                success: false,
+                message: sessionStatus === "ended" ? "Sesi kuis ini sudah berakhir!" : "Sesi belum diaktifkan oleh guru."
+            })
+        }
+
+        const existing = await pool.query(
+            "SELECT * FROM participants WHERE session_id = $1 AND absen = $2",
+            [sessionId, absen]
+        )
+
+        if (existing.rows.length > 0) {
+            return res.status(200).json({
+                success: true,
+                message: "Selamat datang kembali!",
+                data: existing.rows[0]
+            })
+        }
+
+        const newParticipant = await pool.query(
+            "INSERT INTO participants (session_id, name, absen) VALUES ($1, $2, $3) RETURNING *",
+            [sessionId, String(name).trim() || "Siswa", String(absen).trim()]
+        )
+
+        return res.status(201).json({
+            success: true,
+            message: "Berhasil bergabung dengan sesi",
+            data: newParticipant.rows[0]
+        })
+    } catch (error) {
+        console.error("Join session by id error:", error)
+
+        if (error.code === "23505") {
+            return res.status(409).json({ success: false, message: "Absen ini sudah digunakan di sesi ini." })
+        }
+
+        return res.status(500).json({ success: false, message: "Gagal bergabung sesi" })
+    }
+}
+
 export const joinSession = async (req, res) => {
     const { access_code, nama, absen, participant_id } = req.body
     try {

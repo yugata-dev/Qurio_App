@@ -41,7 +41,7 @@ export interface Polls {
     poll: {
       id: string;
       sessionId: number;
-      type: "quiz" | "qa" | "wordcloud";
+      type: "quiz" | "polling" | "qa" | "wordcloud";
       question: string;
       status: "draft" | "published" | "closed";
       created_at: string;
@@ -89,7 +89,7 @@ interface SessionDetailResponse {
     id: string;
     title: string;
     access_code: number;
-    type: "quiz" | "qa" | "wordcloud";
+    type: "quiz" | "polling" | "qa" | "wordcloud";
     status: "active" | "ended";
   };
 }
@@ -113,6 +113,16 @@ export interface responseQuestions {
     answer: string;
     option_id: string;
   };
+}
+
+export interface responseAnswer {
+  success: boolean;
+  data: Array<{
+    poll_id: string;
+    correct_count: number;
+    incorrect_count: number;
+    total_count: number;
+  }>;
 }
 
 const API_URL =
@@ -346,6 +356,30 @@ const getDataSession = async (
   }
 };
 
+export interface PublicSession {
+  id: string;
+  title: string;
+  access_code: number;
+  status: "active" | "ended";
+}
+
+export const getPublicSession = async (
+  sessionId: string,
+): Promise<PublicSession> => {
+  const response = await fetch(`${API_URL}/api/sessions/${sessionId}/public`, {
+    method: "GET",
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Sesi tidak ditemukan.");
+  }
+
+  const result = (await response.json()) as { data: PublicSession };
+  return result.data;
+};
+
 const getAllDataPolls = async (
   sessionId: string,
   token: string | null,
@@ -484,7 +518,9 @@ export const fetchCurrentPoll = async (sessionId: string): Promise<Poll> => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Gagal mendapatkan soal!`);
+      const error = new Error(errorData.message || `Gagal mendapatkan soal!`);
+      (error as Error & { status?: number }).status = response.status;
+      throw error;
     }
 
     // 3. Extract JSON dan kembalikan datanya
@@ -511,6 +547,121 @@ export const fetchResponsePoll = async (
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ participant_id, answer, option_id }),
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Respon gagal`);
+    }
+
+    // 3. Extract JSON dan kembalikan datanya
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("Respon gagal dikirim:", error);
+    throw error;
+  }
+};
+
+export const fetchQuestionPoll = async (
+  pollId: string,
+  participantId: string,
+  questionText: string,
+) => {
+  const response = await fetch(`${API_URL}/api/questions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      poll_id: pollId,
+      participant_id: participantId,
+      question_text: questionText,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const error = new Error(
+      errorData.message || "Pertanyaan gagal dikirim. Silakan coba lagi.",
+    );
+    (error as Error & { status?: number }).status = response.status;
+    throw error;
+  }
+
+  return response.json();
+};
+
+export const fetchWordcloudPoll = async (
+  pollId: string,
+  participantId: string,
+  word: string,
+) => {
+  const response = await fetch(`${API_URL}/api/wordcloud/responses`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      poll_id: pollId,
+      participant_id: participantId,
+      word,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Gagal kirim wordcloud");
+  }
+
+  return response.json();
+};
+
+export const fetchQuestionList = async (pollId: string) => {
+  const response = await fetch(
+    `${API_URL}/api/questions?poll_id=${encodeURIComponent(pollId)}`,
+    {
+      method: "GET",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    },
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Gagal mengambil daftar pertanyaan");
+  }
+
+  return response.json();
+};
+
+export const fetchWordcloudList = async (pollId: string) => {
+  const response = await fetch(
+    `${API_URL}/api/wordcloud/${encodeURIComponent(pollId)}/responses`,
+    {
+      method: "GET",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    },
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Gagal mengambil data wordcloud");
+  }
+
+  return response.json();
+};
+
+export const fetchResponseGetPoll = async (
+  pollId: string,
+): Promise<responseAnswer> => {
+  try {
+    const response = await fetch(
+      `${API_URL}/api/responses/${pollId}/responses`,
+      {
+        method: "GET",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
       },
     );
 

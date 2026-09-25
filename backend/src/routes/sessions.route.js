@@ -1,12 +1,23 @@
 import express from "express"
-import { createSession, getSessions, getSession, updateSession } from "../controllers/sessions.controller.js"
+import { createSession, getSessions, getSession, getPublicSession, updateSession } from "../controllers/sessions.controller.js"
 import { studentLimit, teacherLimit } from "../middlewares/auth.middleware.js"
-import { joinSession } from "../controllers/participants.controller.js"
+import { joinSession, joinSessionById } from "../controllers/participants.controller.js"
 
 const router = express.Router()
 
 // join session (publik, tanpa token)
 router.post("/participants/join", joinSession)
+
+// legacy alias untuk test bot / frontend lama
+router.post("/:sessionId/join", joinSessionById)
+router.get("/:sessionId/current-poll", async (req, res) => {
+    const { getPollsForStudent } = await import("../controllers/polls.controller.js")
+    req.params = { ...req.params, sessionId: req.params.sessionId }
+    return getPollsForStudent(req, res)
+})
+
+// metadata sesi untuk siswa yang sudah bergabung
+router.get("/:id/public", getPublicSession)
 
 // create session baru (guru)
 router.post("/", teacherLimit, createSession)
