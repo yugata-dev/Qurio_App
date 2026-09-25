@@ -29,8 +29,8 @@ export default function RootLayout({
     <html
       lang="en"
       data-scroll-behavior="smooth"
+      suppressHydrationWarning
       className={cn(
-        // "dark",
         "h-full",
         "antialiased",
         geistSans.variable,

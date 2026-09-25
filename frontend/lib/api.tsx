@@ -291,7 +291,7 @@ const createSession = async (
   }
 };
 
-export const getSessions = async (): Promise<SessionListItem[]> => {
+export const getSessionList = async (): Promise<SessionListItem[]> => {
   const response = await fetch(`${API_URL}/api/sessions`, {
     method: "GET",
     credentials: "include",

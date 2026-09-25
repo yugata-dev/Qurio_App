@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -38,27 +38,47 @@ export function SettingsDialog({
   onDeleteAccount,
   onApply,
 }: SettingsDialogProps) {
+  const [draftTheme, setDraftTheme] = useState<Theme>(theme);
+
   useEffect(() => {
+    if (!open) {
+      return;
+    }
+
     let active = true;
 
-    void getThemePreference().then((storedTheme) => {
-      if (active && storedTheme && storedTheme !== theme) {
-        onThemeChange(storedTheme);
+    getThemePreference().then((storedTheme) => {
+      if (active && storedTheme) {
+        setDraftTheme(storedTheme);
       }
     });
 
     return () => {
       active = false;
     };
-  }, [onThemeChange, theme]);
+  }, [open, theme]);
 
-  const handleThemeChange = (nextTheme: Theme) => {
-    onThemeChange(nextTheme);
-    void saveThemePreference(nextTheme);
+  const handleDraftThemeChange = (nextTheme: Theme) => {
+    setDraftTheme(nextTheme);
+  };
+
+  const handleCancel = () => {
+    setDraftTheme(theme);
+  };
+
+  const handleApply = () => {
+    onThemeChange(draftTheme);
+    saveThemePreference(draftTheme);
+    onApply();
+  };
+
+  const handleDialogOpenChange = (nextOpen: boolean) => {
+    handleCancel();
+    onOpenChange(nextOpen);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent>
         <DialogHeader className="pb-5">
           <DialogTitle className="text-xl">Pengaturan</DialogTitle>
@@ -115,24 +135,24 @@ export function SettingsDialog({
               <div className="mt-4 grid grid-cols-3 gap-2">
                 <Button
                   className="h-11"
-                  variant={theme === "system" ? "default" : "outline"}
-                  onClick={() => handleThemeChange("system")}
+                  variant={draftTheme === "system" ? "default" : "outline"}
+                  onClick={() => handleDraftThemeChange("system")}
                 >
                   Sistem
                 </Button>
 
                 <Button
                   className="h-11"
-                  variant={theme === "light" ? "default" : "outline"}
-                  onClick={() => handleThemeChange("light")}
+                  variant={draftTheme === "light" ? "default" : "outline"}
+                  onClick={() => handleDraftThemeChange("light")}
                 >
                   Terang
                 </Button>
 
                 <Button
                   className="h-11"
-                  variant={theme === "dark" ? "default" : "outline"}
-                  onClick={() => handleThemeChange("dark")}
+                  variant={draftTheme === "dark" ? "default" : "outline"}
+                  onClick={() => handleDraftThemeChange("dark")}
                 >
                   Gelap
                 </Button>
@@ -142,11 +162,14 @@ export function SettingsDialog({
         </Tabs>
 
         <DialogFooter>
-          <DialogClose className="inline-flex h-9 items-center justify-center rounded-md border border-border bg-background px-2.5 text-sm font-medium transition-colors hover:bg-muted">
+          <DialogClose
+            className="inline-flex h-9 items-center justify-center rounded-md border border-border bg-background px-2.5 text-sm font-medium transition-colors hover:bg-muted"
+            onClick={handleCancel}
+          >
             Batal
           </DialogClose>
 
-          <Button onClick={onApply}>Terapkan</Button>
+          <Button onClick={handleApply}>Terapkan</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

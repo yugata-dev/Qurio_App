@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getSessions, type SessionListItem } from "@/lib/api";
+import { getSessionList, type SessionListItem } from "@/lib/api";
 
 function formatDate(value: string | null) {
   if (!value) return "-";
@@ -33,7 +33,7 @@ function DashboardPage() {
   useEffect(() => {
     let isMounted = true;
 
-    getSessions()
+    getSessionList()
       .then((sessionList) => {
         if (isMounted) setSessions(sessionList);
       })

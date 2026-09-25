@@ -174,8 +174,7 @@ const PollCard = memo(function PollCard({
 function SessionPage() {
   const router = useRouter();
   const params = useParams();
-  // context mengekspor nama typo "isAutheticated"; di-alias di sini
-  const { user, isAutheticated: isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [session, setSession] = useState<SessionData | null>(null);
   const [polls, setPolls] = useState<Poll[] | null>(null);
   const [stats, setStats] = useState<StatsMap>({});
