@@ -128,7 +128,7 @@ export default function App() {
           {/* </div> */}
         </div>
       </header>
-      <section className="min-h-[calc(100vh-80px)] flex items-start justify-center overflow-hidden bg-[radial-gradient(circle_at_50%_22%,color-mix(in_oklab,var(--primary)_20%,transparent)_0,var(--background)_76%)] pt-18.75 pb-27.5 lg:pt-28 lg:pb-32">
+      <section className="min-h-[calc(100vh-80px)] flex items-start justify-center overflow-hidden bg-[radial-gradient(circle_at_50%_50%,color-mix(in_oklab,var(--primary)_20%,transparent)_0,var(--background)_76%)] pt-18.75 pb-27.5 lg:pt-28 lg:pb-32">
         <div className=".container-custom">
           <div className="max-w-205 mx-auto flex flex-col items-center text-center">
             <span className="inline-flex gap-2 items-center text-brand-green bg-brand-secondary border border-green-border rounded-[30px] px-4 py-2 text-sm font-bold mb-6">
@@ -137,32 +137,33 @@ export default function App() {
             </span>
 
             <HeroSlider />
-            <AccessForm />
-            <Link
+            {/* <Link
               className="mt-6 text-primary text-sm hover:underline"
               href="/login"
             >
               Apakah Anda seorang Guru?
               <strong className="font-extrabold"> Buat Sesi Gratis →</strong>
-            </Link>
+            </Link> */}
           </div>
         </div>
       </section>
       <section id="cta" className="py-24 bg-[#eef4ff]">
-        <div className="w-full max-w-304 mx-auto px-6 grid gap-10 lg:grid-cols-[1fr_auto] items-center">
-          <div>
-            <span className="block text-brand-purple text-[13px] tracking-[0.12em] font-extrabold mb-5">
+        <div className="mx-auto flex w-full max-w-304 flex-col items-center justify-center gap-8 px-6 text-center lg:grid lg:grid-cols-[1fr_auto] lg:items-center lg:text-left">
+          <div className="flex max-w-xl flex-col items-center text-center lg:items-start lg:text-left">
+            <span className="mb-5 block text-[13px] font-extrabold tracking-[0.12em] text-brand-purple">
               UNTUK SISWA
             </span>
-            <h2 className="mt-0 text-3xl tracking-[-0.04em] mb-4">
+            <h2 className="mt-0 mb-4 text-3xl tracking-[-0.04em]">
               Sudah punya kode kelas?
             </h2>
-            <p className="mt-0 max-w-xl text-[#536682] text-lg leading-normal">
+            <p className="mt-0 max-w-xl text-lg leading-normal text-[#536682]">
               Masukkan kode akses, nama, dan nomor absen untuk langsung masuk ke
               ruang kelas.
             </p>
           </div>
-          <AccessForm />
+          <div className="flex justify-center lg:justify-end w-full">
+            <AccessForm />
+          </div>
         </div>
       </section>
       <section
