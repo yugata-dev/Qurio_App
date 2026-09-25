@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { IconCopy, IconDotsVertical, IconSearch } from "@tabler/icons-react";
+import {
+  IconCopy,
+  IconDotsVertical,
+  IconSearch,
+  IconX,
+} from "@tabler/icons-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getSessionList, type SessionListItem } from "@/lib/api";
+import smartSearch from "@/lib/smart-search";
 
 function formatDate(value: string | null) {
   if (!value) return "-";
@@ -27,8 +33,18 @@ function formatDate(value: string | null) {
 
 function DashboardPage() {
   const [sessions, setSessions] = useState<SessionListItem[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const debounceTimer = window.setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => window.clearTimeout(debounceTimer);
+  }, [searchQuery]);
 
   useEffect(() => {
     let isMounted = true;
@@ -67,6 +83,17 @@ function DashboardPage() {
       detail: "Sedang berlangsung",
     },
   ];
+
+  const visibleSessions = debouncedSearchQuery.trim()
+    ? smartSearch(
+        sessions,
+        debouncedSearchQuery,
+        (session) =>
+          `${session.title} ${session.id} ${session.access_code} ${session.status}`,
+      )
+        .filter((result) => result.matchedWords > 0)
+        .map((result) => result.item)
+    : sessions;
 
   return (
     <section className="mx-auto w-full max-w-[1180px] p-6 lg:p-8">
@@ -109,7 +136,25 @@ function DashboardPage() {
               <Input
                 className="h-11 rounded-full border-0 bg-muted pl-10 shadow-none"
                 placeholder="Cari sesi..."
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
               />
+              {searchQuery && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground"
+                  aria-label="Hapus pencarian"
+                  title="Hapus pencarian"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setDebouncedSearchQuery("");
+                  }}
+                >
+                  <IconX className="size-4" />
+                </Button>
+              )}
             </div>
             <Button
               variant="outline"
@@ -164,19 +209,23 @@ function DashboardPage() {
                     </TableCell>
                   </TableRow>
                 )}
-                {!isLoading && !errorMessage && sessions.length === 0 && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className="h-24 text-center text-muted-foreground"
-                    >
-                      Belum ada sesi.
-                    </TableCell>
-                  </TableRow>
-                )}
                 {!isLoading &&
                   !errorMessage &&
-                  sessions.map((session) => (
+                  visibleSessions.length === 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        className="h-24 text-center text-muted-foreground"
+                      >
+                        {debouncedSearchQuery.trim()
+                          ? "Sesi tidak ditemukan."
+                          : "Belum ada sesi."}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                {!isLoading &&
+                  !errorMessage &&
+                  visibleSessions.map((session) => (
                     <TableRow key={session.id}>
                       <TableCell className="px-4 py-3.5 font-medium text-foreground">
                         <Link

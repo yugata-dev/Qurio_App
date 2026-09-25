@@ -91,7 +91,12 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
                 {user?.role || ""}
               </p>
             </div>
-            <Button variant="ghost" size="icon-sm" aria-label="Pengaturan" onClick={() => setSettingsOpen(true)}>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Pengaturan"
+              onClick={() => setSettingsOpen(true)}
+            >
               <IconSettings className="size-4" />
             </Button>
           </div>
@@ -116,7 +121,12 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
               Sesi <IconCirclePlus />
             </Link>
           )}
-          <Button variant="ghost" size="icon" aria-label="Pengaturan" onClick={() => setSettingsOpen(true)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Pengaturan"
+            onClick={() => setSettingsOpen(true)}
+          >
             <IconSettings />
           </Button>
         </div>
