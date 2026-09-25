@@ -1,8 +1,10 @@
 "use client";
 import { fetchUserLogin } from "@/lib/api";
 import { useForm } from "react-hook-form";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { IconEye, IconEyeOff } from "@tabler/icons-react";
 import { useAuth } from "@/context/AuthContext";
 import {
   Card,
@@ -13,6 +15,11 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 
 interface FormLogin {
@@ -22,6 +29,7 @@ interface FormLogin {
 
 function LoginPage() {
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
 
   const { login } = useAuth();
   const {
@@ -99,14 +107,29 @@ function LoginPage() {
               <Label className="text-sm font-semibold text-foreground">
                 Password
               </Label>
-              <Input
-                {...register("password", {
-                  required: "Password wajib diisi",
-                })}
-                placeholder="Masukkan kata sandi Anda"
-                type="password"
-                className="w-full h-11"
-              />
+              <InputGroup className="w-full h-11">
+                <InputGroupInput
+                  {...register("password", {
+                    required: "Password wajib diisi",
+                  })}
+                  placeholder="Masukkan kata sandi Anda"
+                  type={showPassword ? "text" : "password"}
+                  className="h-11"
+                />
+                <InputGroupButton
+                  type="button"
+                  size="icon-sm"
+                  aria-label={
+                    showPassword ? "Sembunyikan password" : "Tampilkan password"
+                  }
+                  title={
+                    showPassword ? "Sembunyikan password" : "Tampilkan password"
+                  }
+                  onClick={() => setShowPassword((visible) => !visible)}
+                >
+                  {showPassword ? <IconEyeOff /> : <IconEye />}
+                </InputGroupButton>
+              </InputGroup>
               {errors.password && (
                 <span className="text-xs text-destructive">
                   {errors.password.message}

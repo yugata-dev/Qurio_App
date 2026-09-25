@@ -1,9 +1,11 @@
 "use client";
 import { fetchUserRegister } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import { useForm, Controller } from "react-hook-form";
+import { IconEye, IconEyeOff } from "@tabler/icons-react";
 import {
   Card,
   CardHeader,
@@ -15,6 +17,11 @@ import { email, z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -23,7 +30,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
 
 // interface RegisterFormData {
 //   name: string;
@@ -36,16 +42,17 @@ const formSchema = z.object({
   name: z.string().min(1, "Nama wajib diisi"),
   email: z
     .string()
-    .email('Email tidak valid')
-    .endsWith('gmail.com', 'Isi input dengan format (gmail.com) '),
+    .email("Email tidak valid")
+    .endsWith("gmail.com", "Isi input dengan format (gmail.com) "),
   password: z.string().min(9, "Password minimal 8 karakter"),
-  role: z.string()
-})
+  role: z.string(),
+});
 
 type RegisterFormData = z.infer<typeof formSchema>;
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const {
     register,
@@ -145,18 +152,33 @@ export default function RegisterPage() {
               <Label className="text-sm font-semibold text-foreground">
                 Password
               </Label>
-              <Input
-                {...register("password", {
-                  required: "Password wajib diisi",
-                  minLength: {
-                    value: 8,
-                    message: "Password minimal 8 karakter",
-                  },
-                })}
-                className="w-full h-11"
-                placeholder="Buat kata sandi minimal 8 karakter"
-                type="password"
-              />
+              <InputGroup className="w-full h-11">
+                <InputGroupInput
+                  {...register("password", {
+                    required: "Password wajib diisi",
+                    minLength: {
+                      value: 8,
+                      message: "Password minimal 8 karakter",
+                    },
+                  })}
+                  className="h-11"
+                  placeholder="Buat kata sandi minimal 8 karakter"
+                  type={showPassword ? "text" : "password"}
+                />
+                <InputGroupButton
+                  type="button"
+                  size="icon-sm"
+                  aria-label={
+                    showPassword ? "Sembunyikan password" : "Tampilkan password"
+                  }
+                  title={
+                    showPassword ? "Sembunyikan password" : "Tampilkan password"
+                  }
+                  onClick={() => setShowPassword((visible) => !visible)}
+                >
+                  {showPassword ? <IconEyeOff /> : <IconEye />}
+                </InputGroupButton>
+              </InputGroup>
               {errors.password && (
                 <span className="text-xs text-destructive">
                   {errors.password.message}
