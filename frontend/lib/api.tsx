@@ -461,7 +461,7 @@ export const updateStatusSession = async (
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
         errorData.message ||
-          `Gagal memperbarui status sesi (HTTP ${response.status})`,
+        `Gagal memperbarui status sesi (HTTP ${response.status})`,
       );
     }
 
