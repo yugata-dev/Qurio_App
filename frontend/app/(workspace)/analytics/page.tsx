@@ -1186,7 +1186,7 @@ function AnalyticsPage() {
           ) : topTopics.length > 0 ? (
             <ChartContainer
               config={topicsConfig}
-              className="h-80 w-full aspect-auto"
+              className="h-80 min-w-[700px] w-full aspect-auto"
             >
               <BarChart
                 data={topTopics.slice(0, 5)}
@@ -1603,7 +1603,7 @@ function LeaderboardTable({
   mode: "active" | "top-score" | "attention";
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border">
+    <div className="overflow-x-auto rounded-xl border border-border">
       <Table>
         <TableHeader className="bg-muted text-muted-foreground">
           <TableRow className="hover:bg-transparent">

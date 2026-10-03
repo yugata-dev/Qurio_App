@@ -25,7 +25,6 @@ interface SettingsDialogProps {
   theme: Theme;
   onThemeChange: (theme: Theme) => void;
   onLogout: () => void;
-  onDeleteAccount: () => void;
   onApply: () => void;
 }
 
@@ -35,7 +34,6 @@ export function SettingsDialog({
   theme,
   onThemeChange,
   onLogout,
-  onDeleteAccount,
   onApply,
 }: SettingsDialogProps) {
   const [draftTheme, setDraftTheme] = useState<Theme>(theme);
@@ -109,18 +107,6 @@ export function SettingsDialog({
               </div>
               <Button variant="destructive" onClick={onLogout}>
                 Keluar
-              </Button>
-            </div>
-
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-destructive/20 bg-destructive/5 p-4">
-              <div>
-                <h3 className="text-sm font-semibold">Hapus akun</h3>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Data akun akan dihapus secara permanen.
-                </p>
-              </div>
-              <Button variant="destructive" onClick={onDeleteAccount}>
-                Hapus akun
               </Button>
             </div>
           </TabsContent>

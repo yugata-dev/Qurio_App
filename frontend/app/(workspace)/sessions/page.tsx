@@ -393,7 +393,7 @@ function SessionsPage() {
           )}
 
           {/* Tabel sesi. */}
-          <div className="mt-4 overflow-hidden rounded-xl border border-border">
+          <div className="mt-4 overflow-x-auto rounded-xl border border-border">
             <Table className="min-w-[820px] text-left">
               <TableHeader className="bg-muted text-muted-foreground">
                 <TableRow className="hover:bg-transparent">

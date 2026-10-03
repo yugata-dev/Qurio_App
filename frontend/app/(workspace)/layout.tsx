@@ -9,8 +9,9 @@ import {
   IconCirclePlus,
   IconLayoutGrid,
   IconList,
-  IconLogout,
+  IconMenu2,
   IconSettings,
+  IconX,
 } from "@tabler/icons-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -30,6 +31,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { logout, user } = useAuth();
   const { theme, setTheme } = useTheme();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isFacilitator = Boolean(user && user.role.toLowerCase() !== "siswa");
   const initials = user?.name
     .split(" ")
@@ -58,7 +60,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
             )}
           >
             <IconCirclePlus className="size-[18px]" />
-            Create New Quiz
+            Buat Sesi Baru
           </Link>
         )}
         <nav className="mt-10 space-y-2" aria-label="Navigasi dashboard">
@@ -111,35 +113,118 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
       <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur lg:hidden">
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-2 font-extrabold tracking-tight"
-        >
-          <span className="grid size-8 place-items-center rounded-lg bg-primary text-xs text-primary-foreground">
-            Q
-          </span>
-          Qurio
-        </Link>
-        <div className="flex items-center gap-1">
-          {isFacilitator && (
-            <Link
-              href="/dashboard/createsessions"
-              className={buttonVariants({ size: "default" })}
-            >
-              Sesi <IconCirclePlus />
-            </Link>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Pengaturan"
-            onClick={() => setSettingsOpen(true)}
-          >
-            <IconSettings />
-          </Button>
+        <div className="flex min-w-0 items-center gap-2">
+          <Link href="/dashboard" aria-label="Qurio, ke Dashboard">
+            <Image
+              src={LogoQurio}
+              alt="Logo Qurio"
+              className="h-9 w-auto object-contain"
+              priority
+            />
+          </Link>
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Buka menu navigasi"
+          aria-expanded={isMobileMenuOpen}
+          onClick={() => setIsMobileMenuOpen(true)}
+        >
+          <IconMenu2 className="size-5" />
+        </Button>
       </header>
-      <main className="min-h-screen lg:pl-65">{children}</main>
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/50"
+            aria-label="Tutup menu navigasi"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <aside
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu navigasi"
+            className="absolute inset-y-0 left-0 flex w-[min(18rem,85vw)] flex-col border-r border-sidebar-border bg-sidebar px-5 py-5 shadow-xl"
+          >
+            <div className="flex items-center justify-between">
+              <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                <Image
+                  src={LogoQurio}
+                  alt="Logo Qurio"
+                  className="h-10 w-auto object-contain"
+                  priority
+                />
+              </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Tutup menu navigasi"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <IconX className="size-5" />
+              </Button>
+            </div>
+            {isFacilitator && (
+              <Link
+                href="/dashboard/createsessions"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={cn(
+                  buttonVariants(),
+                  "mt-7 h-[42px] w-full rounded-[10px] text-[13px] font-semibold",
+                )}
+              >
+                <IconCirclePlus className="size-[18px]" />
+                Buat Sesi Baru
+              </Link>
+            )}
+            <nav className="mt-7 space-y-2" aria-label="Navigasi dashboard">
+              <p className="pb-1 text-xs font-semibold text-[#64748d]">Workspace</p>
+              {navigation.map(({ href, label, Icon }) => {
+                const active = pathname === href;
+                return (
+                  <Link
+                    key={label}
+                    href={href}
+                    aria-current={active ? "page" : undefined}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={cn(
+                      "flex h-[42px] items-center gap-3 rounded-xl px-4 text-sm font-semibold transition-colors",
+                      active
+                        ? "bg-primary text-primary-foreground"
+                        : "text-[#64728b] hover:bg-sidebar-accent",
+                    )}
+                  >
+                    <Icon className="size-[18px]" />
+                    {label}
+                  </Link>
+                );
+              })}
+            </nav>
+            <div className="mt-auto flex items-center gap-3 border-t border-sidebar-border pt-4">
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                {initials || "Q"}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold">{user?.name || "Memuat pengguna..."}</p>
+                <p className="truncate text-xs text-muted-foreground">{user?.role || ""}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Pengaturan"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setSettingsOpen(true);
+                }}
+              >
+                <IconSettings className="size-4" />
+              </Button>
+            </div>
+          </aside>
+        </div>
+      )}
+      <main className="min-h-screen pb-4 lg:pl-65 lg:pb-0">{children}</main>
 
       {/* ✨ TAMBAHKAN INI — supaya semua toast.add() bisa tampil */}
       <Toaster />
@@ -150,7 +235,6 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
         theme={theme === "light" || theme === "dark" ? theme : "system"}
         onThemeChange={setTheme}
         onLogout={logout}
-        onDeleteAccount={() => undefined}
         onApply={() => setSettingsOpen(false)}
       />
     </div>

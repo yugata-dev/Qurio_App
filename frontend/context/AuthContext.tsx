@@ -10,6 +10,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { useRouter } from "next/navigation";
 
 // ============ TYPES ============
 
@@ -50,6 +51,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>(emptyAuthState);
+  const router = useRouter();
 
   useEffect(() => {
     let isMounted = true;
@@ -85,6 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       credentials: "include",
     });
     setAuthState(emptyAuthState);
+    router.replace("/");
   };
 
 
