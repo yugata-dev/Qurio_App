@@ -14,11 +14,11 @@ import {
   IconUsers,
 } from "@tabler/icons-react";
 import {
-  Area,
-  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
+  LabelList,
   XAxis,
   YAxis,
 } from "recharts";
@@ -31,7 +31,6 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -55,41 +54,31 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import {
-  getAnalyticsScoreTrend,
+  getAnalyticsScoreBySession,
   getAnalyticsScores,
   getAnalyticsStudents,
   getAnalyticsSummary,
   getAnalyticsTopics,
   type AnalyticsSummary,
-  type ScoreTrendPeriod,
-  type ScoreTrendPoint,
+  type ScoreBySessionPoint,
   type StudentParticipation,
   type StudentScore,
   type TopTopic,
 } from "@/lib/api";
 import { toast } from "@/components/ui/toast";
+import { useAuth } from "@/context/AuthContext";
+import { exportAnalyticsPDF } from "@/lib/export-pdf";
 import { cn } from "@/lib/utils";
-
-const TREND_RANGES: { value: ScoreTrendPeriod; label: string }[] = [
-  { value: "7d", label: "7 hari" },
-  { value: "14d", label: "14 hari" },
-  { value: "30d", label: "30 hari" },
-];
 
 const timeFormatter = new Intl.DateTimeFormat("id-ID", {
   hour: "2-digit",
   minute: "2-digit",
 });
 
-const scoreTrendConfig = {
+const scoreBySessionConfig = {
   avgScore: { label: "Skor rata-rata", color: "var(--chart-2)" },
+  totalAnswers: { label: "Jawaban dinilai" },
 } satisfies ChartConfig;
-
-const trendDateFormatter = new Intl.DateTimeFormat("id-ID", {
-  day: "numeric",
-  month: "short",
-  timeZone: "UTC",
-});
 
 const topicsConfig = {
   incorrectRate: { label: "Jawaban salah", color: "var(--chart-4)" },
@@ -206,11 +195,6 @@ interface StudentScoreProfile {
   standardDeviation: number;
 }
 
-interface Insight {
-  icon: string;
-  text: string;
-}
-
 function getStudentScoreProfiles(scores: StudentScore[]): StudentScoreProfile[] {
   const totals = new Map<
     string,
@@ -245,66 +229,61 @@ function getStudentScoreProfiles(scores: StudentScore[]): StudentScoreProfile[] 
   });
 }
 
-function generateInsights({
+function pickRandom<T>(items: T[]): T {
+  return items[Math.floor(Math.random() * items.length)]!;
+}
+
+function generateNarrative({
   summary,
   studentScores,
   studentParticipation,
   totalSessions,
+  attentionLeaderboard,
 }: {
   summary: AnalyticsSummary;
   studentScores: StudentScore[];
   studentParticipation: StudentParticipation[];
   totalSessions: number;
-}): Insight[] {
-  const insights: Insight[] = [];
-  const activeStudents = studentParticipation.filter(
-    (student) => student.responsesSubmitted > 0,
-  ).length;
+  attentionLeaderboard: {
+    studentName: string;
+    sessionsJoined: number;
+    averageScore: number | null;
+    isHardworkingLowScore: boolean;
+  }[];
+}): string {
+  const parts: string[] = [];
   const totalStudents = summary.totalStudents;
-  const participationPct = totalStudents
-    ? (activeStudents / totalStudents) * 100
-    : 0;
+  const attendancePct = Math.round(summary.attendanceRate);
 
   if (totalStudents > 0) {
-    if (participationPct >= 90) {
-      insights.push({
-        icon: "✅",
-        text: `Partisipasi sangat baik — hampir semua siswa (${activeStudents} dari ${totalStudents}) terlibat aktif di kelas.`,
-      });
-    } else if (participationPct >= 70) {
-      insights.push({
-        icon: "📊",
-        text: `Partisipasi cukup baik — ${activeStudents} dari ${totalStudents} siswa terlibat. Beberapa siswa masih perlu didorong untuk aktif.`,
-      });
-    } else {
-      insights.push({
-        icon: "⚠️",
-        text: `Partisipasi perlu ditingkatkan — hanya ${activeStudents} dari ${totalStudents} siswa yang aktif. Pertimbangkan strategi untuk meningkatkan keterlibatan.`,
-      });
-    }
+    parts.push(
+      pickRandom([
+        `Tingkat partisipasi kelas tercatat ${attendancePct}% dari seluruh siswa.`,
+        `Kehadiran siswa berada di angka ${attendancePct}%, dari total ${totalStudents} siswa.`,
+        `Secara keseluruhan, tingkat kehadiran kelas mencapai ${attendancePct}%.`,
+      ]),
+    );
   }
 
-  const averageScore = Math.round(summary.averageScore);
-  if (averageScore >= 80) {
-    insights.push({
-      icon: "🏆",
-      text: `Nilai rata-rata kelas ${averageScore}% — pemahaman materi sangat baik.`,
-    });
-  } else if (averageScore >= 70) {
-    insights.push({
-      icon: "✅",
-      text: `Nilai rata-rata kelas ${averageScore}% — sudah di atas standar, pertahankan atau tingkatkan.`,
-    });
-  } else if (averageScore >= 60) {
-    insights.push({
-      icon: "📊",
-      text: `Nilai rata-rata kelas ${averageScore}% — masih di batas aman, perlu penguatan di beberapa topik.`,
-    });
-  } else {
-    insights.push({
-      icon: "⚠️",
-      text: `Nilai rata-rata kelas ${averageScore}% — di bawah standar. Pertimbangkan untuk mengulang materi yang sulit.`,
-    });
+  if (studentScores.length > 0) {
+    const averageScore = Math.round(summary.averageScore);
+    if (averageScore >= 80) {
+      parts.push(
+        `Nilai kuis rata-rata ${averageScore}%, menunjukkan pemahaman materi yang kuat dan berada di atas KKM 70.`,
+      );
+    } else if (averageScore >= 70) {
+      parts.push(
+        `Nilai kuis rata-rata ${averageScore}% dan sudah memenuhi KKM 70. Pertahankan cara belajar yang berjalan baik.`,
+      );
+    } else if (averageScore >= 60) {
+      parts.push(
+        `Nilai kuis rata-rata ${averageScore}%, masih di bawah KKM 70 sehingga beberapa materi mungkin perlu diulang.`,
+      );
+    } else {
+      parts.push(
+        `Nilai kuis rata-rata ${averageScore}%, jauh di bawah KKM 70 dan perlu penguatan materi dengan pendekatan berbeda.`,
+      );
+    }
   }
 
   const scoreProfiles = getStudentScoreProfiles(studentScores).sort(
@@ -312,70 +291,69 @@ function generateInsights({
   );
   const topPerformer = scoreProfiles[0];
   if (topPerformer) {
-    insights.push({
-      icon: "🌟",
-      text: `${topPerformer.studentName} adalah siswa terbaik — rata-rata ${topPerformer.average}% dari ${topPerformer.sessionCount} sesi kuis yang diikuti.`,
-    });
+    parts.push(
+      `Siswa dengan hasil tertinggi adalah ${topPerformer.studentName}, dengan rata-rata ${topPerformer.average}% dari ${topPerformer.sessionCount} sesi kuis.`,
+    );
   }
 
   const participationByKey = new Map(
     studentParticipation.map((student) => [student.studentKey, student]),
   );
-  const hardworkingStudents = scoreProfiles.filter((student) => {
-    const participation = participationByKey.get(student.studentKey);
-    return participation !== undefined &&
-      participation.sessionsJoined >= 7 &&
-      student.average < 70;
-  });
-  if (hardworkingStudents.length === 1) {
-    const student = hardworkingStudents[0];
-    const participation = participationByKey.get(student.studentKey);
-    insights.push({
-      icon: "💪",
-      text: `${student.studentName} sangat rajin hadir (${participation?.sessionsJoined} sesi), tapi nilainya masih ${student.average}%. Perlu pendekatan berbeda untuk membantunya memahami materi.`,
+  const hardworkingStudents = attentionLeaderboard.filter(
+    (student) => student.isHardworkingLowScore,
+  );
+
+  if (hardworkingStudents.length > 0) {
+    if (hardworkingStudents.length === 1) {
+      const student = hardworkingStudents[0];
+      parts.push(
+        `Di sisi lain, ${student.studentName} rajin masuk (${student.sessionsJoined} sesi) tetapi nilainya masih ${student.averageScore}%. Mungkin dia butuh cara belajar yang berbeda.`,
+      );
+    } else if (hardworkingStudents.length <= 3) {
+      const names = hardworkingStudents.map((student) => student.studentName);
+      parts.push(
+        `Di sisi lain, ada ${hardworkingStudents.length} anak rajin masuk tetapi nilainya belum nyantol, yaitu ${names.join(", ")}. Mereka mungkin butuh pendekatan belajar yang berbeda.`,
+      );
+    } else {
+      const topNames = hardworkingStudents
+        .slice(0, 3)
+        .map((student) => student.studentName);
+      parts.push(
+        `Di sisi lain, ada ${hardworkingStudents.length} anak rajin masuk tetapi nilainya belum nyantol. Di antaranya ${topNames.join(", ")}, dan ${hardworkingStudents.length - 3} lainnya. Mereka mungkin butuh pendekatan belajar yang berbeda.`,
+      );
+    }
+  } else {
+    const highScoringLowAttendance = scoreProfiles.find((student) => {
+      const participation = participationByKey.get(student.studentKey);
+      return participation !== undefined &&
+        participation.sessionsJoined <= 5 &&
+        student.average >= 75;
     });
-  } else if (hardworkingStudents.length <= 3 && hardworkingStudents.length > 1) {
-    insights.push({
-      icon: "💪",
-      text: `${hardworkingStudents.length} siswa rajin hadir tapi nilainya perlu ditingkatkan: ${hardworkingStudents.map((student) => student.studentName).join(", ")}. Mereka sudah berusaha, mungkin butuh pendampingan tambahan.`,
-    });
-  } else if (hardworkingStudents.length > 3) {
-    insights.push({
-      icon: "💪",
-      text: `Ada ${hardworkingStudents.length} siswa yang rajin hadir tapi nilainya di bawah standar. Perlu perhatian khusus untuk kelompok ini.`,
-    });
+    if (highScoringLowAttendance) {
+      const participation = participationByKey.get(highScoringLowAttendance.studentKey);
+      parts.push(
+        `${highScoringLowAttendance.studentName} mendapat nilai bagus (${highScoringLowAttendance.average}%) meski hadir ${participation?.sessionsJoined} dari ${totalSessions} sesi.`,
+      );
+    }
   }
 
-  const highScoringLowAttendance = scoreProfiles.find((student) => {
-    const participation = participationByKey.get(student.studentKey);
-    return participation !== undefined &&
-      participation.sessionsJoined <= 5 &&
-      student.average >= 75;
-  });
-  if (highScoringLowAttendance) {
-    const participation = participationByKey.get(highScoringLowAttendance.studentKey);
-    insights.push({
-      icon: "🎯",
-      text: `${highScoringLowAttendance.studentName} memiliki nilai bagus (${highScoringLowAttendance.average}%), tapi hanya hadir di ${participation?.sessionsJoined} dari ${totalSessions} sesi. Cek apakah ada kendala kehadiran.`,
-    });
+  if (attentionLeaderboard.length > 0) {
+    parts.push(
+      `${attentionLeaderboard.length} siswa perlu perhatian khusus. Lihat tab "Perlu Perhatian" untuk tindak lanjut.`,
+    );
   }
 
-  const studentsNeedingAttention = new Set([
-    ...scoreProfiles
-      .filter((student) => student.average < 60)
-      .map((student) => student.studentKey),
-    ...studentParticipation
-      .filter((student) => student.sessionsJoined < 4)
-      .map((student) => student.studentKey),
-  ]);
-  if (studentsNeedingAttention.size > 0) {
-    insights.push({
-      icon: "🚨",
-      text: `${studentsNeedingAttention.size} siswa perlu perhatian khusus — nilainya rendah atau kehadirannya jarang. Lihat tab 'Perlu Perhatian' untuk detail.`,
-    });
+  if (parts.length < 3) {
+    parts.push(
+      pickRandom([
+        "Terus beri ruang bagi siswa untuk bertanya dan saling membantu.",
+        "Aktivitas belajar yang konsisten dapat membantu menjaga pemahaman siswa.",
+        "Dorong siswa untuk terus terlibat dalam sesi dan latihan berikutnya.",
+      ]),
+    );
   }
 
-  return insights;
+  return parts.join(" ");
 }
 
 function getQuizCoverage(sessionCount: number, totalSessions: number) {
@@ -401,18 +379,18 @@ function getQuizCoverage(sessionCount: number, totalSessions: number) {
 // Halaman utama
 // -------------------------------------------------------------
 function AnalyticsPage() {
+  const { user } = useAuth();
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [studentScores, setStudentScores] = useState<StudentScore[]>([]);
   const [studentParticipation, setStudentParticipation] = useState<
     StudentParticipation[]
   >([]);
   const [topTopics, setTopTopics] = useState<TopTopic[]>([]);
-  const [scoreTrend, setScoreTrend] = useState<ScoreTrendPoint[]>([]);
+  const [scoreBySession, setScoreBySession] = useState<ScoreBySessionPoint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [fetchedAt, setFetchedAt] = useState<number | null>(null);
-  const [trendRange, setTrendRange] = useState<ScoreTrendPeriod>("7d");
   const [leaderboardTab, setLeaderboardTab] = useState<
     "active" | "top-score" | "attention"
   >("active");
@@ -434,7 +412,7 @@ function AnalyticsPage() {
             getAnalyticsScores("all"),
             getAnalyticsStudents("all"),
             getAnalyticsTopics("all", 5),
-            getAnalyticsScoreTrend(trendRange),
+            getAnalyticsScoreBySession(),
           ] as const);
 
         if (summaryResult.status === "fulfilled") {
@@ -450,7 +428,7 @@ function AnalyticsPage() {
           setTopTopics(topicsResult.value);
         }
         if (trendResult.status === "fulfilled") {
-          setScoreTrend(trendResult.value);
+          setScoreBySession(trendResult.value);
         }
 
         const failures: string[] = [];
@@ -463,7 +441,7 @@ function AnalyticsPage() {
           failures.push("topik tersulit");
         }
         if (trendResult.status === "rejected") {
-          failures.push("tren skor kuis");
+          failures.push("skor kuis per sesi");
         }
 
         const stamp = Date.now();
@@ -479,7 +457,7 @@ function AnalyticsPage() {
         setIsRefreshing(false);
       }
     },
-    [trendRange],
+    [],
   );
 
   useEffect(() => {
@@ -487,8 +465,11 @@ function AnalyticsPage() {
     return () => window.clearTimeout(timer);
   }, [loadSessions]);
 
-  const hasScoreTrendData = scoreTrend.some(
-    (point) => point.totalResponses > 0,
+  const lowestScoringSession = scoreBySession.reduce<ScoreBySessionPoint | null>(
+    (lowest, session) => lowest === null || session.avgScore < lowest.avgScore
+      ? session
+      : lowest,
+    null,
   );
 
   const scoreByStudent = useMemo(
@@ -576,19 +557,6 @@ function AnalyticsPage() {
     };
   }, [scoreByStudent]);
 
-  const insights = useMemo(
-    () =>
-      summary
-        ? generateInsights({
-          summary,
-          studentScores,
-          studentParticipation,
-          totalSessions: summary.totalSessions,
-        })
-        : [],
-    [summary, studentScores, studentParticipation],
-  );
-
   const attentionLeaderboard = useMemo(() => {
     const studentsByKey = new Map(
       studentParticipation.map((student) => [
@@ -614,51 +582,71 @@ function AnalyticsPage() {
     }
 
     const totalSessions = summary?.totalSessions ?? 0;
+    const attendanceThreshold = Math.max(7, totalSessions - 1);
     return [...studentsByKey.values()]
       .flatMap((student) => {
         const averageScore = student.scoreProfile?.average ?? null;
-        const lowScore = averageScore !== null && averageScore < 60;
-        const lowAttendance = student.sessionsJoined < 4;
-        const lowResponses = student.responsesSubmitted < 15;
-        if (!lowScore && !lowAttendance && !lowResponses) return [];
+        const isCriticalScore = averageScore !== null && averageScore < 60;
+        const isCriticalAttendance = student.sessionsJoined < 4;
+        const isLowResponses = student.responsesSubmitted < 15;
+        const isHardworkingLowScore =
+          averageScore !== null &&
+          averageScore >= 60 &&
+          averageScore < 70 &&
+          student.sessionsJoined >= attendanceThreshold;
+
+        if (
+          !isCriticalScore &&
+          !isCriticalAttendance &&
+          !isLowResponses &&
+          !isHardworkingLowScore
+        ) {
+          return [];
+        }
 
         const reasons: string[] = [];
-        if (lowScore) reasons.push(`🚨 Nilai rendah (${averageScore}%)`);
-        if (lowAttendance) {
+        if (isCriticalScore) {
+          reasons.push(`🚨 Nilai kritis (${averageScore}%)`);
+        } else if (isHardworkingLowScore) {
+          reasons.push(`💪 Rajin hadir tapi nilai ${averageScore}%`);
+        }
+
+        if (isCriticalAttendance) {
           reasons.push(
             `⚠️ Kehadiran rendah (${student.sessionsJoined} dari ${totalSessions} sesi)`,
           );
         }
-        if (lowResponses) {
-          reasons.push(`💬 Jarang menjawab (${student.responsesSubmitted} respons)`);
+        if (isLowResponses) {
+          reasons.push(
+            `💬 Jarang menjawab (${student.responsesSubmitted} respons)`,
+          );
         }
 
         let recommendation = "Dorong siswa untuk lebih aktif menjawab";
-        if (lowScore && lowAttendance) {
+        if (isCriticalScore && isCriticalAttendance) {
           recommendation = "Prioritaskan — cek kendala belajar & kehadiran";
-        } else if (lowScore) {
+        } else if (isCriticalScore) {
           recommendation = "Beri pendampingan belajar tambahan";
-        } else if (lowAttendance) {
+        } else if (isCriticalAttendance) {
           recommendation = "Cek kendala kehadiran, follow up orang tua";
-        } else if (
-          student.sessionsJoined >= 7 &&
-          averageScore !== null &&
-          averageScore < 70
-        ) {
-          recommendation = "Coba metode pengajaran berbeda untuk siswa ini";
+        } else if (isHardworkingLowScore) {
+          recommendation = "Apresiasi usahanya, coba metode belajar berbeda";
         }
 
-        const severity = lowScore && lowAttendance
+        const severity = isCriticalScore && isCriticalAttendance
           ? 1
-          : lowScore
+          : isCriticalScore
             ? 2
-            : lowAttendance
-              ? 3
-              : 4;
+            : isCriticalAttendance
+              ? 2
+              : isHardworkingLowScore
+                ? 3
+                : 4;
 
         return [{
           ...student,
           averageScore,
+          isHardworkingLowScore,
           reason: reasons.join(" · "),
           recommendation,
           severity,
@@ -672,6 +660,78 @@ function AnalyticsPage() {
       );
   }, [studentParticipation, scoreByStudent, summary?.totalSessions]);
 
+  const classNarrative = useMemo(
+    () =>
+      summary
+        ? generateNarrative({
+          summary,
+          studentScores,
+          studentParticipation,
+          totalSessions: summary.totalSessions,
+          attentionLeaderboard,
+        })
+        : "",
+    [summary, studentScores, studentParticipation, attentionLeaderboard],
+  );
+
+  const handleExportPDF = () => {
+    if (!summary) {
+      toast.add({
+        title: "Data belum siap",
+        description: "Tunggu data dimuat sebelum ekspor PDF.",
+        type: "info",
+      });
+      return;
+    }
+
+    const leaderboardRows = leaderboardTab === "active"
+      ? activeLeaderboard.slice(0, 10).map((row, index) => ({
+        rank: index + 1,
+        name: row.studentName,
+        detail: `${row.sessionsJoined} sesi, ${row.questionsAsked} tanya, ${row.responsesSubmitted} jawaban`,
+        value: `${row.sessionsJoined + row.questionsAsked + row.responsesSubmitted} aktivitas`,
+      }))
+      : leaderboardTab === "top-score"
+        ? topScoreLeaderboard.slice(0, 10).map((row, index) => ({
+          rank: index + 1,
+          name: row.studentName,
+          detail: `Dari ${row.sessionCount} sesi berkuis`,
+          value: `${row.average}%`,
+        }))
+        : attentionLeaderboard.slice(0, 10).map((row, index) => ({
+          rank: index + 1,
+          name: row.studentName,
+          detail: row.reason,
+          value: row.averageScore === null ? "Belum ada skor" : `${row.averageScore}%`,
+        }));
+
+    try {
+      exportAnalyticsPDF({
+        summary: {
+          totalStudents: summary.totalStudents,
+          averageScore: summary.averageScore,
+          attendanceRate: summary.attendanceRate,
+          totalSessions: summary.totalSessions,
+        },
+        narrative: classNarrative,
+        leaderboard: leaderboardRows,
+        topTopics,
+        teacherName: user?.name ?? "Guru",
+      });
+      toast.add({
+        title: "Laporan PDF berhasil dibuat",
+        description: "File PDF tersimpan di folder Downloads.",
+        type: "success",
+      });
+    } catch {
+      toast.add({
+        title: "Ekspor PDF gagal",
+        description: "Coba muat ulang data, lalu ekspor kembali.",
+        type: "error",
+      });
+    }
+  };
+
   // ---- Export CSV ----
   const handleExportCSV = () => {
     if (!studentScores.length && !studentParticipation.length) {
@@ -684,31 +744,116 @@ function AnalyticsPage() {
       return;
     }
 
-    const rows: string[] = [];
-    rows.push(
-      "student_name,sessions_joined,questions_asked,responses_submitted,average_score",
-    );
+    if (!summary) {
+      toast.add({
+        title: "Data belum siap",
+        description: "Tunggu ringkasan kelas dimuat sebelum ekspor CSV.",
+        type: "info",
+      });
+      return;
+    }
 
-    const scoreByStudentName = new Map(
-      [...scoreByStudent.entries()].map(([studentKey, student]) => [
+    const scoreRanked = [...scoreByStudent.entries()]
+      .map(([studentKey, student]) => ({
         studentKey,
-        student.average,
-      ]),
+        average: student.average,
+      }))
+      .sort((first, second) => second.average - first.average);
+
+    const scoreRankByKey = new Map(
+      scoreRanked.map((student, index) => [student.studentKey, index + 1]),
     );
 
-    studentParticipation.forEach((p) => {
-      rows.push(
-        [
-          `"${p.studentName.replaceAll('"', '""')}"`,
-          p.sessionsJoined,
-          p.questionsAsked,
-          p.responsesSubmitted,
-          scoreByStudentName.get(p.studentKey) ?? "",
-        ].join(","),
+    const shortenStatus = (label: string) => {
+      if (label.includes("Sangat Aktif")) return "🌟 Sangat Aktif";
+      if (label.includes("Top Performer")) return "🏆 Top Performer";
+      if (label.includes("Rajin")) return "💪 Rajin";
+      if (label.includes("Baik")) return "✅ Baik";
+      if (label.includes("Perlu Bimbingan")) return "⚠️ Perlu Bimbingan";
+      if (label.includes("Perlu Perhatian")) return "🚨 Perlu Perhatian";
+      if (label.includes("Data terbatas")) return "📊 Data Terbatas";
+      return label;
+    };
+
+    const getFullStatus = (student: StudentParticipation) => {
+      const score = scoreByStudent.get(student.studentKey);
+      const totalSessions = summary.totalSessions;
+      const attendanceRate = totalSessions > 0
+        ? (student.sessionsJoined / totalSessions) * 100
+        : 0;
+
+      if (attendanceRate < 60) return "⚠️ Jarang Hadir";
+      if (!score) return "";
+
+      const baseStatus = shortenStatus(
+        getScoreStatus(score.average, score.sessionCount, student.sessionsJoined).label,
       );
+
+      if (attendanceRate < 75 && baseStatus === "✅ Baik") {
+        return "✅ Baik · ⚠️ Kehadiran";
+      }
+
+      return baseStatus;
+    };
+
+    const teacherName = user?.name ?? "Guru";
+    const exportDate = new Date().toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    const lines: string[] = [];
+    lines.push("# Laporan Analitik Qurio");
+    lines.push(`# Guru: ${teacherName}`);
+    lines.push(`# Tanggal Export: ${exportDate}`);
+    lines.push(`# Periode: Semua data (${summary.totalSessions} sesi)`);
+    lines.push("#");
+    lines.push("# Kolom:");
+    lines.push("# rank - ranking berdasarkan aktivitas (kehadiran + tanya + jawab)");
+    lines.push("# score_rank - ranking berdasarkan rata-rata nilai kuis");
+    lines.push("# attendance_pct - persentase kehadiran siswa");
+    lines.push("# average_score_pct - rata-rata nilai kuis (0-100)");
+    lines.push("# status - kategori otomatis");
+    lines.push("");
+    lines.push("# Catatan:");
+    lines.push("# - rank & score_rank bisa berbeda. rank = aktivitas, score_rank = nilai.");
+    lines.push("# - Sort di Excel by kolom mana yang mau jadi prioritas.");
+    lines.push("");
+    lines.push(
+      "rank,score_rank,student_name,sessions_joined,total_sessions,attendance_pct,questions_asked,responses_submitted,average_score_pct,status",
+    );
+
+    const totalSessions = summary.totalSessions;
+    const sortedParticipation = [...studentParticipation].sort(
+      (first, second) =>
+        second.sessionsJoined + second.questionsAsked + second.responsesSubmitted -
+        (first.sessionsJoined + first.questionsAsked + first.responsesSubmitted),
+    );
+
+    sortedParticipation.forEach((p, index) => {
+      const score = scoreByStudent.get(p.studentKey);
+      const attendancePct = totalSessions > 0
+        ? Math.round((p.sessionsJoined / totalSessions) * 100)
+        : 0;
+      const averageScorePct = score ? score.average : "";
+      const scoreRank = scoreRankByKey.get(p.studentKey) ?? "";
+      const status = getFullStatus(p);
+
+      lines.push([
+        index + 1,
+        scoreRank,
+        `"${p.studentName.replaceAll('"', '""')}"`,
+        p.sessionsJoined,
+        totalSessions,
+        attendancePct,
+        p.questionsAsked,
+        p.responsesSubmitted,
+        averageScorePct,
+        `"${status.replaceAll('"', '""')}"`,
+      ].join(","));
     });
 
-    const csv = rows.join("\n");
+    const csv = lines.join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -736,28 +881,28 @@ function AnalyticsPage() {
       {
         label: "Total Siswa",
         value: summary ? String(summary.totalStudents) : "-",
-        detail: "Siswa unik di seluruh sesi",
+        detail: "Siswa yang pernah ikut minimal 1 sesi",
       },
       {
         label: "Rata-rata Skor Kuis",
         value: summary ? `${Math.round(summary.averageScore)}%` : "-",
         detail:
           summary
-            ? `Dari ${studentScores.length} rekap siswa-sesi`
+            ? `Dari ${studentScores.length} jawaban kuis yang dinilai`
             : "Menunggu data jawaban kuis",
       },
       {
         label: "Tingkat Kehadiran",
         value: summary ? `${Math.round(summary.attendanceRate)}%` : "-",
         detail: summary
-          ? `${summary.sessionsWithClassSize} dari ${summary.totalSessions} sesi terukur`
+          ? `Rata-rata per sesi, dari ${summary.totalStudents} siswa terdaftar`
           : "Menunggu data kehadiran",
       },
       {
         label: "Sesi Dianalisis",
         value: summary ? String(summary.totalSessions) : "-",
         detail: summary
-          ? `${summary.sessionsWithClassSize} dari ${summary.totalSessions} sesi punya data kelas`
+          ? `Total ${summary.totalSessions} sesi kelas Anda`
           : "Memuat...",
       },
     ];
@@ -768,11 +913,11 @@ function AnalyticsPage() {
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-[-0.5px] text-foreground">
-            Analitik Performa Siswa
+            Analitik Performa Kelas
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Ukur pemahaman, partisipasi, dan capaian belajar siswa di seluruh
-            sesi Qurio Anda
+            Pantau pemahaman, kehadiran, dan capaian siswa di seluruh sesi kelas
+            Anda
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -797,7 +942,8 @@ function AnalyticsPage() {
           <Button
             variant="outline"
             size="sm"
-            disabled
+            disabled={isLoading || !summary}
+            onClick={handleExportPDF}
             aria-label="Ekspor PDF"
           >
             <IconDownload className="size-4" />
@@ -868,19 +1014,9 @@ function AnalyticsPage() {
               Insight akan muncul setelah ada data kuis dan partisipasi.
             </p>
           ) : (
-            <ul className="flex flex-col gap-1.5">
-              {insights.map((insight, index) => (
-                <li
-                  key={`${index}-${insight.icon}`}
-                  className="flex items-start gap-2 text-sm leading-relaxed text-foreground"
-                >
-                  <span aria-hidden="true" className="shrink-0">
-                    {insight.icon}
-                  </span>
-                  <span>{insight.text}</span>
-                </li>
-              ))}
-            </ul>
+            <p className="text-sm leading-relaxed text-foreground">
+              {classNarrative}
+            </p>
           )}
         </CardContent>
       </Card>
@@ -935,85 +1071,101 @@ function AnalyticsPage() {
           </Card>
         )}
 
-      {/* Tren skor kuis harian. */}
+      {/* Skor rata-rata kuis per sesi. */}
       <Card className="mt-6 rounded-[20px] border-border py-0 shadow-[0_8px_24px_rgb(15_23_42/0.05)] dark:shadow-none">
         <CardHeader className="p-5 pb-0 sm:p-6 sm:pb-0">
           <CardTitle className="text-base font-semibold text-foreground">
-            Tren Skor Kuis Harian
+            Skor Rata-rata per Sesi
           </CardTitle>
           <CardDescription>
-            Persentase jawaban benar dari seluruh respons kuis harian
+            Persentase jawaban benar pada setiap sesi kuis dengan minimal 5 jawaban dinilai
           </CardDescription>
-          <CardAction>
-            <Tabs
-              value={trendRange}
-              onValueChange={(value) =>
-                setTrendRange(value as ScoreTrendPeriod)
-              }
-              className="w-auto gap-0"
-            >
-              <TabsList className="h-8 w-fit gap-1 rounded-full border-b-0 bg-muted px-1 py-1">
-                {TREND_RANGES.map((range) => (
-                  <TabsTrigger
-                    key={range.value}
-                    value={range.value}
-                    className="h-6 rounded-full border-b-0 px-3 text-xs data-active:border-transparent data-active:bg-background data-active:text-foreground"
-                  >
-                    {range.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-          </CardAction>
         </CardHeader>
         <CardContent className="p-5 pt-4 sm:p-6 sm:pt-4">
           {isLoading ? (
             <Skeleton className="h-56 w-full rounded-xl" />
-          ) : hasScoreTrendData ? (
+          ) : scoreBySession.length > 0 ? (
             <ChartContainer
-              config={scoreTrendConfig}
-              className="h-56 w-full aspect-auto"
+              config={scoreBySessionConfig}
+              className="w-full aspect-auto"
+              style={{ height: Math.max(240, scoreBySession.length * 44) }}
             >
-              <AreaChart
-                data={scoreTrend}
-                margin={{ top: 8, right: 8, left: -8, bottom: 0 }}
+              <BarChart
+                data={scoreBySession}
+                layout="vertical"
+                margin={{ top: 8, right: 56, left: 8, bottom: 0 }}
               >
-                <CartesianGrid vertical={false} />
+                <CartesianGrid horizontal={false} />
                 <XAxis
-                  dataKey="date"
-                  tickFormatter={(date: string) =>
-                    trendDateFormatter.format(new Date(`${date}T12:00:00Z`))
-                  }
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  minTickGap={12}
-                />
-                <YAxis
+                  type="number"
                   domain={[0, 100]}
-                  allowDecimals={false}
                   tickFormatter={(value: number) => `${value}%`}
                   tickLine={false}
                   axisLine={false}
-                  width={36}
+                  tickMargin={8}
                 />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Area
-                  type="monotone"
+                <YAxis
+                  type="category"
+                  dataKey="sessionTitle"
+                  tickFormatter={(value: string) =>
+                    value.length > 22 ? `${value.slice(0, 20)}…` : value
+                  }
+                  tickLine={false}
+                  axisLine={false}
+                  width={150}
+                />
+                <ChartTooltip
+                  content={
+                    <ChartTooltipContent
+                      labelKey="sessionTitle"
+                      labelFormatter={(_, payload) =>
+                        payload?.[0]?.payload?.sessionTitle ?? ""
+                      }
+                      formatter={(value, name) =>
+                        name === "avgScore" ? `${value}%` : value
+                      }
+                    />
+                  }
+                />
+                <Bar
                   dataKey="avgScore"
-                  stroke="var(--color-avgScore)"
-                  fill="var(--color-avgScore)"
-                  fillOpacity={0.18}
-                  strokeWidth={2}
-                />
-              </AreaChart>
+                  radius={[0, 4, 4, 0]}
+                  animationDuration={600}
+                >
+                  {scoreBySession.map((session) => (
+                    <Cell
+                      key={session.sessionId}
+                      fill={
+                        session.avgScore >= 80
+                          ? "#10b981"
+                          : session.avgScore >= 70
+                            ? "#3b82f6"
+                            : session.avgScore >= 60
+                              ? "#f59e0b"
+                              : "#dc2626"
+                      }
+                    />
+                  ))}
+                  <LabelList
+                    dataKey="avgScore"
+                    position="right"
+                    formatter={(value) => `${Number(value)}%`}
+                    className="fill-foreground text-xs font-semibold"
+                  />
+                </Bar>
+              </BarChart>
             </ChartContainer>
           ) : (
             <EmptyBlock
-              title="Belum ada skor kuis pada rentang ini"
-              description="Belum ada respons kuis yang dinilai pada rentang tanggal ini."
+              title="Belum ada sesi kuis yang cukup datanya"
+              description="Sesi kuis akan tampil setelah memiliki minimal 5 jawaban yang dinilai."
               icon={<IconTrendingUp className="size-5" />}
             />
+          )}
+          {lowestScoringSession && !isLoading && (
+            <p className="mt-4 rounded-lg bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+              Skor terendah ada di sesi <span className="font-medium text-foreground">{lowestScoringSession.sessionTitle}</span> ({lowestScoringSession.avgScore}%). Pertimbangkan mengulang materi sesi ini.
+            </p>
           )}
         </CardContent>
       </Card>
@@ -1034,12 +1186,12 @@ function AnalyticsPage() {
           ) : topTopics.length > 0 ? (
             <ChartContainer
               config={topicsConfig}
-              className="h-72 w-full aspect-auto"
+              className="h-80 w-full aspect-auto"
             >
               <BarChart
                 data={topTopics.slice(0, 5)}
                 layout="vertical"
-                margin={{ top: 8, right: 24, left: 8, bottom: 0 }}
+                margin={{ top: 8, right: 56, left: 8, bottom: 0 }}
               >
                 <CartesianGrid horizontal={false} />
                 <XAxis
@@ -1054,17 +1206,66 @@ function AnalyticsPage() {
                   dataKey="questionText"
                   tickLine={false}
                   axisLine={false}
-                  width={220}
+                  width={320}
+                  tick={{ fontSize: 11 }}
                   tickFormatter={(value: string) =>
-                    value.length > 40 ? `${value.slice(0, 40)}…` : value
+                    value.length > 65 ? `${value.slice(0, 65)}…` : value
                   }
                 />
-                <ChartTooltip content={<ChartTooltipContent />} />
+                <ChartTooltip
+                  content={
+                    <ChartTooltipContent
+                      indicator="line"
+                      labelKey="questionText"
+                      labelFormatter={(_label, payload) => {
+                        const topic = payload?.[0]?.payload as
+                          | TopTopic
+                          | undefined;
+                        return topic ? (
+                          <div className="grid gap-1">
+                            <span>{topic.questionText}</span>
+                            <span className="font-normal text-muted-foreground">
+                              Sesi: {topic.sessionTitle}
+                            </span>
+                          </div>
+                        ) : null;
+                      }}
+                      formatter={(value, name, item) => {
+                        if (name === "incorrectRate") {
+                          return [
+                            `${Math.round(Number(value))}% salah (${item.payload.totalAnswers} jawaban)`,
+                            "Tingkat kesalahan",
+                          ];
+                        }
+                        return [value, name];
+                      }}
+                    />
+                  }
+                />
                 <Bar
                   dataKey="incorrectRate"
-                  fill="var(--color-incorrectRate)"
                   radius={[0, 4, 4, 0]}
-                />
+                  animationDuration={600}
+                >
+                  {topTopics.slice(0, 5).map((topic) => (
+                    <Cell
+                      key={topic.questionId}
+                      fill={
+                        topic.incorrectRate >= 70
+                          ? "#dc2626"
+                          : topic.incorrectRate >= 50
+                            ? "#f59e0b"
+                            : "#eab308"
+                      }
+                    />
+                  ))}
+                  <LabelList
+                    dataKey="incorrectRate"
+                    position="right"
+                    formatter={(value) => `${Math.round(Number(value))}%`}
+                    className="fill-foreground text-xs font-semibold"
+                  />
+                </Bar>
               </BarChart>
             </ChartContainer>
           ) : (
@@ -1097,7 +1298,7 @@ function AnalyticsPage() {
                 ? "Diurutkan berdasarkan jumlah aktivitas: bergabung sesi, bertanya, dan menjawab. Cocok untuk melihat siapa yang paling terlibat di kelas."
                 : leaderboardTab === "top-score"
                   ? "Diurutkan berdasarkan rata-rata nilai kuis. Cocok untuk melihat siapa yang paling paham materi."
-                  : "Siswa diurutkan berdasarkan nilai, kehadiran, dan respons yang perlu ditindaklanjuti."}
+                  : "Siswa yang perlu perhatian khusus: nilai rendah (<60), kehadiran jarang (<50% sesi), jarang menjawab (<15 respons), atau rajin hadir tapi nilainya belum optimal (60-69)."}
             </CardDescription>
           </div>
           <div className="col-start-1 row-start-2 justify-self-start sm:col-start-2 sm:row-start-1 sm:justify-self-end">
@@ -1237,19 +1438,69 @@ function AnalyticsPage() {
               icon={<IconAward className="size-5" />}
             />
           ) : attentionLeaderboard.length > 0 ? (
-            <LeaderboardTable
-              mode="attention"
-              rows={attentionLeaderboard.slice(0, 10).map((student, index) => ({
-                rank: index + 1,
-                name: student.studentName,
-                detail: `${student.sessionsJoined} dari ${summary?.totalSessions ?? 0} sesi · ${student.responsesSubmitted} respons`,
-                value: "",
-                statusLabel: "",
-                statusClassName: "",
-                reason: student.reason,
-                recommendation: student.recommendation,
-              }))}
-            />
+            <div className="flex flex-col gap-6">
+              {attentionLeaderboard.filter((student) => student.severity <= 2).length > 0 && (
+                <div>
+                  <div className="mb-3 flex items-baseline gap-2">
+                    <h3 className="text-sm font-semibold text-rose-700 dark:text-rose-400">
+                      🚨 Butuh Tindakan Segera
+                    </h3>
+                    <span className="text-xs text-muted-foreground">
+                      ({attentionLeaderboard.filter((student) => student.severity <= 2).length} siswa)
+                    </span>
+                  </div>
+                  <p className="mb-3 text-xs text-muted-foreground">
+                    Siswa dengan nilai kritis atau kehadiran sangat rendah.
+                  </p>
+                  <LeaderboardTable
+                    mode="attention"
+                    rows={attentionLeaderboard
+                      .filter((student) => student.severity <= 2)
+                      .map((student, index) => ({
+                        rank: index + 1,
+                        name: student.studentName,
+                        detail: `${student.sessionsJoined} dari ${summary?.totalSessions ?? 0} sesi · ${student.responsesSubmitted} respons`,
+                        value: "",
+                        statusLabel: "",
+                        statusClassName: "",
+                        reason: student.reason,
+                        recommendation: student.recommendation,
+                      }))}
+                  />
+                </div>
+              )}
+
+              {attentionLeaderboard.filter((student) => student.isHardworkingLowScore).length > 0 && (
+                <div>
+                  <div className="mb-3 flex items-baseline gap-2">
+                    <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-400">
+                      💪 Apresiasi Usaha, Bantu Pemahaman
+                    </h3>
+                    <span className="text-xs text-muted-foreground">
+                      ({attentionLeaderboard.filter((student) => student.isHardworkingLowScore).length} siswa)
+                    </span>
+                  </div>
+                  <p className="mb-3 text-xs text-muted-foreground">
+                    Siswa rajin hadir, tapi nilainya masih perlu ditingkatkan.
+                  </p>
+                  <LeaderboardTable
+                    mode="attention"
+                    rows={attentionLeaderboard
+                      .filter((student) => student.isHardworkingLowScore)
+                      .map((student, index) => ({
+                        rank: index + 1,
+                        name: student.studentName,
+                        detail: `${student.sessionsJoined} dari ${summary?.totalSessions ?? 0} sesi · ${student.responsesSubmitted} respons`,
+                        value: "",
+                        statusLabel: "",
+                        statusClassName: "",
+                        reason: student.reason,
+                        recommendation: student.recommendation,
+                      }))}
+                  />
+                </div>
+              )}
+            </div>
           ) : (
             <div className="grid min-h-50 place-items-center rounded-xl border border-emerald-200 bg-emerald-50/70 px-6 py-10 text-center dark:border-emerald-900 dark:bg-emerald-950/40">
               <div className="max-w-sm">
@@ -1422,7 +1673,7 @@ function LeaderboardTable({
                         variant="outline"
                         className={cn("mt-1 ml-2", row.coverageClassName)}
                       >
-                        📊 {row.coverageLabel}
+                        {row.coverageLabel}
                       </Badge>
                     )}
                   </TableCell>

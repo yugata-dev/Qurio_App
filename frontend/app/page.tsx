@@ -119,10 +119,17 @@ export default function App() {
           </nav>
           {/* <div className="flex items-center gap-3 ml-auto text-sm font-bold text-slate-600 [&>a:first-child]:hidden sm:gap-8 sm:ml-0 sm:[&>a:first-child]:block"> */}
           <Link
-            className="inline-flex items-center justify-center gap-2.5 rounded-full border border-primary/20 bg-primary px-5 py-3 font-extrabold text-primary-foreground text-small shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-xl"
+            className="inline-flex items-center justify-center font-bold text-black text-small "
             href="/login"
           >
             <span>Masuk</span>
+            <IconLogin2 className="w-4 h-4" />
+          </Link>
+          <Link
+            className="inline-flex items-center justify-center gap-2.5 rounded-full border border-primary/20 bg-primary px-5 py-3 font-extrabold text-primary-foreground text-small shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-xl"
+            href="/register"
+          >
+            <span>Daftar Gratis</span>
             <IconLogin2 className="w-4 h-4" />
           </Link>
           {/* </div> */}

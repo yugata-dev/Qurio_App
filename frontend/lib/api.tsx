@@ -132,7 +132,6 @@ export interface responseAnswer {
 }
 
 export type AnalyticsPeriod = "7d" | "30d" | "all";
-export type ScoreTrendPeriod = "7d" | "14d" | "30d";
 
 /** Satu baris breakdown kehadiran per sesi dari endpoint analytics summary. */
 export interface AttendanceBreakdownItem {
@@ -180,10 +179,12 @@ export interface TopTopic {
   totalAnswers: number;
 }
 
-export interface ScoreTrendPoint {
-  date: string;
+export interface ScoreBySessionPoint {
+  sessionId: string;
+  sessionTitle: string;
+  createdAt: string;
   avgScore: number;
-  totalResponses: number;
+  totalAnswers: number;
 }
 
 const API_URL = (
@@ -835,14 +836,10 @@ export const getAnalyticsTopics = (
     token,
   );
 
-export const getAnalyticsScoreTrend = (
-  period: ScoreTrendPeriod = "7d",
+export const getAnalyticsScoreBySession = (
   token?: string,
-): Promise<ScoreTrendPoint[]> =>
-  fetchAnalyticsData<ScoreTrendPoint[]>(
-    `score-trend?period=${encodeURIComponent(period)}`,
-    token,
-  );
+): Promise<ScoreBySessionPoint[]> =>
+  fetchAnalyticsData<ScoreBySessionPoint[]>("score-by-session", token);
 
 export {
   fetchUserLogin,
