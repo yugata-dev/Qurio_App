@@ -1,13 +1,18 @@
 "use client";
 
+// ============ IMPORTS ============
+
+// React
 import {
   createContext,
   ReactNode,
-  useState,
   useContext,
   useEffect,
+  useState,
 } from "react";
-import Cookies from "js-cookie";
+import { useRouter } from "next/navigation";
+
+// ============ TYPES ============
 
 interface User {
   id: string;
@@ -18,101 +23,96 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
-  isAutheticated: boolean;
-  login: (user: User, token: string) => void;
+  isAuthenticated: boolean;
+  login: (user: User) => void;
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-function isTokenExpired(token: string) {
-  try {
-    const payload = JSON.parse(
-      atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")),
-    );
-    return typeof payload.exp !== "number" || payload.exp * 1000 <= Date.now();
-  } catch {
-    return true;
-  }
+interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
 }
 
+// ============ KONSTANTA ============
+
+const emptyAuthState: AuthState = {
+  user: null,
+  isAuthenticated: false,
+};
+
+
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+).replace(/\/api\/?$/, "");
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// ============ PROVIDER ============
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isAutheticated, setIsAutheticated] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [authState, setAuthState] = useState<AuthState>(emptyAuthState);
+  const router = useRouter();
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
+    let isMounted = true;
 
-    if (storedToken && !isTokenExpired(storedToken)) {
-      try {
-        setToken(storedToken);
-        setIsAutheticated(true);
-
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
+    fetch(`${API_URL}/api/users/me`, { credentials: "include" })
+      .then((response) => {
+        if (!response.ok) throw new Error("Unauthenticated");
+        return response.json() as Promise<{ data: { user: User } }>;
+      })
+      .then((response) => {
+        if (isMounted) {
+          setAuthState({ user: response.data.user, isAuthenticated: true });
         }
-      } catch (error) {
-        console.error("gagal memuat login:", error);
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-      }
-    } else if (storedToken) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      Cookies.remove("token");
-      Cookies.remove("role");
-    }
+      })
+      .catch(() => {
+        if (isMounted) setAuthState(emptyAuthState);
+      });
 
-    setIsLoading(false);
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const login = (userData: User, tokenData: string) => {
-    setUser(userData);
-    setToken(tokenData);
-    setIsAutheticated(true);
-    if (tokenData) localStorage.setItem("token", tokenData);
-    localStorage.setItem("user", JSON.stringify(userData));
-    Cookies.set("token", tokenData, { expires: 7 });
-    Cookies.set("role", userData.role, { expires: 1 });
+  // Handler login
+  const login = (userData: User) => {
+    setAuthState({ user: userData, isAuthenticated: true });
   };
 
+  // Handler logout
   const logout = () => {
-    setUser(null);
-    setToken(null);
-    setIsAutheticated(false);
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    Cookies.remove("token");
-    Cookies.remove("role");
+    void fetch(`${API_URL}/api/users/logout`, {
+      method: "POST",
+      credentials: "include",
+    });
+    setAuthState(emptyAuthState);
+    router.replace("/");
   };
-  const value = {
-    user,
-    token,
-    isAutheticated,
+
+
+  const authContextValue: AuthContextType = {
+    user: authState.user,
+    isAuthenticated: authState.isAuthenticated,
     login,
     logout,
   };
 
-  if (isLoading) {
-    return (
-      <div style={{ padding: "20px", textRendering: "optimizeLegibility" }}>
-        Sedang memuat...
-      </div>
-    );
-  }
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={authContextValue}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
+// ============ HOOK CUSTOM ============
+
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
+  const authContext = useContext(AuthContext);
+
+  if (authContext === undefined) {
     throw new Error("useAuth harus digunakan didalam AuthProvider");
   }
 
-  return context;
+  return authContext;
 };

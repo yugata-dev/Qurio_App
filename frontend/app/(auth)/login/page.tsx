@@ -1,8 +1,10 @@
 "use client";
 import { fetchUserLogin } from "@/lib/api";
 import { useForm } from "react-hook-form";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { IconEye, IconEyeOff } from "@tabler/icons-react";
 import { useAuth } from "@/context/AuthContext";
 import {
   Card,
@@ -13,50 +15,48 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 
 interface FormLogin {
   email: string;
   password: string;
-  // role: string;
-  // token: string;
 }
 
 function LoginPage() {
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
 
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<FormLogin>();
 
-  //   useEffect(() => {
-  //     if (isAutheticated) {
-  //       router.push("/dashboard");
-  //     }
-  //   }, [isAutheticated, router]);
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, router]);
 
   const onSubmit = async (data: FormLogin) => {
     try {
-      const response = await fetchUserLogin(
-        data.email,
-        data.password,
-        // data.token,
-      );
+      const response = await fetchUserLogin(data.email, data.password);
 
       if (response.success && response.data) {
         const dataUser = response.data.user;
-        const dataToken = response.data.token;
-
-        login(dataUser, dataToken);
+        login(dataUser);
 
         alert("Login berhasil..");
       }
       // Simpan token (jika ada) dan redirect ke dashboard
       router.push("/dashboard");
-    } catch (error: any) {
+    } catch (error) {
       console.error("login error:", error);
     }
   };
@@ -64,10 +64,10 @@ function LoginPage() {
   const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
   return (
-    <div className="relative flex flex-col flex-1 items-center justify-center bg-zinc-100 font-sans min-h-screen p-4">
+    <div className="relative flex flex-col flex-1 items-center justify-center bg-secondary/80 font-sans min-h-screen p-4">
       <Card className="max-w-120 w-full shadow-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-zinc-900">
+          <CardTitle className="text-2xl font-bold text-primary">
             Masuk ke Akun
           </CardTitle>
           <CardDescription className="text-sm text-zinc-500">
@@ -80,7 +80,7 @@ function LoginPage() {
             className="flex flex-col gap-3"
           >
             <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-semibold text-zinc-800 ml-[11.2px]">
+              <Label className="text-sm font-semibold text-foreground">
                 Email
               </Label>
               <Input
@@ -91,31 +91,46 @@ function LoginPage() {
                     message: "Format email tidak valid",
                   },
                 })}
-                placeholder="nama@sekolah.sch.id"
+                placeholder="nama@gmail.com"
                 type="email"
                 className="w-full h-11"
               />
               {errors.email && (
-                <span className="text-xs text-red-500">
+                <span className="text-xs text-destructive">
                   {errors.email.message}
                 </span>
               )}
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label className="text-sm font-semibold text-zinc-800 ml-[11.2px]">
+              <Label className="text-sm font-semibold text-foreground">
                 Password
               </Label>
-              <Input
-                {...register("password", {
-                  required: "Password wajib diisi",
-                })}
-                placeholder="Masukkan kata sandi Anda"
-                type="password"
-                className="w-full h-11"
-              />
+              <InputGroup className="w-full h-11">
+                <InputGroupInput
+                  {...register("password", {
+                    required: "Password wajib diisi",
+                  })}
+                  placeholder="Masukkan kata sandi Anda"
+                  type={showPassword ? "text" : "password"}
+                  className="h-11"
+                />
+                <InputGroupButton
+                  type="button"
+                  size="icon-sm"
+                  aria-label={
+                    showPassword ? "Sembunyikan password" : "Tampilkan password"
+                  }
+                  title={
+                    showPassword ? "Sembunyikan password" : "Tampilkan password"
+                  }
+                  onClick={() => setShowPassword((visible) => !visible)}
+                >
+                  {showPassword ? <IconEyeOff /> : <IconEye />}
+                </InputGroupButton>
+              </InputGroup>
               {errors.password && (
-                <span className="text-xs text-red-500">
+                <span className="text-xs text-destructive">
                   {errors.password.message}
                 </span>
               )}

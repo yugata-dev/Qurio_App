@@ -1,0 +1,48 @@
+import express from "express";
+import {
+  createSession,
+  getSessions,
+  getSession,
+  getPublicSession,
+  updateSession,
+  deleteSession,
+} from "../controllers/sessions.controller.js";
+import { studentLimit, teacherLimit } from "../middlewares/auth.middleware.js";
+import {
+  joinSession,
+  joinSessionById,
+} from "../controllers/participants.controller.js";
+
+const router = express.Router();
+
+// join session (publik, tanpa token)
+router.post("/participants/join", joinSession);
+
+// legacy alias untuk test bot / frontend lama
+router.post("/:sessionId/join", joinSessionById);
+router.get("/:sessionId/current-poll", async (req, res) => {
+  const { getPollsForStudent } =
+    await import("../controllers/polls.controller.js");
+  req.params = { ...req.params, sessionId: req.params.sessionId };
+  return getPollsForStudent(req, res);
+});
+
+// metadata sesi untuk siswa yang sudah bergabung
+router.get("/:id/public", getPublicSession);
+
+// create session baru (guru)
+router.post("/", teacherLimit, createSession);
+
+// list semua sessionnp
+router.get("/", teacherLimit, getSessions);
+
+// get detail 1 session
+router.get("/:id", teacherLimit, getSession);
+
+// update session (guru pemilik)
+router.put("/:id", teacherLimit, updateSession);
+
+// delete session and its related data (guru pemilik)
+router.delete("/:id", teacherLimit, deleteSession);
+
+export default router;

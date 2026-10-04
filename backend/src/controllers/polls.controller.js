@@ -1,0 +1,542 @@
+import pool from "../config/database/connection.js"
+
+const ALLOWED_POLL_TYPES = ["wordcloud", "polling", "qa", "quiz"]
+
+// Helper: Hapus kunci jawaban (is_correct) sebelum dikirim ke siswa via WebSocket
+// Siswa tidak boleh tahu jawaban yang benar sebelum poll ditutup
+function sanitizeOptions(options) {
+    return options.map((option) => {
+        // Ambil semua field kecuali is_correct
+        const { is_correct, ...safeOption } = option
+        return safeOption
+    })
+}
+
+// Helper: Validasi input saat membuat poll
+// Memastikan type, question, dan options valid sesuai tipe poll
+function validatePollInput(type, question, options) {
+    // Cek apakah type adalah salah satu dari tipe yang diizinkan
+    if (!ALLOWED_POLL_TYPES.includes(type)) {
+        return "Tipe soal tidak valid!"
+    }
+
+    // Pertanyaan harus ada dan tidak boleh kosong/spasi
+    const cleanQuestion = question ? String(question).trim() : ""
+    if (!cleanQuestion) {
+        return "Pertanyaan wajib diisi!"
+    }
+
+    // Polling dan Quiz memerlukan opsi jawaban
+    const requiresOptions = (type === "polling" || type === "quiz")
+    if (requiresOptions) {
+        // Cek apakah options adalah array dan tidak kosong
+        if (!Array.isArray(options) || options.length === 0) {
+            return "Options wajib berupa array non-kosong untuk polling/quiz!"
+        }
+
+        // Setiap opsi harus memiliki teks yang valid
+        for (const opt of options) {
+            const optText = opt && opt.text ? String(opt.text).trim() : ""
+            if (!optText) {
+                return "Setiap opsi wajib memiliki teks valid!"
+            }
+        }
+    }
+
+    // Jika semua validasi lolos, return null (tidak ada error)
+    return null
+}
+
+// ====================================================================
+// 1. CREATE POLL (Membuat soal baru di dalam sesi)
+// ====================================================================
+export const createPoll = async (req, res) => {
+    const { sessionId } = req.params
+    const { type, question, options = [] } = req.body
+
+
+    // Step 1: Validasi input yang dikirim dari client
+    const validationError = validatePollInput(type, question, options)
+    if (validationError) {
+        return res.status(400).json({ success: false, message: validationError })
+    }
+
+    const status = "published"
+
+    // Step 2: Ambil koneksi database untuk transaksi
+    let client
+    try {
+        client = await pool.connect()
+
+        await client.query("BEGIN")
+
+        // Serialize lifecycle changes for this session.
+        const sessionRes = await client.query(
+            "SELECT teacher_id FROM sessions WHERE id = $1 FOR UPDATE",
+            [sessionId]
+        )
+
+        if (sessionRes.rows.length === 0) {
+            await client.query("ROLLBACK")
+            return res.status(404).json({ success: false, message: "Sesi tidak ditemukan!" })
+        }
+
+
+        // Verifikasi bahwa guru yang login adalah pemilik sesi
+        const teacherId = sessionRes.rows[0].teacher_id
+        const loggedInTeacherId = req.user ? req.user.id : null
+        if (teacherId !== loggedInTeacherId) {
+            await client.query("ROLLBACK")
+            return res.status(403).json({ success: false, message: "Anda bukan pemilik sesi ini!" })
+        }
+
+        await client.query(
+            `UPDATE polls
+             SET status = 'closed', closed_at = CURRENT_TIMESTAMP
+             WHERE session_id = $1 AND status = 'published'`,
+            [sessionId]
+        )
+
+        // Step 5: Simpan poll ke database
+        const pollRes = await client.query(
+            `INSERT INTO polls (session_id, type, question, status, published_at)
+             VALUES ($1, $2, $3, $4, $5)
+             RETURNING *`,
+            [sessionId, type, question, status, new Date()]
+        )
+        const newPoll = pollRes.rows[0]
+        const savedOptions = []
+
+        // Step 6: Jika tipe polling/quiz, simpan opsi jawaban
+        if (type === "polling" || type === "quiz") {
+            for (let i = 0; i < options.length; i++) {
+                const optionText = options[i].text.trim()
+                const isCorrect = options[i].is_correct === true ? true : false
+                const optionOrder = i + 1
+
+                const optRes = await client.query(
+                    "INSERT INTO poll_options (poll_id, option_text, is_correct, option_order) VALUES ($1, $2, $3, $4) RETURNING *",
+                    [newPoll.id, optionText, isCorrect, optionOrder]
+                )
+                savedOptions.push(optRes.rows[0])
+            }
+        }
+
+        // Step 7: Selesaikan transaksi (commit)
+        await client.query("COMMIT")
+
+        // Step 8: Broadcast ke WebSocket untuk semua peserta di ruang sesi
+        // PENTING: Jangan kirim is_correct ke siswa, hanya untuk guru via HTTP
+        const io = req.app.get("io")
+        if (io) {
+            io.to(`session:${sessionId}`).emit("poll_created", {
+                ...newPoll,
+                options: sanitizeOptions(savedOptions)
+            })
+        }
+
+        // Step 9: Kirim response ke guru (dengan kunci jawaban lengkap)
+        return res.status(201).json({
+            success: true,
+            data: { ...newPoll, options: savedOptions }
+        })
+
+    } catch (error) {
+        // Jika terjadi error, batalkan transaksi (rollback)
+        if (client) {
+            await client.query("ROLLBACK").catch(() => { })
+        }
+        console.error("Create poll error:", error)
+        return res.status(500).json({ success: false, message: "Gagal membuat soal" })
+    } finally {
+        // Selalu lepaskan koneksi database
+        if (client) {
+            client.release()
+        }
+    }
+}
+
+// ====================================================================
+// 2. GET ALL POLLS BY SESSION (Ambil semua soal dalam satu sesi)
+// ====================================================================
+export const getPollsBySession = async (req, res) => {
+    const { sessionId } = req.params
+
+    try {
+        // Step 1: Ambil semua poll dalam sesi ini
+        const pollsRes = await pool.query(
+            "SELECT * FROM polls WHERE session_id = $1 ORDER BY created_at ASC",
+            [sessionId]
+        )
+
+        // Step 2: Ambil semua poll_options untuk semua poll dalam sesi ini
+        const optionsRes = await pool.query(
+            "SELECT * FROM poll_options WHERE poll_id IN (SELECT id FROM polls WHERE session_id = $1) ORDER BY option_order ASC",
+            [sessionId]
+        )
+
+        // Step 3: Gabungkan data poll dengan options-nya
+        // Setiap poll akan memiliki array options yang sesuai
+        const pollsWithOptions = pollsRes.rows.map(poll => {
+            const pollOptions = optionsRes.rows.filter(opt => opt.poll_id === poll.id)
+            return {
+                ...poll,
+                options: pollOptions
+            }
+        })
+
+        return res.status(200).json({ success: true, data: pollsWithOptions })
+    } catch (error) {
+        console.error("Get polls error:", error.message)
+        return res.status(500).json({ success: false, message: "Gagal mengambil soal" })
+    }
+}
+
+// ====================================================================
+// 3. GET SINGLE POLL (Ambil detail satu soal spesifik)
+// ====================================================================
+export const getPoll = async (req, res) => {
+    const { pollId } = req.params
+
+    try {
+        // Step 1: Ambil detail poll berdasarkan ID
+        const pollRes = await pool.query(
+            "SELECT * FROM polls WHERE id = $1",
+            [pollId]
+        )
+
+        // Step 2: Jika poll tidak ada, return 404
+        if (pollRes.rows.length === 0) {
+            return res.status(404).json({ success: false, message: "Soal tidak ditemukan" })
+        }
+
+        // Step 3: Ambil semua opsi jawaban untuk poll ini
+        const optionsRes = await pool.query(
+            "SELECT * FROM poll_options WHERE poll_id = $1 ORDER BY option_order ASC",
+            [pollId]
+        )
+
+        // Step 4: Gabungkan poll data dengan options-nya
+        const pollData = {
+            ...pollRes.rows[0],
+            options: optionsRes.rows
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: pollData
+        })
+    } catch (error) {
+        console.error("Get poll error:", error.message)
+        return res.status(500).json({ success: false, message: "Gagal mengambil soal" })
+    }
+}
+
+// ====================================================================
+// UPDATE ALL POLLS STATUS IN A SESSION
+// Endpoint: PATCH /api/sessions/:sessionId/polls/status
+// ====================================================================
+export const updateAllPollsBySession = async (req, res) => {
+    const { sessionId } = req.params;
+    const { status } = req.body;
+
+    // Validasi status
+    const validStatuses = ["draft", "published", "closed"];
+    if (!validStatuses.includes(status)) {
+        return res.status(400).json({ success: false, message: "Status tidak valid! (draft/published/closed)" });
+    }
+
+    if (status === "published") {
+        return res.status(400).json({
+            success: false,
+            message: "Publish harus dilakukan untuk satu poll, bukan seluruh sesi."
+        });
+    }
+
+    let client
+    try {
+        client = await pool.connect()
+        await client.query("BEGIN")
+
+        // Step 1: Cek apakah sesi ada & verifikasi pemilik sesi (Cukup query tabel sessions)
+        const sessionRes = await client.query(
+            `SELECT id, teacher_id FROM sessions WHERE id = $1 FOR UPDATE`,
+            [sessionId]
+        );
+
+        if (sessionRes.rows.length === 0) {
+            await client.query("ROLLBACK")
+            return res.status(404).json({ success: false, message: "Sesi tidak ditemukan." });
+        }
+
+        const teacherId = sessionRes.rows[0].teacher_id;
+        const loggedInTeacherId = req.user ? req.user.id : null;
+
+        if (teacherId !== loggedInTeacherId) {
+            await client.query("ROLLBACK")
+            return res.status(403).json({ success: false, message: "Anda bukan pemilik sesi ini!" });
+        }
+
+        // Step 2: Bulk Update SEMUA poll yang ada di dalam session_id tersebut
+        let query = "UPDATE polls SET status = $1";
+        if (status === "published") {
+            query += ", published_at = CURRENT_TIMESTAMP, closed_at = NULL";
+        } else if (status === "closed") {
+            query += ", closed_at = CURRENT_TIMESTAMP";
+        } else {
+            query += ", published_at = NULL, closed_at = NULL";
+        }
+
+        query += " WHERE session_id = $2 RETURNING *";
+
+        const updatedPollsRes = await client.query(query, [status, sessionId]);
+        const updatedPolls = updatedPollsRes.rows; // Berisi ARRAY seluruh poll yang ter-update
+
+        if (updatedPolls.length === 0) {
+            await client.query("ROLLBACK")
+            return res.status(404).json({
+                success: false,
+                message: "Tidak ada poll yang ditemukan di sesi ini."
+            });
+        }
+
+        await client.query("COMMIT")
+
+        // Step 3: Broadcast event via Socket.io ke semua peserta di room sesi
+        const io = req.app.get("io");
+        if (io) {
+            io.to(`session:${sessionId}`).emit("all_polls_updated", {
+                sessionId,
+                status,
+                polls: updatedPolls
+            });
+        }
+
+        // Step 4: Kirim response balik ke frontend berisi array poll terbaru
+        return res.status(200).json({
+            success: true,
+            message: `Semua poll berhasil diubah menjadi ${status}`,
+            data: updatedPolls
+        });
+
+    } catch (error) {
+        if (client) await client.query("ROLLBACK").catch(() => { })
+        console.error("Bulk update poll error:", error.message);
+        return res.status(500).json({ success: false, message: "Gagal mengubah status semua poll" });
+    } finally {
+        if (client) client.release()
+    }
+};
+
+export const updatePoll = async (req, res) => {
+    const { pollId } = req.params;
+    const { status } = req.body;
+
+    // Validasi status — TODO: copy validasi yang sama persis kayak di updateAllPollsBySession
+    const validStatuses = ["draft", "published", "closed"];
+    if (!validStatuses.includes(status)) {
+        return res.status(400).json({ success: false, message: "Status tidak valid! (draft/published/closed)" });
+    }
+
+    let client
+    try {
+        client = await pool.connect()
+        await client.query("BEGIN")
+
+        // Step 1: Cek poll ada, sekalian ambil session_id + teacher_id buat verifikasi kepemilikan
+        // TODO: query JOIN polls ke sessions, ambil: p.id, p.type, p.session_id, s.teacher_id
+        // Petunjuk: SELECT p.id, p.type, p.session_id, s.teacher_id
+        //           FROM polls p JOIN sessions s ON p.session_id = s.id
+        //           WHERE p.id = $1
+        const pollRes = await client.query(
+            `SELECT p.id, p.type, p.session_id, s.teacher_id
+             FROM polls p
+             JOIN sessions s ON p.session_id = s.id
+             WHERE p.id = $1`,
+            [pollId]
+        );
+
+        if (pollRes.rows.length === 0) {
+            await client.query("ROLLBACK")
+            return res.status(404).json({ success: false, message: "Poll tidak ditemukan." });
+        }
+
+        const poll = pollRes.rows[0];
+
+        // Step 2: Guard type — TODO: cuma quiz yang boleh lewat endpoint ini
+        // Kalau poll.type bukan 'quiz', tolak dengan 400 + pesan jelas
+
+        // Step 3: Verifikasi kepemilikan — TODO: copy pola yang sama dari updateAllPollsBySession
+        // (bandingin poll.teacher_id sama req.user.id)
+        const teacherId = pollRes.rows[0].teacher_id;
+        const loggedInTeacherId = req.user ? req.user.id : null;
+
+        if (teacherId !== loggedInTeacherId) {
+            await client.query("ROLLBACK")
+            return res.status(403).json({ success: false, message: "Anda bukan pemilik sesi ini!" });
+        }
+
+        await client.query("SELECT id FROM sessions WHERE id = $1 FOR UPDATE", [poll.session_id])
+        const lockedPollRes = await client.query(
+            "SELECT id FROM polls WHERE id = $1 FOR UPDATE",
+            [pollId]
+        )
+
+        if (lockedPollRes.rows.length === 0) {
+            await client.query("ROLLBACK")
+            return res.status(404).json({ success: false, message: "Poll tidak ditemukan." });
+        }
+
+        if (status === "published") {
+            await client.query(
+                `UPDATE polls
+                 SET status = 'closed', closed_at = CURRENT_TIMESTAMP
+                 WHERE session_id = $1 AND status = 'published' AND id <> $2`,
+                [poll.session_id, pollId]
+            )
+        }
+
+        // Step 4: Update — TODO: mirip query bulk, tapi WHERE id = $2 (bukan session_id)
+        let query = "UPDATE polls SET status = $1";
+        if (status === "published") {
+            query += ", published_at = CURRENT_TIMESTAMP, closed_at = NULL";
+        } else if (status === "closed") {
+            query += ", closed_at = CURRENT_TIMESTAMP";
+        } else {
+            query += ", published_at = NULL, closed_at = NULL";
+        }
+        query += " WHERE id = $2 RETURNING *";
+
+        const updatedRes = await client.query(query, [status, pollId]);
+        if (updatedRes.rows.length === 0) {
+            await client.query("ROLLBACK")
+            return res.status(404).json({ success: false, message: "Poll tidak ditemukan." });
+        }
+        const updatedPoll = updatedRes.rows[0];
+        await client.query("COMMIT");
+
+        // Step 5: Broadcast socket — TODO: emit ke room session, nama event bebas
+        // tapi HARUS beda dari "all_polls_updated" biar frontend bisa bedain
+        // saran nama: "poll_status_updated"
+        const io = req.app.get("io");
+        if (io) {
+            io.to(`session:${poll.session_id}`).emit("poll_updated", {
+                pollId,
+                status,
+                poll: updatedPoll
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: `Poll berhasil diubah menjadi ${status}`,
+            data: updatedPoll
+        });
+
+    } catch (error) {
+        if (client) await client.query("ROLLBACK").catch(() => { })
+        console.error("Update single poll error:", error.message);
+        return res.status(500).json({ success: false, message: "Gagal mengubah status poll" });
+    } finally {
+        if (client) client.release()
+    }
+};
+
+export const getPollsForStudent = async (req, res) => {
+    const { sessionId } = req.params;
+
+    let client
+
+    try {
+        client = await pool.connect()
+        await client.query("BEGIN")
+
+        const publishedPollsRes = await client.query(
+            `SELECT *
+             FROM polls
+             WHERE session_id = $1
+             AND status = 'published'
+             ORDER BY published_at DESC NULLS LAST, created_at DESC`,
+            [sessionId]
+        )
+
+        // Tidak ada poll aktif
+        if (publishedPollsRes.rows.length === 0) {
+            await client.query("COMMIT")
+            return res.status(404).json({
+                success: false,
+                message: "Tidak ada soal aktif saat ini untuk sesi ini."
+            })
+        }
+
+        const canonicalPoll = publishedPollsRes.rows[0]
+
+        if (publishedPollsRes.rows.length > 1) {
+            const stalePollIds = publishedPollsRes.rows.slice(1).map(poll => poll.id)
+
+            if (stalePollIds.length > 0) {
+                await client.query(
+                    `UPDATE polls
+                     SET status = 'closed',
+                         closed_at = CURRENT_TIMESTAMP
+                     WHERE session_id = $1
+                       AND status = 'published'
+                       AND id = ANY($2)`,
+                    [sessionId, stalePollIds]
+                )
+            }
+        }
+
+        await client.query("COMMIT")
+
+        // Quiz dan polling membutuhkan options
+        if (canonicalPoll.type === "quiz" || canonicalPoll.type === "polling") {
+            const getDataPollOption = await client.query(
+                `SELECT
+                    id,
+                    poll_id,
+                    option_text,
+                    option_order
+                 FROM poll_options
+                 WHERE poll_id = $1
+                 ORDER BY option_order ASC`,
+                [canonicalPoll.id]
+            )
+
+            return res.status(200).json({
+                success: true,
+                message: "Poll berhasil didapat!",
+                data: {
+                    ...canonicalPoll,
+                    options: getDataPollOption.rows
+                }
+            })
+        }
+
+        // Poll selain quiz
+        return res.status(200).json({
+            success: true,
+            message: "Poll berhasil didapat!",
+            data: {
+                ...canonicalPoll,
+                options: []
+            }
+        })
+
+    } catch (error) {
+        if (client) {
+            await client.query("ROLLBACK").catch(() => { })
+        }
+
+        console.error("Get data poll error:", error.message)
+
+        return res.status(500).json({
+            success: false,
+            message: "Gagal mengambil data Soal"
+        })
+    } finally {
+        if (client) {
+            client.release()
+        }
+    }
+};
