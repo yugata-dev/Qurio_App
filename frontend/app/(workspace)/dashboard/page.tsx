@@ -1,5 +1,7 @@
 "use client";
 
+import { IconChartBar, IconMessages, IconCheck } from "@tabler/icons-react";
+
 import { useEffect, useState } from "react";
 import {
   IconDotsVertical,
@@ -441,7 +443,7 @@ function DashboardPage() {
                                 : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
                             )}
                           >
-                            {session.mode === "quiz" ? "📊 Quiz" : "💬 Interaktif"}
+                            {session.mode === "quiz" ? <><IconChartBar className="mr-1 inline size-3" />Quiz</> : <><IconMessages className="mr-1 inline size-3" />Interaktif</>}
                           </Badge>
                         </div>
                       </TableCell>
@@ -559,7 +561,7 @@ function DashboardPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus sesi ini?</AlertDialogTitle>
             <AlertDialogDescription>
-              Sesi "{sessionToDelete?.title}" beserta seluruh data terkait
+              Sesi &quot;{sessionToDelete?.title}&quot; beserta seluruh data terkait
               (respons siswa, pertanyaan, dan hasil) akan dihapus permanen.
               Tindakan ini tidak dapat dibatalkan.
             </AlertDialogDescription>

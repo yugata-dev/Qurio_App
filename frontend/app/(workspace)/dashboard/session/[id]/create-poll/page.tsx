@@ -12,7 +12,7 @@ export default function CreatePollPage() {
     const router = useRouter();
     const sessionId = params.id as string;
 
-    const [session, setSession] = useState<any>(null);
+    const [session, setSession] = useState<{ mode?: string } | null>(null);
     const [pollType, setPollType] = useState<string>(searchParams.get("type") || "");
     const [question, setQuestion] = useState("");
     const [options, setOptions] = useState<string[]>(["", ""]);

@@ -1,6 +1,6 @@
 declare module "jspdf" {
   export default class jsPDF {
-    constructor(...args: any[]);
+    constructor(...args: unknown[]);
     lastAutoTable?: { finalY: number };
     internal: { pageSize: { height: number } };
     setFontSize(size: number): void;

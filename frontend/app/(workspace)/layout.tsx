@@ -23,7 +23,7 @@ import LogoQurio from "../../public/Qurio-Cropped.svg";
 const navigation = [
   { href: "/dashboard", label: "Dashboard", Icon: IconLayoutGrid },
   { href: "/sessions", label: "Session List", Icon: IconList },
-  { href: "/analytics", label: "Analytics", Icon: IconChartBar },
+  { href: "/analytics/quiz", label: "Analytics", Icon: IconChartBar },
 ];
 
 function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -66,14 +66,16 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
         <nav className="mt-10 space-y-2" aria-label="Navigasi dashboard">
           <p className="pb-1 text-xs font-semibold text-[#64748d]">Workspace</p>
           {navigation.map(({ href, label, Icon }) => {
-            const active = pathname === href;
+            const active =
+              pathname === href ||
+              (href === "/analytics/quiz" && pathname.startsWith("/analytics"));
             return (
               <Link
                 key={label}
                 href={href}
                 aria-current={active ? "page" : undefined}
                 onClick={(event) => {
-                  if (active) event.preventDefault();
+                  if (pathname === href) event.preventDefault();
                 }}
                 className={cn(
                   "flex h-[42px] items-center gap-3 rounded-xl px-4 text-sm font-semibold transition-colors",
@@ -181,7 +183,9 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
             <nav className="mt-7 space-y-2" aria-label="Navigasi dashboard">
               <p className="pb-1 text-xs font-semibold text-[#64748d]">Workspace</p>
               {navigation.map(({ href, label, Icon }) => {
-                const active = pathname === href;
+                const active =
+                  pathname === href ||
+                  (href === "/analytics/quiz" && pathname.startsWith("/analytics"));
                 return (
                   <Link
                     key={label}

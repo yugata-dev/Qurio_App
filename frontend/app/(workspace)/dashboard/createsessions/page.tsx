@@ -1,5 +1,7 @@
 "use client";
 
+import { IconChartBar, IconMessages, IconCheck } from "@tabler/icons-react";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Controller, useForm, useFieldArray } from "react-hook-form";
@@ -204,7 +206,7 @@ function CreateSessionsPage() {
                       : "border-border hover:border-muted-foreground/30",
                   )}
                 >
-                  <span className="font-semibold">📊 Sesi Quiz</span>
+                  <span className="font-semibold"><IconChartBar className="size-4" />Sesi Quiz</span>
                   <p className="text-xs text-muted-foreground">
                     Ada nilai. Cocok untuk ujian, pre-test, atau kuis penilaian. Hanya bisa berisi soal quiz.
                   </p>
@@ -219,7 +221,7 @@ function CreateSessionsPage() {
                       : "border-border hover:border-muted-foreground/30",
                   )}
                 >
-                  <span className="font-semibold">💬 Sesi Interaktif</span>
+                  <span className="font-semibold"><IconMessages className="size-4" />Sesi Interaktif</span>
                   <p className="text-xs text-muted-foreground">
                     Tanpa nilai. Cocok untuk diskusi, brainstorming, atau ice breaker. Bisa berisi wordcloud, tanya jawab, dan polling.
                   </p>

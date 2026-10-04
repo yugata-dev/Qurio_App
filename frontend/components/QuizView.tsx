@@ -3,7 +3,7 @@
 import { io } from "socket.io-client"
 import { useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
-import { IconCircleCheck, IconCircleCheckFilled } from "@tabler/icons-react"
+import { IconCircleCheck, IconCircleCheckFilled, IconClock, IconSchool } from "@tabler/icons-react"
 import {
     fetchCurrentPoll,
     fetchQuestionPoll,
@@ -61,11 +61,11 @@ function Header({ title }: { title?: string }) {
     )
 }
 
-function Notice({ emoji, title, text, tone = "zinc" }: { emoji: string; title: string; text: string; tone?: "zinc" | "green" }) {
+function Notice({ Icon, title, text, tone = "zinc" }: { Icon: typeof IconClock; title: string; text: string; tone?: "zinc" | "green" }) {
     const bubble = tone === "green" ? "bg-green-100 text-green-600" : "bg-zinc-100"
     return (
         <div className="bg-white rounded-2xl border border-zinc-200 p-10 text-center shadow-sm">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl ${bubble}`}>{emoji}</div>
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl ${bubble}`}><Icon className="size-7" /></div>
             <h3 className="font-bold text-zinc-800">{title}</h3>
             <p className="text-sm text-zinc-500 mt-1">{text}</p>
         </div>
@@ -227,9 +227,9 @@ export default function QuizView({ sessionId, onInvalidParticipant }: QuizViewPr
                 {submitError && <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm">{submitError}</div>}
 
                 {sessionEnded ? (
-                    <Notice emoji="🏁" title="Sesi telah berakhir" text="Terima kasih sudah berpartisipasi!" />
+                    <Notice Icon={IconClock} title="Sesi telah berakhir" text="Terima kasih sudah berpartisipasi!" />
                 ) : !poll ? (
-                    <Notice emoji="👨‍🏫" title="Menunggu soal dari guru..." text="Tetap di halaman ini, soal akan muncul otomatis" />
+                    <Notice Icon={IconSchool} title="Menunggu soal dari guru..." text="Tetap di halaman ini, soal akan muncul otomatis" />
                 ) : isSubmitted ? (
                     <div className="flex flex-col items-center gap-4 py-12">
                         <div className="flex size-16 items-center justify-center rounded-full bg-emerald-500/10">

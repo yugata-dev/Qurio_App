@@ -5,8 +5,20 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  /* --- Custom Colors --- */
-  --color-brand-purple: #2563eb;
+  /* Qurio brand blue, sampled from Qurio-Cropped.svg (#335EFF). */
+  --color-brand-50: #eff3ff;
+  --color-brand-100: #dce5ff;
+  --color-brand-200: #b9caff;
+  --color-brand-300: #8aa7ff;
+  --color-brand-400: #5d83ff;
+  --color-brand-500: #335eff;
+  --color-brand-600: #2548e8;
+  --color-brand-700: #1f3ac2;
+  --color-brand-800: #20359a;
+  --color-brand-900: #202f78;
+  --color-brand-950: #151d49;
+  /* Compatibility aliases used by existing landing-page accents. */
+  --color-brand-purple: var(--color-brand-500);
   --color-brand-green: #0ea5e9;
   --color-brand-green-dark: #0369a1;
   --color-brand-green-light: #eaf6ff;
@@ -15,16 +27,23 @@
   --color-brand-text-dark: #263651;
 
   /* --- Custom Animations --- */
-  --animate-marquee-scroll: qurio-marquee-scroll 34s linear infinite;
+  --animate-marquee-scroll: qurio-marquee-scroll 42s linear infinite;
 
-  --ink: #101a31;
-  --slate: #50627d;
+  --color-ink: #172033;
+  --color-slate: #53627a;
+  --color-line: #e4e9f2;
+  --radius-card: 1rem;
+  --shadow-card: 0 8px 28px rgb(27 48 91 / 7%);
+  --shadow-float: 0 16px 40px rgb(27 48 91 / 12%);
+
+  --ink: #172033;
+  --slate: #53627a;
   --muted: #94a3ba;
-  --line: #e5ebf3;
-  --purple: #2563eb;
-  --purple-soft: #eff6ff;
+  --line: #e4e9f2;
+  --purple: #335eff;
+  --purple-soft: #eff3ff;
   --green: #0ea5e9;
-  --pale: #f6f9fc;
+  --pale: #f6f8fc;
   --dark: #111a2e;
   --white: #fff;
 }
@@ -81,9 +100,9 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(54.6% 0.245 262.88);
-  --primary-foreground: oklch(0.982 0.018 155.826);
-  --audience-section: #eef4ff;
+  --primary: #335eff;
+  --primary-foreground: #ffffff;
+  --audience-section: #f2f5ff;
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.97 0 0);
@@ -93,7 +112,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --ring: #335eff;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -102,8 +121,8 @@
   --radius: 0.875rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.627 0.194 149.214);
-  --sidebar-primary-foreground: oklch(0.982 0.018 155.826);
+  --sidebar-primary: #335eff;
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
@@ -117,7 +136,7 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: var(--color-blue-600) /* oklch(62.3% 0.214 259.81) */;
+  --primary: #5d83ff;
   --primary-foreground: oklch(0.982 0.018 155.826);
   --audience-section: oklch(0.22 0.045 262.88);
   --secondary: oklch(0.274 0.006 286.033);
@@ -137,8 +156,8 @@
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.723 0.219 149.579);
-  --sidebar-primary-foreground: oklch(0.982 0.018 155.826);
+  --sidebar-primary: #5d83ff;
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
@@ -155,24 +174,50 @@
   }
 }
 
+.marquee-mask {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 24px, #000 calc(100% - 24px), transparent);
+}
+
+.marquee-track {
+  width: max-content;
+  will-change: transform;
+}
+
+.marquee-group > span:not(:last-child)::after {
+  width: 6px;
+  height: 6px;
+  margin-left: 1.25rem;
+  border-radius: 9999px;
+  background: var(--primary);
+  content: "";
+  opacity: 0.55;
+}
+
+@media (min-width: 640px) {
+  .marquee-group > span:not(:last-child)::after {
+    margin-left: 2rem;
+  }
+}
+
 /* 3. CUSTOM COMPONENTS (Opsional: Untuk merapikan class yang terlalu panjang) */
 @layer components {
   /* Contoh: Menggabungkan class tombol .primary dari sebelumnya */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2.5 rounded-2xl px-6 py-4 border-0 font-extrabold text-base cursor-pointer transition-all duration-200 bg-brand-purple text-white shadow-lg hover:-translate-y-0.5 hover:shadow-xl;
+    @apply inline-flex min-h-11 items-center justify-center gap-2.5 rounded-xl border-0 bg-brand-500 px-6 py-3 font-extrabold text-base text-white shadow-md transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-brand-600 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
   }
 
   .btn-primary-sm {
-    @apply px-6 py-3 rounded-full text-sm;
+    @apply px-6 py-3 rounded-xl text-sm;
   }
 
   /* Contoh: Pill badge dari hero */
   .pill-badge {
-    @apply inline-flex gap-2 items-center text-brand-green-dark bg-brand-green-light border border-brand-green-border rounded-full px-4 py-2 text-sm font-bold;
+    @apply inline-flex min-h-9 gap-2 items-center text-brand-800 bg-brand-50 border border-brand-200 rounded-full px-4 py-2 text-sm font-bold;
   }
 
   .container-custom {
-    width: min(100% - 32px, 500px);
+    width: min(100% - 32px, 1180px);
   }
 }
 
@@ -190,6 +235,11 @@
     @apply text-inherit no-underline;
   }
 
+  :where(button, a, input, textarea, select, [tabindex]):focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 3px;
+  }
+
   .logo {
     display: flex;
     align-items: center;
@@ -202,10 +252,10 @@
   }
   .logo img {
     display: block;
-    height: 100%;
+    height: 40px;
+    width: auto;
     max-width: 100%;
     max-height: 100%;
-    aspect-ratio: 1 / 1;
     object-fit: contain;
   }
   /* .logo > span {
@@ -221,6 +271,15 @@
   body {
     background: var(--background);
     color: var(--foreground);
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

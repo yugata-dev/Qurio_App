@@ -1,5 +1,7 @@
 "use client";
 
+import { IconChartBar, IconMessages, IconCheck } from "@tabler/icons-react";
+
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { io } from "socket.io-client";
@@ -182,7 +184,7 @@ const PollCard = memo(function PollCard({
                     <span>{opt.option_text}</span>
                     {poll.type === "quiz" && opt.is_correct && (
                       <span className="ml-auto text-xs font-semibold text-emerald-600">
-                        ✓ Benar
+                        <IconCheck className="mr-1 inline size-3" />Benar
                       </span>
                     )}
                   </div>
@@ -438,7 +440,7 @@ function SessionPage() {
                     variant={session.mode === "quiz" ? "default" : "secondary"}
                     className="ml-2 align-middle"
                   >
-                    {session.mode === "quiz" ? "📊 Sesi Quiz" : "💬 Sesi Interaktif"}
+                    {session.mode === "quiz" ? <><IconChartBar className="mr-1 inline size-3" />Sesi Quiz</> : <><IconMessages className="mr-1 inline size-3" />Sesi Interaktif</>}
                   </Badge>
                 )}
               </h1>

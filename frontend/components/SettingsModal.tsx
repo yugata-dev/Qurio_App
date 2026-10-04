@@ -15,7 +15,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 import { Button } from "@/components/ui/button";
 import { getThemePreference, saveThemePreference } from "@/lib/db";
-import { IconPalette, IconUser } from "@tabler/icons-react";
+import { IconLogout, IconPalette, IconUser } from "@tabler/icons-react";
 
 type Theme = "light" | "dark";
 
@@ -37,6 +37,7 @@ export function SettingsDialog({
   onApply,
 }: SettingsDialogProps) {
   const [draftTheme, setDraftTheme] = useState<Theme>(theme);
+  const [activeTab, setActiveTab] = useState<"account" | "theme">("account");
 
   useEffect(() => {
     if (!open) {
@@ -85,7 +86,10 @@ export function SettingsDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="account">
+        <Tabs
+          defaultValue="account"
+          onValueChange={(value) => setActiveTab(value as "account" | "theme")}
+        >
           <TabsList>
             <TabsTrigger value="account">
               <IconUser />
@@ -97,18 +101,30 @@ export function SettingsDialog({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="account" className="space-y-3 p-6">
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-destructive/20 bg-destructive/5 p-4">
-              <div>
-                <h3 className="text-sm font-semibold">Keluar dari akun</h3>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Keluar dari akun pada perangkat ini.
-                </p>
+          <TabsContent value="account" className="mt-0 px-0 pt-5">
+            <section className="rounded-2xl border border-rose-200 bg-gradient-to-br from-rose-50/80 to-background p-4 dark:border-rose-900/60 dark:from-rose-950/30 sm:p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300">
+                  <IconLogout className="size-5" aria-hidden="true" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-semibold tracking-tight">
+                    Keluar dari akun
+                  </h3>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                    Keluar dari akun pada perangkat ini.
+                  </p>
+                </div>
+                <Button
+                  variant="destructive"
+                  className="min-h-11 w-full shrink-0 sm:w-auto"
+                  onClick={onLogout}
+                >
+                  <IconLogout className="size-4" aria-hidden="true" />
+                  Keluar
+                </Button>
               </div>
-              <Button variant="destructive" onClick={onLogout}>
-                Keluar
-              </Button>
-            </div>
+            </section>
           </TabsContent>
 
           <TabsContent value="theme" className="p-6">
@@ -139,15 +155,19 @@ export function SettingsDialog({
           </TabsContent>
         </Tabs>
 
-        <DialogFooter>
+        <DialogFooter className="mt-1 gap-3">
           <DialogClose
-            className="inline-flex h-9 items-center justify-center rounded-md border border-border bg-background px-2.5 text-sm font-medium transition-colors hover:bg-muted"
+            className="inline-flex h-11 min-w-28 items-center justify-center rounded-xl border border-border bg-background px-4 text-sm font-medium transition-colors hover:bg-muted"
             onClick={handleCancel}
           >
             Batal
           </DialogClose>
 
-          <Button onClick={handleApply}>Terapkan</Button>
+          {activeTab === "theme" && (
+            <Button className="h-11 min-w-28 rounded-xl px-4" onClick={handleApply}>
+              Terapkan
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
