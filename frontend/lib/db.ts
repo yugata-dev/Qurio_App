@@ -1,6 +1,6 @@
 import Dexie, { type Table } from "dexie";
 
-export type ThemePreference = "system" | "light" | "dark";
+export type ThemePreference = "light" | "dark";
 
 export interface PreferenceRecord {
   key: string;
@@ -20,9 +20,12 @@ export const db = new QurioDatabase();
 
 export async function getThemePreference(): Promise<ThemePreference | null> {
   const preference = await db.preferences.get("theme");
-  return preference?.value === "system" ||
-    preference?.value === "light" ||
-    preference?.value === "dark"
+  if (preference?.value === "system") {
+    await db.preferences.put({ key: "theme", value: "light" });
+    return "light";
+  }
+
+  return preference?.value === "light" || preference?.value === "dark"
     ? preference.value
     : null;
 }

@@ -14,6 +14,7 @@ import {
 } from "@tabler/icons-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { CopyButton } from "@/components/CopyButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -49,6 +50,7 @@ import {
   type SessionListItem,
 } from "@/lib/api";
 import smartSearch from "@/lib/smart-search";
+import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/toast";
 
 // Format tanggal dari API menggunakan lokal Indonesia.
@@ -120,14 +122,14 @@ function DashboardPage() {
   // Kartu ringkasan: sesi aktif didahulukan karena paling relevan.
   const overviewItems = [
     {
-      label: "Sesi Aktif",
-      value: String(activeSessions.length),
-      detail: "Sedang berlangsung sekarang",
-    },
-    {
       label: "Total Sesi",
       value: String(sessions.length),
       detail: "Semua sesi yang pernah dibuat",
+    },
+    {
+      label: "Sesi Aktif",
+      value: String(activeSessions.length),
+      detail: "Sedang berlangsung sekarang",
     },
     {
       label: "Sesi Selesai",
@@ -417,18 +419,31 @@ function DashboardPage() {
                     <TableRow key={session.id}>
                       {/* Nama sesi + indikator aktif. */}
                       <TableCell className="px-4 py-3.5">
-                        <Link
-                          href={`/dashboard/session/${session.id}`}
-                          className="group inline-flex items-center gap-2"
-                        >
-                          <span
-                            className="size-2 shrink-0 rounded-full bg-emerald-500"
-                            aria-hidden="true"
-                          />
-                          <span className="font-medium text-foreground transition-colors group-hover:text-primary group-hover:underline">
-                            {session.title}
-                          </span>
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/dashboard/session/${session.id}`}
+                            className="group inline-flex items-center gap-2"
+                          >
+                            <span
+                              className="size-2 shrink-0 rounded-full bg-emerald-500"
+                              aria-hidden="true"
+                            />
+                            <span className="font-medium text-foreground transition-colors group-hover:text-primary group-hover:underline">
+                              {session.title}
+                            </span>
+                          </Link>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "shrink-0 text-[10px] font-semibold",
+                              session.mode === "quiz"
+                                ? "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-400"
+                                : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+                            )}
+                          >
+                            {session.mode === "quiz" ? "📊 Quiz" : "💬 Interaktif"}
+                          </Badge>
+                        </div>
                       </TableCell>
 
                       {/* Kode akses + tombol salin. */}

@@ -10,12 +10,16 @@ import {
   getDataSession,
   updateSinglePolls,
   updateStatusSession,
+  type PollStats,
+  type PollingDistributionItem,
 } from "@/lib/api";
 import { CopyButton } from "@/components/CopyButton";
+import { Badge } from "@/components/ui/badge";
 
 export interface SessionData {
   id: string;
   title: string;
+  mode: "interactive" | "quiz";
   access_code: string | number;
   type: "quiz" | "polling" | "qa" | "wordcloud";
   status: "active" | "ended";
@@ -41,20 +45,64 @@ export interface Poll {
   options: PollOption[];
 }
 
-type PollStats = { correct: number; wrong: number };
 type StatsMap = Record<string, PollStats>;
 
-// Payload yang IDEALNYA dikirim backend saat ada jawaban baru
 type ResponseCreatedPayload = { poll_id?: string; is_correct?: boolean };
 
-const FLUSH_DELAY_MS = 500; // gabungkan banyak event jadi 1 batch fetch
-const FALLBACK_POLL_MS = 10_000; // polling HANYA saat socket terputus
+const EMPTY_STATS: PollStats = {
+  pollId: "",
+  pollType: "polling",
+  totalVotes: 0,
+  distribution: [],
+};
 
-const EMPTY_STATS: PollStats = { correct: 0, wrong: 0 };
+function PollingResultCard({
+  distribution,
+  totalVotes,
+}: {
+  distribution: PollingDistributionItem[];
+  totalVotes: number;
+}) {
+  if (!distribution || totalVotes === 0) {
+    return (
+      <div className="mt-3 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+        Belum ada siswa yang menjawab. Vote akan muncul di sini secara real-time.
+      </div>
+    );
+  }
 
-/* ------------------------------------------------------------------ */
-/* Card per poll: di-memo supaya hanya card yang berubah yang render   */
-/* ------------------------------------------------------------------ */
+  return (
+    <div className="mt-4 flex flex-col gap-3">
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span className="font-medium">Total {totalVotes} suara</span>
+        <span className="flex items-center gap-1">
+          <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+          Live
+        </span>
+      </div>
+
+      {distribution.map((item) => (
+        <div key={item.optionId} className="flex flex-col gap-1.5">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-sm font-medium text-foreground">
+              {item.optionText}
+            </span>
+            <span className="text-xs font-semibold tabular-nums text-muted-foreground">
+              {item.votes} suara · {item.percentage}%
+            </span>
+          </div>
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-all duration-500"
+              style={{ width: `${item.percentage}%` }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 interface PollCardProps {
   poll: Poll;
   index: number;
@@ -70,9 +118,9 @@ const PollCard = memo(function PollCard({
   onUpdate,
   onOpenDetail,
 }: PollCardProps) {
-  const total = stats.correct + stats.wrong;
+  const isQuizStats = stats.pollType === "quiz";
+  const isPollingStats = stats.pollType === "polling";
 
-  // Jangan mutasi props/state dengan .sort() langsung
   const sortedOptions = useMemo(
     () =>
       poll.options
@@ -87,8 +135,7 @@ const PollCard = memo(function PollCard({
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <p className="text-xs text-gray-500">
-              #{index + 1} •{" "}
-              {poll.type === "qa" ? "TANYA JAWAB" : poll.type.toUpperCase()}
+              #{index + 1} • {poll.type === "qa" ? "TANYA JAWAB" : poll.type.toUpperCase()}
             </p>
             <span
               className={`text-xs px-2 py-0.5 rounded-full ${poll.status === "published"
@@ -101,40 +148,57 @@ const PollCard = memo(function PollCard({
               {poll.status}
             </span>
 
-            {poll.type === "quiz" && total > 0 && (
+            {poll.type === "quiz" && isQuizStats && (
               <div className="flex items-center gap-2 ml-2">
                 <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full border border-green-200">
-                  Benar: {stats.correct}
+                  Benar: {stats.correct_count}
                 </span>
                 <span className="text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded-full border border-red-200">
-                  Salah: {stats.wrong}
+                  Salah: {stats.incorrect_count}
                 </span>
+              </div>
+            )}
+
+            {poll.type === "polling" && isPollingStats && (
+              <div className="ml-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                {stats.totalVotes} suara
               </div>
             )}
           </div>
 
           <p className="font-medium text-gray-900">{poll.question}</p>
 
-          {poll.type === "quiz" && sortedOptions.length > 0 && (
-            <div className="mt-3 space-y-1.5">
-              {sortedOptions.map((opt) => (
-                <div
-                  key={opt.id}
-                  className={`text-sm px-3 py-2 rounded-lg border ${opt.is_correct
-                    ? "bg-green-50 border-green-200 text-green-800"
-                    : "bg-gray-50 border-gray-100 text-gray-700"
-                    }`}
-                >
-                  {opt.option_text} {opt.is_correct && " ✔"}
-                </div>
-              ))}
-            </div>
+          {(poll.type === "quiz" || poll.type === "polling") &&
+            sortedOptions.length > 0 && (
+              <div className="mt-3 space-y-1.5">
+                {sortedOptions.map((opt, optionIndex) => (
+                  <div
+                    key={opt.id}
+                    className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700"
+                  >
+                    <span className="font-mono text-xs text-gray-500">
+                      {String.fromCharCode(65 + optionIndex)}.
+                    </span>
+                    <span>{opt.option_text}</span>
+                    {poll.type === "quiz" && opt.is_correct && (
+                      <span className="ml-auto text-xs font-semibold text-emerald-600">
+                        ✓ Benar
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+          {poll.type === "polling" && isPollingStats && (
+            <PollingResultCard
+              distribution={stats.distribution}
+              totalVotes={stats.totalVotes}
+            />
           )}
 
-          {poll.type === "quiz" && total === 0 && (
-            <p className="text-xs text-gray-400 mt-2">
-              Belum ada jawaban masuk
-            </p>
+          {poll.type === "quiz" && isQuizStats && stats.total_count === 0 && (
+            <p className="text-xs text-gray-400 mt-2">Belum ada jawaban masuk</p>
           )}
         </div>
       </div>
@@ -167,9 +231,6 @@ const PollCard = memo(function PollCard({
   );
 });
 
-/* ------------------------------------------------------------------ */
-/* Page                                                                */
-/* ------------------------------------------------------------------ */
 function SessionPage() {
   const router = useRouter();
   const params = useParams();
@@ -185,61 +246,29 @@ function SessionPage() {
     if (!isAuthenticated || !sessionId) return;
 
     let cancelled = false;
-    const quizIds = new Set<string>();
-    const dirty = new Set<string>();
-    let flushTimer: ReturnType<typeof setTimeout> | null = null;
-    let fallbackTimer: ReturnType<typeof setInterval> | null = null;
-
+    const allPollIds = new Set<string>();
     const socketUrl = (
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
     ).replace(/\/api\/?$/, "");
     const socket = io(socketUrl, { withCredentials: true });
 
-    // Ambil statistik HANYA untuk poll yang diminta (bukan semua poll)
     const fetchStats = async (ids: string[]) => {
       if (ids.length === 0) return;
-      const results = await Promise.allSettled(
-        ids.map((id) => fetchResponseGetPoll(id)),
-      );
+      const results = await Promise.allSettled(ids.map((id) => fetchResponseGetPoll(id)));
       if (cancelled) return;
 
       setStats((prev) => {
         const next = { ...prev };
-        results.forEach((res, i) => {
-          if (res.status !== "fulfilled") return; // 1 gagal tidak merusak yang lain
-          const item = res.value.data.find((a) => a.poll_id === ids[i]);
-          next[ids[i]] = {
-            correct: item?.correct_count ?? 0,
-            wrong: item?.incorrect_count ?? 0,
-          };
+        results.forEach((res, idx) => {
+          if (res.status !== "fulfilled") return;
+          const stat = res.value.data;
+          if (!stat) return;
+          next[ids[idx]] = stat;
         });
         return next;
       });
     };
 
-    // Debounce: 50 siswa menjawab bersamaan => 1 batch, bukan 50 fetch
-    const scheduleFlush = (pollId?: string) => {
-      if (pollId) dirty.add(pollId);
-      else quizIds.forEach((id) => dirty.add(id));
-      if (flushTimer) return;
-      flushTimer = setTimeout(() => {
-        flushTimer = null;
-        const ids = [...dirty];
-        dirty.clear();
-        void fetchStats(ids);
-      }, FLUSH_DELAY_MS);
-    };
-
-    const startFallback = () => {
-      if (!fallbackTimer)
-        fallbackTimer = setInterval(() => scheduleFlush(), FALLBACK_POLL_MS);
-    };
-    const stopFallback = () => {
-      if (fallbackTimer) clearInterval(fallbackTimer);
-      fallbackTimer = null;
-    };
-
-    // Load awal: session & polls paralel, statistik hanya untuk quiz, cukup sekali
     const loadInitial = async () => {
       const [sessionRes, pollRes] = await Promise.allSettled([
         getDataSession(sessionId, null),
@@ -251,14 +280,10 @@ function SessionPage() {
       else setErrorMessage("Sesi tidak ditemukan atau sudah tidak tersedia.");
 
       if (pollRes.status === "fulfilled") {
-        const loaded: Poll[] = Array.isArray(pollRes.value)
-          ? pollRes.value
-          : [];
+        const loaded: Poll[] = Array.isArray(pollRes.value) ? pollRes.value : [];
         setPolls(loaded);
-        loaded
-          .filter((p) => p.type === "quiz")
-          .forEach((p) => quizIds.add(p.id));
-        void fetchStats([...quizIds]);
+        loaded.forEach((poll) => allPollIds.add(poll.id));
+        void fetchStats([...allPollIds]);
       } else {
         setErrorMessage("Gagal mengambil data poll");
       }
@@ -266,44 +291,71 @@ function SessionPage() {
 
     void loadInitial();
 
-    // Join di event "connect" agar otomatis re-join setelah reconnect
     socket.on("connect", () => {
       socket.emit("join_session", sessionId);
       if (user?.id) socket.emit("join_teacher", user.id);
-      stopFallback();
-      scheduleFlush(); // sinkron ulang event yang mungkin terlewat saat putus
     });
-    socket.on("disconnect", startFallback);
-    socket.on("connect_error", startFallback);
+
+    socket.on("poll_vote_updated", (payload: {
+      pollId?: string;
+      pollType?: string;
+      distribution?: PollingDistributionItem[];
+      totalVotes?: number;
+      correct_count?: number;
+      incorrect_count?: number;
+      total_count?: number;
+    }) => {
+      if (!payload?.pollId) return;
+
+      const pollId = String(payload.pollId);
+
+      setStats((prev) => {
+        const next: StatsMap = { ...prev };
+        const stats: PollStats =
+          payload.pollType === "polling"
+            ? {
+              pollId,
+              pollType: "polling",
+              totalVotes: payload.totalVotes ?? 0,
+              distribution: payload.distribution ?? [],
+            }
+            : {
+              pollId,
+              pollType: "quiz",
+              correct_count: payload.correct_count ?? 0,
+              incorrect_count: payload.incorrect_count ?? 0,
+              total_count: payload.total_count ?? 0,
+            };
+
+        next[pollId] = stats;
+        return next;
+      });
+    });
 
     socket.on("response_created", (payload?: ResponseCreatedPayload) => {
       const pollId = payload?.poll_id;
-      if (pollId && !quizIds.has(pollId)) return; // qa/wordcloud tidak butuh statistik
+      if (!pollId) return;
 
-      // Kasus ideal: backend kirim poll_id + is_correct => 0 request
-      if (pollId && typeof payload?.is_correct === "boolean") {
-        const isCorrect = payload.is_correct;
+      if (typeof payload.is_correct === "boolean") {
         setStats((prev) => {
-          const cur = prev[pollId] ?? EMPTY_STATS;
+          const current = prev[pollId];
+          if (current?.pollType !== "quiz") return prev;
+
           return {
             ...prev,
             [pollId]: {
-              correct: cur.correct + (isCorrect ? 1 : 0),
-              wrong: cur.wrong + (isCorrect ? 0 : 1),
+              ...current,
+              correct_count: current.correct_count + (payload.is_correct ? 1 : 0),
+              incorrect_count: current.incorrect_count + (payload.is_correct ? 0 : 1),
+              total_count: current.total_count + 1,
             },
           };
         });
-        return;
       }
-
-      // Fallback: refetch hanya poll yang terkena, di-debounce
-      scheduleFlush(pollId);
     });
 
     return () => {
       cancelled = true;
-      if (flushTimer) clearTimeout(flushTimer);
-      stopFallback();
       socket.emit("leave_session", sessionId);
       if (user?.id) socket.emit("leave_teacher", user.id);
       socket.removeAllListeners();
@@ -311,7 +363,6 @@ function SessionPage() {
     };
   }, [sessionId, isAuthenticated, user?.id]);
 
-  // Handler stabil (useCallback) agar React.memo pada PollCard efektif
   const onUpdateSingle = useCallback(
     async (pollId: string, statusTarget: Poll["status"]) => {
       if (!isAuthenticated) {
@@ -359,11 +410,7 @@ function SessionPage() {
     if (!isAuthenticated)
       return setErrorMessage("Sesi login tidak sesuai atau sudah kedaluwarsa.");
     try {
-      const updatedSession = await updateStatusSession(
-        sessionId,
-        statusTarget,
-        null,
-      );
+      const updatedSession = await updateStatusSession(sessionId, statusTarget, null);
       setSession(updatedSession);
       setErrorMessage(null);
       setSuccessMessage(
@@ -381,12 +428,22 @@ function SessionPage() {
   return (
     <div className="min-h-screen bg-background p-6 text-foreground">
       <div className="max-w-3xl mx-auto space-y-6">
-        {/* Header Sesi */}
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="flex justify-between items-start">
             <div>
+              <h1 className="mb-2 text-xl font-semibold">
+                {session?.title}
+                {session && (
+                  <Badge
+                    variant={session.mode === "quiz" ? "default" : "secondary"}
+                    className="ml-2 align-middle"
+                  >
+                    {session.mode === "quiz" ? "📊 Sesi Quiz" : "💬 Sesi Interaktif"}
+                  </Badge>
+                )}
+              </h1>
               <p className="text-sm text-gray-500 mt-1">
-                Title: {session?.title} • Kode:{" "}
+                Kode:{" "}
                 <span className="font-mono font-semibold bg-gray-100 px-2 py-0.5 rounded">
                   {session?.access_code}
                 </span>
@@ -419,17 +476,20 @@ function SessionPage() {
               Akhiri Sesi
             </button>
             <button
-              onClick={() =>
-                router.push(`/dashboard/createpolls/${session?.id}`)
-              }
+              onClick={() => {
+                if (session?.mode === "quiz") {
+                  router.push(`/dashboard/session/${sessionId}/create-poll?type=quiz`);
+                } else {
+                  router.push(`/dashboard/session/${sessionId}/create-poll`);
+                }
+              }}
               className="text-sm px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 ml-auto"
             >
-              + Buat Soal
+              {session?.mode === "quiz" ? "+ Buat Soal Quiz" : "+ Buat Aktivitas"}
             </button>
           </div>
         </div>
 
-        {/* Alert */}
         {errorMessage && (
           <div className="bg-red-50 border border-red-200 text-red-700 text-sm p-3 rounded-lg">
             {errorMessage}

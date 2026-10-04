@@ -43,11 +43,11 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-65 flex-col border-r border-sidebar-border bg-sidebar px-6 py-6 lg:flex">
-        <Link href="/dashboard" className="flex items-center px-2 py-1 shrink-0">
+        <Link href="/dashboard" className="flex justify-center items-center px-2 py-1 shrink-0">
           <Image
             src={LogoQurio}
             alt="Logo Qurio"
-            className="h-[65px] ml-5 w-auto object-contain object-left"
+            className="h-[50px] w-auto object-contain object-left"
             priority
           />
         </Link>
@@ -56,7 +56,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
             href="/dashboard/createsessions"
             className={cn(
               buttonVariants(),
-              "mt-10 h-[42px] w-full rounded-[10px] text-[13px] font-semibold",
+              "mt-5 h-[42px] w-full rounded-[10px] text-[13px] font-semibold",
             )}
           >
             <IconCirclePlus className="size-[18px]" />
@@ -232,7 +232,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
       <SettingsDialog
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
-        theme={theme === "light" || theme === "dark" ? theme : "system"}
+        theme={theme === "dark" ? "dark" : "light"}
         onThemeChange={setTheme}
         onLogout={logout}
         onApply={() => setSettingsOpen(false)}

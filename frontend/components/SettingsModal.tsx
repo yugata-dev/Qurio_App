@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { getThemePreference, saveThemePreference } from "@/lib/db";
 import { IconPalette, IconUser } from "@tabler/icons-react";
 
-type Theme = "system" | "light" | "dark";
+type Theme = "light" | "dark";
 
 interface SettingsDialogProps {
   open: boolean;
@@ -118,15 +118,7 @@ export function SettingsDialog({
                 Pilih tema yang digunakan aplikasi.
               </p>
 
-              <div className="mt-4 grid grid-cols-3 gap-2">
-                <Button
-                  className="h-11"
-                  variant={draftTheme === "system" ? "default" : "outline"}
-                  onClick={() => handleDraftThemeChange("system")}
-                >
-                  Sistem
-                </Button>
-
+              <div className="mt-4 grid grid-cols-2 gap-2">
                 <Button
                   className="h-11"
                   variant={draftTheme === "light" ? "default" : "outline"}

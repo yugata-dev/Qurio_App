@@ -357,6 +357,7 @@ async function runSeed() {
                 id: randomUUID(),
                 teacherId: teacher.id,
                 topic,
+                mode: index < 4 ? "quiz" : "interactive",
                 status: index < 4 ? "ended" : "active",
                 createdAt,
                 endedAt:
@@ -379,12 +380,13 @@ async function runSeed() {
         await insertRows(
             client,
             "sessions",
-            ["id", "teacher_id", "title", "access_code", "status", "class_size", "created_at", "ended_at"],
+            ["id", "teacher_id", "title", "access_code", "mode", "status", "class_size", "created_at", "ended_at"],
             sessions.map((session) => [
                 session.id,
                 session.teacherId,
                 session.topic.title,
                 session.accessCode,
+                session.mode,
                 session.status,
                 session.classSize,
                 session.createdAt,
