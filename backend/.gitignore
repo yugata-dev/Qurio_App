@@ -1,34 +1,38 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Dependencies
+node_modules/
 
-# dependencies
-node_modules
-.next
+# Build and coverage output
+dist/
+build/
+coverage/
+
+# Environment files
 .env
-dist
+.env.*
+!.env.example
 
-# testing
-coverage
-
-# production
-build
-
-# misc
-.DS_Store
+# Local tools and certificates
+.vercel/
+.vscode/
+.idea/
+.postman/
 *.pem
 
-# debug
+# Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# vercel
-.vercel
+# Operating system files
+.DS_Store
+Thumbs.db
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-seed-analytics.js
-scripts
-run-migration.js
+# Local uploads and data
+uploads/
+*.sqlite
+*.db
 
+# Local-only demo data generator
+scripts/seed-analytics.js
