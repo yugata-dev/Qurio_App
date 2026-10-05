@@ -92,6 +92,7 @@ export interface SessionListItem {
   title: string;
   access_code: string;
   class_size: number | null;
+  mode: "interactive" | "quiz";
   participant_count: number;
   status: "active" | "ended";
   created_at: string;
@@ -111,6 +112,7 @@ interface SessionDetailResponse {
     title: string;
     access_code: number;
     class_size: number | null;
+    mode: "interactive" | "quiz";
     type: "quiz" | "polling" | "qa" | "wordcloud";
     status: "active" | "ended";
   };
@@ -137,18 +139,34 @@ export interface responseQuestions {
   };
 }
 
-export interface responseAnswer {
-  success: boolean;
-  data: Array<{
-    poll_id: string;
+export interface PollingDistributionItem {
+  optionId: string;
+  optionText: string;
+  votes: number;
+  percentage: number;
+}
+
+export type PollStats =
+  | {
+    pollId: string;
+    pollType: "polling";
+    totalVotes: number;
+    distribution: PollingDistributionItem[];
+  }
+  | {
+    pollId: string;
+    pollType: "quiz";
     correct_count: number;
     incorrect_count: number;
     total_count: number;
-  }>;
+  };
+
+export interface responseAnswer {
+  success: boolean;
+  data: PollStats;
 }
 
 export type AnalyticsPeriod = "7d" | "30d" | "all";
-export type ParticipationTrendPeriod = "7d" | "14d" | "30d";
 
 /** Satu baris breakdown kehadiran per sesi dari endpoint analytics summary. */
 export interface AttendanceBreakdownItem {
@@ -196,10 +214,12 @@ export interface TopTopic {
   totalAnswers: number;
 }
 
-export interface ParticipationTrendPoint {
-  date: string;
-  label: string;
-  participants: number;
+export interface ScoreBySessionPoint {
+  sessionId: string;
+  sessionTitle: string;
+  createdAt: string;
+  avgScore: number;
+  totalAnswers: number;
 }
 
 const API_URL = (
@@ -339,11 +359,12 @@ const postType = async (
 
 const createSession = async (
   title: string,
-  classSize?: number | null | string,
+  classSize: number | null,
+  mode: "interactive" | "quiz",
   token?: string,
 ): Promise<Sessions> => {
   const normalizedClassSize =
-    classSize === undefined || classSize === null || classSize === ""
+    classSize === undefined || classSize === null
       ? null
       : Number(classSize);
 
@@ -357,6 +378,7 @@ const createSession = async (
       body: JSON.stringify({
         title,
         class_size: normalizedClassSize,
+        mode,
       }),
     });
 
@@ -848,14 +870,10 @@ export const getAnalyticsTopics = (
     token,
   );
 
-export const getAnalyticsParticipationTrend = (
-  period: ParticipationTrendPeriod = "7d",
+export const getAnalyticsScoreBySession = (
   token?: string,
-): Promise<ParticipationTrendPoint[]> =>
-  fetchAnalyticsData<ParticipationTrendPoint[]>(
-    `participation-trend?period=${encodeURIComponent(period)}`,
-    token,
-  );
+): Promise<ScoreBySessionPoint[]> =>
+  fetchAnalyticsData<ScoreBySessionPoint[]>("score-by-session", token);
 
 export {
   fetchUserLogin,

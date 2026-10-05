@@ -3,6 +3,7 @@
 import { io } from "socket.io-client"
 import { useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
+import { IconCircleCheck, IconCircleCheckFilled, IconClock, IconSchool } from "@tabler/icons-react"
 import {
     fetchCurrentPoll,
     fetchQuestionPoll,
@@ -60,11 +61,11 @@ function Header({ title }: { title?: string }) {
     )
 }
 
-function Notice({ emoji, title, text, tone = "zinc" }: { emoji: string; title: string; text: string; tone?: "zinc" | "green" }) {
+function Notice({ Icon, title, text, tone = "zinc" }: { Icon: typeof IconClock; title: string; text: string; tone?: "zinc" | "green" }) {
     const bubble = tone === "green" ? "bg-green-100 text-green-600" : "bg-zinc-100"
     return (
         <div className="bg-white rounded-2xl border border-zinc-200 p-10 text-center shadow-sm">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl ${bubble}`}>{emoji}</div>
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl ${bubble}`}><Icon className="size-7" /></div>
             <h3 className="font-bold text-zinc-800">{title}</h3>
             <p className="text-sm text-zinc-500 mt-1">{text}</p>
         </div>
@@ -74,8 +75,8 @@ function Notice({ emoji, title, text, tone = "zinc" }: { emoji: string; title: s
 export default function QuizView({ sessionId, onInvalidParticipant }: QuizViewProps) {
     const { register, reset, setValue, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>()
     const [poll, setPoll] = useState<Poll | null>(null)
-    const [selected, setSelected] = useState<string | null>(null)
-    const [submitted, setSubmitted] = useState(false)
+    const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null)
+    const [isSubmitted, setIsSubmitted] = useState(false)
     const [sessionEnded, setSessionEnded] = useState(false)
     const [sessionData, setSessionData] = useState<PublicSession | null>(null)
     const [submitError, setSubmitError] = useState<string | null>(null)
@@ -93,9 +94,9 @@ export default function QuizView({ sessionId, onInvalidParticipant }: QuizViewPr
             setPoll(next)
             setSubmitError(null)
             const already = next ? readSubmitted(next.id) : false
-            setSubmitted(already)
+            setIsSubmitted(already)
             if (!already) {
-                setSelected(null)
+                setSelectedOptionId(null)
                 reset({ answerStudent: "" })
             }
         }
@@ -188,8 +189,8 @@ export default function QuizView({ sessionId, onInvalidParticipant }: QuizViewPr
             if (!participantId) throw new Error("Participant ID tidak ditemukan")
 
             if (poll.type === "quiz" || poll.type === "polling") {
-                if (!selected) throw new Error("Pilih salah satu jawaban")
-                await fetchResponsePoll(poll.id, participantId, data.answerStudent, selected)
+                if (!selectedOptionId) throw new Error("Pilih salah satu jawaban")
+                await fetchResponsePoll(poll.id, participantId, data.answerStudent, selectedOptionId)
             } else if (poll.type === "qa") {
                 if (!data.answerStudent?.trim()) throw new Error("Jawaban wajib diisi")
                 await fetchQuestionPoll(poll.id, participantId, data.answerStudent.trim())
@@ -199,12 +200,12 @@ export default function QuizView({ sessionId, onInvalidParticipant }: QuizViewPr
             }
 
             writeSubmitted(poll.id)
-            setSubmitted(true)
+            setIsSubmitted(true)
         } catch (err) {
             const status = (err as { status?: number }).status
             if (status === 409) { // server bilang sudah pernah menjawab (mis. storage terhapus)
                 writeSubmitted(poll.id)
-                setSubmitted(true)
+                setIsSubmitted(true)
                 return
             }
             if (status === 403) { // participant_id bukan milik sesi ini
@@ -226,11 +227,17 @@ export default function QuizView({ sessionId, onInvalidParticipant }: QuizViewPr
                 {submitError && <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm">{submitError}</div>}
 
                 {sessionEnded ? (
-                    <Notice emoji="🏁" title="Sesi telah berakhir" text="Terima kasih sudah berpartisipasi!" />
+                    <Notice Icon={IconClock} title="Sesi telah berakhir" text="Terima kasih sudah berpartisipasi!" />
                 ) : !poll ? (
-                    <Notice emoji="👨‍🏫" title="Menunggu soal dari guru..." text="Tetap di halaman ini, soal akan muncul otomatis" />
-                ) : submitted ? (
-                    <Notice emoji="✓" tone="green" title="Jawaban terkirim!" text="Jawaban kamu sudah diterima. Tetap di sini menunggu soal selanjutnya." />
+                    <Notice Icon={IconSchool} title="Menunggu soal dari guru..." text="Tetap di halaman ini, soal akan muncul otomatis" />
+                ) : isSubmitted ? (
+                    <div className="flex flex-col items-center gap-4 py-12">
+                        <div className="flex size-16 items-center justify-center rounded-full bg-emerald-500/10">
+                            <IconCircleCheck className="size-8 text-emerald-600" />
+                        </div>
+                        <p className="text-xl font-semibold text-foreground">Terima kasih!</p>
+                        <p className="text-sm text-muted-foreground">Jawabanmu sudah tercatat.</p>
+                    </div>
                 ) : (
                     <div className="bg-white rounded-2xl border border-zinc-200 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
                         <div className="p-6 md:p-8">
@@ -250,11 +257,20 @@ export default function QuizView({ sessionId, onInvalidParticipant }: QuizViewPr
                                         <div className="space-y-3">
                                             {sortedOptions.map((opt, i) => {
                                                 const char = String.fromCharCode(65 + i)
-                                                const isActive = selected === opt.id
+                                                const isActive = selectedOptionId === opt.id
                                                 return (
-                                                    <button key={opt.id} type="button" onClick={() => { setSelected(opt.id); setValue("answerStudent", opt.option_text, { shouldDirty: true, shouldValidate: true }) }} className={`w-full text-left flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${isActive ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-100 bg-zinc-50 hover:border-zinc-300 text-zinc-700"}`}>
-                                                        <div className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center font-black text-sm ${isActive ? "bg-white text-zinc-900" : "bg-white border border-zinc-200"}`}>{char}</div>
-                                                        <span className="text-sm font-medium">{opt.option_text}</span>
+                                                    <button
+                                                        key={opt.id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSelectedOptionId(opt.id)
+                                                            setValue("answerStudent", opt.option_text, { shouldDirty: true, shouldValidate: true })
+                                                        }}
+                                                        className={`w-full text-left flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${isActive ? "border-primary bg-primary/5 shadow-sm" : "border-border bg-card hover:border-muted-foreground/30 hover:bg-muted/30 text-zinc-700"}`}
+                                                    >
+                                                        <div className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center font-black text-sm ${isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>{char}</div>
+                                                        <span className={`flex-1 text-sm font-medium ${isActive ? "text-foreground" : "text-muted-foreground"}`}>{opt.option_text}</span>
+                                                        {isActive && <IconCircleCheckFilled className="size-5 text-primary" />}
                                                     </button>
                                                 )
                                             })}
@@ -262,8 +278,8 @@ export default function QuizView({ sessionId, onInvalidParticipant }: QuizViewPr
                                         {errors.answerStudent && <p className="text-xs text-red-500">{errors.answerStudent.message}</p>}
                                     </>
                                 )}
-                                <button type="submit" disabled={isSubmitting} className="w-full mt-6 bg-zinc-900 text-white text-sm font-bold rounded-2xl p-4 hover:bg-black active:scale-[0.98] disabled:opacity-50 transition-all">
-                                    {isSubmitting ? "Mengirim..." : "Kirim Jawaban 🚀"}
+                                <button type="submit" disabled={!selectedOptionId || isSubmitting} className="w-full mt-6 bg-zinc-900 text-white text-sm font-bold rounded-2xl p-4 hover:bg-black active:scale-[0.98] disabled:opacity-50 transition-all">
+                                    {isSubmitting ? "Mengirim..." : "Kirim Jawaban"}
                                 </button>
                             </form>
                         </div>

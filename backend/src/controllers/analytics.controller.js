@@ -319,51 +319,34 @@ export const getAnalyticsTopics = async (req, res) => {
   }
 };
 
-// Return a complete daily series of scored quiz responses.
-export const getAnalyticsScoreTrend = async (req, res) => {
-  const periodDays = parsePeriod(req, res, ["7d", "14d", "30d"]);
-  if (periodDays === undefined) return;
-
+// Return average quiz scores grouped by session.
+export const getAnalyticsScoreBySession = async (req, res) => {
   try {
     const result = await pool.query(
-      `WITH days AS (
-         SELECT generated_day::date AS date
-         FROM generate_series(
-           CURRENT_DATE - ($2::int - 1),
-           CURRENT_DATE,
-           INTERVAL '1 day'
-         ) AS generated_day
-       ), daily_scores AS (
-         SELECT
-           r.submitted_at::date AS date,
-           ROUND(
-             COUNT(*) FILTER (WHERE r.is_correct = TRUE)::numeric
-             / NULLIF(COUNT(*) FILTER (WHERE r.is_correct IS NOT NULL), 0)
-             * 100,
-             1
-           )::float AS avg_score,
-           COUNT(*) FILTER (WHERE r.is_correct IS NOT NULL)::int AS total_responses
-         FROM responses r
-         JOIN polls p ON p.id = r.poll_id AND p.type = 'quiz'
-         JOIN sessions s ON s.id = p.session_id
-         WHERE s.teacher_id = $1
-           AND r.submitted_at >= CURRENT_DATE - ($2::int - 1)
-           AND r.submitted_at < CURRENT_DATE + 1
-           AND r.is_correct IS NOT NULL
-         GROUP BY r.submitted_at::date
-       )
-       SELECT
-         TO_CHAR(days.date, 'YYYY-MM-DD') AS date,
-         COALESCE(daily_scores.avg_score, 0)::float AS "avgScore",
-         COALESCE(daily_scores.total_responses, 0)::int AS "totalResponses"
-       FROM days
-       LEFT JOIN daily_scores USING (date)
-       ORDER BY days.date ASC`,
-      [req.user.id, periodDays],
+      `SELECT
+         s.id AS "sessionId",
+         s.title AS "sessionTitle",
+         s.created_at AS "createdAt",
+         ROUND(
+           COUNT(*) FILTER (WHERE r.is_correct = true)::numeric
+           / NULLIF(COUNT(*) FILTER (WHERE r.is_correct IS NOT NULL), 0)
+           * 100,
+           1
+         )::float AS "avgScore",
+         COUNT(*) FILTER (WHERE r.is_correct IS NOT NULL)::int AS "totalAnswers"
+       FROM sessions s
+       JOIN polls p ON p.session_id = s.id AND p.type = 'quiz'
+       JOIN responses r ON r.poll_id = p.id
+       WHERE s.teacher_id = $1
+         AND r.is_correct IS NOT NULL
+       GROUP BY s.id, s.title, s.created_at
+       HAVING COUNT(*) FILTER (WHERE r.is_correct IS NOT NULL) >= 5
+       ORDER BY s.created_at ASC`,
+      [req.user.id],
     );
 
     return res.status(200).json({ success: true, data: result.rows });
   } catch (error) {
-    return sendQueryError(res, "Get analytics score trend error", error);
+    return sendQueryError(res, "Get analytics score by session error", error);
   }
 };

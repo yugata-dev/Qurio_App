@@ -1,5 +1,7 @@
 "use client";
 
+import { IconChartBar, IconMessages, IconCheck } from "@tabler/icons-react";
+
 import { useEffect, useState } from "react";
 import {
   IconChevronDown,
@@ -15,6 +17,7 @@ import {
 } from "@tabler/icons-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { CopyButton } from "@/components/CopyButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -54,6 +57,7 @@ import {
   type SessionListItem,
 } from "@/lib/api";
 import smartSearch from "@/lib/smart-search";
+import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/toast";
 
 // Format tanggal dari API menggunakan lokal Indonesia.
@@ -393,7 +397,7 @@ function SessionsPage() {
           )}
 
           {/* Tabel sesi. */}
-          <div className="mt-4 overflow-hidden rounded-xl border border-border">
+          <div className="mt-4 overflow-x-auto rounded-xl border border-border">
             <Table className="min-w-[820px] text-left">
               <TableHeader className="bg-muted text-muted-foreground">
                 <TableRow className="hover:bg-transparent">
@@ -488,22 +492,35 @@ function SessionsPage() {
                       <TableRow key={session.id}>
                         {/* Nama sesi + dot indikator. */}
                         <TableCell className="px-4 py-3.5">
-                          <Link
-                            href={`/dashboard/session/${session.id}`}
-                            className="group inline-flex items-center gap-2"
-                          >
-                            <span
-                              className={
-                                isActive
-                                  ? "size-2 shrink-0 rounded-full bg-emerald-500"
-                                  : "size-2 shrink-0 rounded-full bg-muted-foreground/40"
-                              }
-                              aria-hidden="true"
-                            />
-                            <span className="font-medium text-foreground transition-colors group-hover:text-primary group-hover:underline">
-                              {session.title}
-                            </span>
-                          </Link>
+                          <div className="flex items-center gap-2">
+                            <Link
+                              href={`/dashboard/session/${session.id}`}
+                              className="group inline-flex items-center gap-2"
+                            >
+                              <span
+                                className={
+                                  isActive
+                                    ? "size-2 shrink-0 rounded-full bg-emerald-500"
+                                    : "size-2 shrink-0 rounded-full bg-muted-foreground/40"
+                                }
+                                aria-hidden="true"
+                              />
+                              <span className="font-medium text-foreground transition-colors group-hover:text-primary group-hover:underline">
+                                {session.title}
+                              </span>
+                            </Link>
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "shrink-0 text-[10px] font-semibold",
+                                session.mode === "quiz"
+                                  ? "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-400"
+                                  : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+                              )}
+                            >
+                              {session.mode === "quiz" ? <><IconChartBar className="mr-1 inline size-3" />Quiz</> : <><IconMessages className="mr-1 inline size-3" />Interaktif</>}
+                            </Badge>
+                          </div>
                         </TableCell>
 
                         {/* Kode akses + tombol salin. */}
@@ -638,7 +655,7 @@ function SessionsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus sesi ini?</AlertDialogTitle>
             <AlertDialogDescription>
-              Sesi "{sessionToDelete?.title}" beserta seluruh data terkait
+              Sesi &quot;{sessionToDelete?.title}&quot; beserta seluruh data terkait
               (respons siswa, pertanyaan, dan hasil) akan dihapus permanen.
               Tindakan ini tidak dapat dibatalkan.
             </AlertDialogDescription>

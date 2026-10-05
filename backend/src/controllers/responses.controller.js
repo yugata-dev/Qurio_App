@@ -1,5 +1,76 @@
 import pool from "../config/database/connection.js"
 
+async function getPollDistribution(pollId) {
+    const pollResult = await pool.query(
+        `SELECT type FROM polls WHERE id = $1`,
+        [pollId]
+    )
+
+    const pollType = pollResult.rows[0]?.type
+
+    if (pollType === "quiz") {
+        const statsResult = await pool.query(
+            `SELECT
+                COUNT(*) FILTER (WHERE po.is_correct = TRUE)::int AS correct_count,
+                COUNT(*) FILTER (WHERE po.is_correct = FALSE)::int AS incorrect_count,
+                COUNT(*)::int AS total_count
+             FROM responses r
+             LEFT JOIN poll_options po ON po.id = r.option_id
+             WHERE r.poll_id = $1`,
+            [pollId]
+        )
+
+        const stats = statsResult.rows[0] || {
+            correct_count: 0,
+            incorrect_count: 0,
+            total_count: 0,
+        }
+
+        return {
+            pollId,
+            pollType: "quiz",
+            correct_count: Number(stats.correct_count || 0),
+            incorrect_count: Number(stats.incorrect_count || 0),
+            total_count: Number(stats.total_count || 0),
+        }
+    }
+
+    const rows = await pool.query(
+        `SELECT
+            po.id AS "optionId",
+            po.option_text AS "optionText",
+            po.option_order,
+            COUNT(r.id)::int AS "votes"
+         FROM poll_options po
+         LEFT JOIN responses r ON r.option_id = po.id
+         WHERE po.poll_id = $1
+         GROUP BY po.id, po.option_text, po.option_order
+         ORDER BY po.option_order ASC;`,
+        [pollId]
+    )
+
+    const distribution = rows.rows.map((row) => ({
+        optionId: row.optionId,
+        optionText: row.optionText,
+        votes: Number(row.votes || 0),
+        percentage: 0,
+    }))
+
+    const totalVotes = distribution.reduce((sum, item) => sum + item.votes, 0)
+
+    const finalDistribution = distribution.map((item) => ({
+        ...item,
+        percentage: totalVotes > 0 ? Math.round((item.votes / totalVotes) * 100) : 0,
+    }))
+
+    return {
+        pollId,
+        pollType: "polling",
+        totalVotes,
+        distribution: finalDistribution,
+    }
+}
+
 // ====================================================================
 // GET RESPONSES (Ambil semua jawaban peserta untuk satu soal)
 // ====================================================================
@@ -7,9 +78,8 @@ export const getResponses = async (req, res) => {
     const { pollId } = req.params
 
     try {
-        // Step 1: Verifikasi bahwa soal ada dan guru yang login memiliki sesinya
         const pollResult = await pool.query(
-            `SELECT p.id, s.teacher_id
+            `SELECT p.id, p.type, s.teacher_id
              FROM polls p
              JOIN sessions s ON s.id = p.session_id
              WHERE p.id = $1`,
@@ -24,23 +94,46 @@ export const getResponses = async (req, res) => {
             return res.status(403).json({ success: false, message: "Anda bukan pemilik sesi ini!" })
         }
 
-        // Step 2: Hitung hasil di server tanpa mengirim kunci jawaban ke client.
+        const pollType = pollResult.rows[0].type
+
+        if (pollType === "polling") {
+            const stats = await getPollDistribution(pollId)
+            return res.status(200).json({
+                success: true,
+                data: stats,
+            })
+        }
+
         const responsesResult = await pool.query(
             `SELECT
-    r.poll_id,
-    COUNT(*) FILTER (WHERE po.is_correct = TRUE)::int AS correct_count,
-    COUNT(*) FILTER (WHERE po.is_correct = FALSE)::int AS incorrect_count,
-    COUNT(*)::int AS total_count
-    FROM responses r
-    LEFT JOIN poll_options po
-    ON po.id = r.option_id
-    WHERE r.poll_id = $1
-    GROUP BY r.poll_id`,
+                r.poll_id,
+                COUNT(*) FILTER (WHERE po.is_correct = TRUE)::int AS correct_count,
+                COUNT(*) FILTER (WHERE po.is_correct = FALSE)::int AS incorrect_count,
+                COUNT(*)::int AS total_count
+             FROM responses r
+             LEFT JOIN poll_options po ON po.id = r.option_id
+             WHERE r.poll_id = $1
+             GROUP BY r.poll_id`,
             [pollId]
         )
 
-        // Step 3: Kirim data jawaban ke guru
-        res.status(200).json({ success: true, data: responsesResult.rows })
+        const row = responsesResult.rows[0] || {
+            poll_id: pollId,
+            correct_count: 0,
+            incorrect_count: 0,
+            total_count: 0,
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                pollId: row.poll_id || pollId,
+                pollType: "quiz",
+                correct_count: Number(row.correct_count || 0),
+                incorrect_count: Number(row.incorrect_count || 0),
+                total_count: Number(row.total_count || 0),
+            },
+        })
     } catch (error) {
         console.error("Get responses error:", error.message)
         return res.status(500).json({ success: false, message: "Gagal mengambil jawaban" })
@@ -190,8 +283,22 @@ export const createResponse = async (req, res) => {
         const io = req.app.get("io")
 
         if (io) {
-            // emit ke guru tetap pakai newResponse (lengkap)
             io.to(`teacher:${poll.teacher_id}`).emit("response_created", newResponse)
+
+            const sessionResult = await pool.query(
+                `SELECT session_id FROM polls WHERE id = $1`,
+                [pollId]
+            )
+
+            if (sessionResult.rows[0]) {
+                const sessionId = sessionResult.rows[0].session_id
+                const stats = await getPollDistribution(pollId)
+
+                io.to(`session:${sessionId}`).emit("poll_vote_updated", {
+                    pollId,
+                    ...stats,
+                })
+            }
         }
 
         // balasan ke siswa: tanpa is_correct

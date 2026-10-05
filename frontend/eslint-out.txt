@@ -1,4 +1,0 @@
-npm notice run frontend@0.1.0 npx
-npm notice run eslint app/(workspace)/analytics/page.tsx app/(workspace)/sessions/page.tsx --format stylish --no-warn-reminder
-Invalid option '--warn-reminder' - perhaps you meant '--warn-ignored'?
-You're using eslint.config.js, some command line flags are no longer available. Please see https://eslint.org/docs/latest/use/command-line-interface for details.

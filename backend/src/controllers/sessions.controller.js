@@ -41,7 +41,9 @@ function validateClassSize(classSize) {
 // POST SESSION (Guru membuat sesi baru)
 // ====================================================================
 export const createSession = async (req, res) => {
-  const { title, class_size } = req.body;
+  const { title, class_size, mode } = req.body;
+
+  const allowedModes = ["interactive", "quiz"];
 
   // Step 1: Ambil ID guru dari token JWT yang sudah diverifikasi
   const teacherId = req.user ? req.user.id : null;
@@ -61,6 +63,14 @@ export const createSession = async (req, res) => {
     });
   }
 
+  const normalizedMode = mode === undefined || mode === null || mode === "" ? "interactive" : mode;
+  if (!allowedModes.includes(normalizedMode)) {
+    return res.status(400).json({
+      success: false,
+      message: "Mode sesi harus berupa 'interactive' atau 'quiz'.",
+    });
+  }
+
   const classSizeValidation = validateClassSize(class_size);
   if (!classSizeValidation.valid) {
     return res.status(400).json({
@@ -72,8 +82,8 @@ export const createSession = async (req, res) => {
   try {
     // Step 3: Buat sesi baru di database dengan kode akses acak
     const createdSessionResult = await pool.query(
-      "INSERT INTO sessions (title, teacher_id, access_code, status, class_size) VALUES ($1, $2, $3, 'active', $4) RETURNING *",
-      [title, teacherId, generateAccessCode(), classSizeValidation.value],
+      "INSERT INTO sessions (title, teacher_id, access_code, status, class_size, mode) VALUES ($1, $2, $3, 'active', $4, $5) RETURNING *",
+      [title, teacherId, generateAccessCode(), classSizeValidation.value, normalizedMode],
     );
 
     const newSession = createdSessionResult.rows[0];

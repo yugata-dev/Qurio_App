@@ -63,11 +63,11 @@ export function AccessForm({ sessionId, onSuccess }: ParticipantFormProps) {
   return (
     <form
       id="access"
-      className="mt-8 flex w-full max-w-lg flex-col gap-5 rounded-3xl bg-card px-8 pb-8 pt-8 text-left text-card-foreground shadow-lg sm:w-4/5 sm:min-w-sm"
+      className="mt-8 flex w-full max-w-lg flex-col gap-5 rounded-2xl border border-border bg-card px-5 py-6 text-left text-card-foreground shadow-[0_12px_36px_rgb(27_48_91/0.08)] sm:w-4/5 sm:min-w-sm sm:px-8 sm:py-8"
       onSubmit={handleSubmit(handleInputFormParticipant)}
       aria-label="Form masuk ruang kelas"
     >
-      <h3 className="mb-7 text-center text-[18px]">Masuk Ruang Kelas Instan</h3>
+      <h3 className="mb-2 text-center text-lg font-bold tracking-tight">Masuk Ruang Kelas Instan</h3>
 
       {/* Kode Akses */}
       <div>
@@ -86,10 +86,11 @@ export function AccessForm({ sessionId, onSuccess }: ParticipantFormProps) {
             },
           })}
           id="access_code"
+          aria-invalid={Boolean(errors.access_code)}
           inputMode="numeric"
           maxLength={6}
           placeholder="Masukkan kode akses"
-          className="h-16 w-full rounded-xl border border-input bg-background px-4 text-base text-foreground outline-ring placeholder:text-muted-foreground"
+          className="h-16 w-full rounded-xl border border-input bg-background px-4 text-xl font-semibold tracking-[0.18em] text-foreground outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-base placeholder:font-normal placeholder:tracking-normal placeholder:text-muted-foreground focus-visible:border-brand-500 focus-visible:ring-4 focus-visible:ring-brand-500/15 aria-invalid:border-destructive aria-invalid:ring-4 aria-invalid:ring-destructive/10"
         />
         {errors.access_code && (
           <div className="mt-2 text-xs font-semibold text-red-500">
@@ -109,8 +110,9 @@ export function AccessForm({ sessionId, onSuccess }: ParticipantFormProps) {
         <input
           {...register("name", { required: "Isi nama anda" })}
           id="name"
+          aria-invalid={Boolean(errors.name)}
           placeholder="Masukkan nama lengkap"
-          className="h-16 w-full rounded-xl border border-input bg-background px-4 text-base text-foreground outline-ring placeholder:text-muted-foreground"
+          className="h-14 w-full rounded-xl border border-input bg-background px-4 text-base text-foreground outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-muted-foreground focus-visible:border-brand-500 focus-visible:ring-4 focus-visible:ring-brand-500/15 aria-invalid:border-destructive aria-invalid:ring-4 aria-invalid:ring-destructive/10"
         />
         {errors.name && (
           <div className="mt-2 text-xs font-semibold text-red-500">
@@ -130,8 +132,9 @@ export function AccessForm({ sessionId, onSuccess }: ParticipantFormProps) {
         <input
           {...register("absen", { required: "Nomor absen wajib diisi." })}
           id="absen"
+          aria-invalid={Boolean(errors.absen)}
           placeholder="Masukkan nomor absen"
-          className="h-16 w-full rounded-xl border border-input bg-background px-4 text-base text-foreground outline-ring placeholder:text-muted-foreground"
+          className="h-14 w-full rounded-xl border border-input bg-background px-4 text-base text-foreground outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-muted-foreground focus-visible:border-brand-500 focus-visible:ring-4 focus-visible:ring-brand-500/15 aria-invalid:border-destructive aria-invalid:ring-4 aria-invalid:ring-destructive/10"
         />
         {errors.absen && (
           <div className="mt-2 text-xs font-semibold text-red-500">
@@ -141,7 +144,7 @@ export function AccessForm({ sessionId, onSuccess }: ParticipantFormProps) {
       </div>
 
       <Button
-        className="inline-flex w-full cursor-pointer items-center justify-center gap-3 rounded-[15px] border-0 bg-primary px-6 py-6! text-base font-extrabold text-primary-foreground shadow-lg transition-all duration-200 hover:-translate-y-0.5"
+        className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-3 rounded-xl border-0 bg-brand-500 px-6 py-4 text-base font-extrabold text-white shadow-md transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-brand-600 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
         type="submit"
         disabled={isSubmitting}
       >
