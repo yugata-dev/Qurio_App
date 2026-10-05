@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   title: "Qurio - Make your class life",
   description: "Transparansi Intelektual",
   icons: {
-    icon: "../public/Qurio-Cropped.svg"
+    icon: "/Qurio-Cropped.svg"
   }
 };
 
