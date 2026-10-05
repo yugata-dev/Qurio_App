@@ -184,6 +184,28 @@
   will-change: transform;
 }
 
+@media (max-width: 767px) {
+  .marquee-track {
+    animation-duration: 58s;
+  }
+
+  .marquee-mask:active .marquee-track,
+  .marquee-mask:focus-within .marquee-track {
+    animation-play-state: paused;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  .marquee-group[aria-hidden="true"] {
+    display: none;
+  }
+}
+
 .marquee-group > span:not(:last-child)::after {
   width: 6px;
   height: 6px;
