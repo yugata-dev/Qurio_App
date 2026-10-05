@@ -21,6 +21,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Qurio - Make your class life",
   description: "Transparansi Intelektual",
+  icons: {
+    icon: "/Qurio-Cropped.svg"
+  }
 };
 
 export default function RootLayout({

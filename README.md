@@ -68,14 +68,16 @@ Murid bergabung tanpa akun, cukup memasukkan kode sesi.
 - **Kuis**: soal dengan jawaban benar, dinilai otomatis.
 - **Tanya Jawab**: murid bertanya dan memberi suara pada pertanyaan teman.
 - **Word Cloud**: kumpulan kata dari kelas, diperbarui langsung.
-- Murid masuk lewat kode sesi, tanpa registrasi.
+- Guru dapat membuat sesi mode interaktif atau quiz, mengatur kapasitas kelas, menerbitkan aktivitas, dan mengakhiri sesi.
+- Murid bergabung dengan kode sesi dan nama/nomor absen tanpa membuat akun; jawaban, pertanyaan, dan aktivitas sesi diperbarui real-time.
 
 **Analitik yang transparan**
 
-- Ringkasan kehadiran dan nilai per kelas, per sesi, dan per murid.
+- Analitik Quiz menyediakan ringkasan kelas, kehadiran per sesi, skor per sesi, topik sulit, serta partisipasi, skor, dan status perhatian siswa.
 - Setiap kartu angka punya popover **"Cara menghitung"** yang menjelaskan rumus, cakupan data, dan ambang batasnya.
-- Aturan **"Perlu Perhatian"** ditulis terang: nilai di bawah ambang dengan jumlah sesi minimum, atau kehadiran rendah.
-- Ambang batas disimpan di satu berkas konfigurasi, bukan tersebar di kode.
+- Analitik interaksi dan Quiz tersedia pada halaman terpisah. Analitik Quiz hanya menghitung sesi Quiz yang memiliki jawaban yang sudah dinilai.
+- Aturan **"Perlu Perhatian"** menggabungkan ambang skor dan kehadiran dengan syarat jumlah sesi yang dijelaskan di UI.
+- Ambang batas disimpan di konfigurasi metrik backend dan disinkronkan ke frontend.
 - Ekspor laporan ke **PDF**.
 
 **Keamanan dasar**
@@ -104,14 +106,52 @@ Murid bergabung tanpa akun, cukup memasukkan kode sesi.
 
 ```mermaid
 flowchart LR
-    U[Guru & Murid<br/>Browser] -->|HTTPS| V[Next.js<br/>Vercel]
-    V -->|REST + WebSocket| R[Express + Socket.IO<br/>Railway]
-    R -->|SQL| N[(PostgreSQL<br/>Neon)]
+  subgraph Client[Browser]
+    T[Guru]
+    S[Murid]
+  end
+
+  subgraph Frontend[Next.js App Router - Vercel]
+    W[Workspace guru<br/>Sesi, aktivitas, analitik]
+    P[Halaman murid<br/>Gabung dan ikut aktivitas]
+    API[API client<br/>REST]
+    WS[Socket.IO client]
+    PDF[Ekspor laporan PDF]
+  end
+
+  subgraph Backend[Express dan Socket.IO - Railway]
+    MW[CORS, Helmet, JSON, logging]
+    AUTH[Auth dan role middleware<br/>JWT / cookie]
+    ROUTES[REST routes]
+    CTRL[Controllers<br/>Auth, sesi, poll, jawaban,<br/>Q&A, wordcloud, analitik]
+    SOCKET[Socket.IO rooms<br/>session:id dan teacher:id]
+  end
+
+  DB[(PostgreSQL - Neon)]
+
+  T --> W
+  S --> P
+  W --> API
+  P --> API
+  W --> WS
+  P --> WS
+  W --> PDF
+  API -->|HTTPS / JSON| MW
+  MW --> ROUTES
+  ROUTES -->|Endpoint guru| AUTH
+  ROUTES -->|Endpoint publik / opsional| CTRL
+  AUTH --> CTRL
+  CTRL <-->|SQL| DB
+  WS <-->|WebSocket| SOCKET
+  CTRL -->|Emit perubahan data| SOCKET
 ```
 
-- **Frontend** (Next.js App Router) menampilkan UI dan menerima update real-time lewat Socket.IO.
-- **Backend** (Express 5) menyediakan REST API (`/api/users`, `/api/sessions`, `/api/polls`, `/api/questions`, `/api/wordcloud`, `/api/analytics`) dan mengirim event ke ruang sesi.
-- **Database** (PostgreSQL) menyimpan pengguna, sesi, poll, jawaban, pertanyaan, partisipan, dan hitungan word cloud. Skema dikelola lewat migrasi SQL berurutan.
+- **Alur guru:** guru mendaftar atau login melalui `/api/users`. JWT dibaca dari header `Authorization` atau cookie HttpOnly. Middleware membatasi pembuatan dan pengelolaan sesi, aktivitas, serta analitik untuk guru.
+- **Alur murid:** murid bergabung menggunakan kode sesi melalui endpoint publik, kemudian mengirim jawaban atau aktivitas tanpa akun. Polling, kuis, Q&A, dan word cloud menggunakan endpoint sesuai jenis aktivitas.
+- **REST API:** `/api/users` menangani autentikasi; `/api/sessions` menangani sesi dan keikutsertaan; `/api/polls` menangani aktivitas; `/api/responses` menangani jawaban; `/api/questions` menangani Q&A; `/api/wordcloud` menangani kiriman dan hasil word cloud; `/api/analytics` menyediakan metrik guru.
+- **Real-time:** client bergabung ke ruang `session:<id>` atau `teacher:<id>`. Controller memancarkan perubahan seperti `poll_vote_updated`, `question_created`, `wordcloud_updated`, dan notifikasi sesi agar tampilan terkait dapat diperbarui tanpa memuat ulang.
+- **Data dan analitik:** PostgreSQL menyimpan akun, sesi, opsi poll, jawaban, peserta, pertanyaan, suara Q&A, serta hitungan word cloud. Analitik Quiz memakai data jawaban yang sudah dinilai; definisi dan ambangnya bersumber dari `backend/src/config/analytics-metrics.json`, lalu disalin ke frontend melalui skrip sinkronisasi.
+- **Ekspor:** laporan PDF dibuat di frontend dari data analitik yang dimuat aplikasi.
 
 <p align="right">(<a href="#readme-top">kembali ke atas</a>)</p>
 
@@ -188,17 +228,74 @@ flowchart LR
 
 ```
 Qurio_App/
-├── frontend/          # Next.js (App Router)
-│   ├── app/           # halaman: landing, auth, workspace, play
-│   ├── components/    # komponen UI
-│   └── lib/           # api client, ekspor PDF, konfigurasi metrik
-├── backend/           # Express + Socket.IO
-│   ├── src/routes/
-│   ├── src/controllers/
-│   └── src/db/migrations/
-├── docs/              # dokumentasi (termasuk definisi metrik analitik)
-└── postman/           # koleksi uji API
+├── frontend/                         # Next.js App Router dan UI
+│   ├── app/
+│   │   ├── (auth)/                    # login/page.tsx dan register/page.tsx
+│   │   ├── (workspace)/
+│   │   │   ├── analytics/
+│   │   │   │   ├── layout.tsx
+│   │   │   │   ├── page.tsx             # ringkasan analitik
+│   │   │   │   ├── interactive/page.tsx # analitik aktivitas interaktif
+│   │   │   │   └── quiz/page.tsx        # analitik performa Quiz
+│   │   │   ├── dashboard/
+│   │   │   │   ├── page.tsx             # dashboard guru
+│   │   │   │   ├── createsessions/page.tsx # pembuatan sesi
+│   │   │   │   └── session/[id]/       # detail sesi dan pembuatan aktivitas
+│   │   │   │       ├── page.tsx
+│   │   │   │       ├── create-poll/page.tsx # form aktivitas
+│   │   │   │       └── poll/[pollId]/
+│   │   │   │           ├── qa/page.tsx
+│   │   │   │           └── wordcloud/page.tsx
+│   │   │   └── sessions/               # daftar sesi
+│   │   │       └── page.tsx
+│   │   ├── play/[id]/page.tsx           # halaman murid untuk bergabung/bermain
+│   │   ├── privasi/page.tsx             # kebijakan privasi
+│   │   ├── syarat/page.tsx              # syarat penggunaan
+│   │   ├── globals.css                 # gaya global
+│   │   ├── layout.tsx                  # layout aplikasi
+│   │   └── page.tsx                    # halaman utama
+│   ├── components/
+│   │   ├── ui/                         # komponen dasar UI
+│   │   ├── AccessForm.tsx               # form akses sesi
+│   │   ├── CopyButton.tsx
+│   │   ├── LegalPlaceholder.tsx
+│   │   ├── QuizView.tsx                 # tampilan aktivitas Quiz
+│   │   ├── SettingsModal.tsx            # pengaturan
+│   │   └── ThemeProvider.tsx            # penyedia tema
+│   ├── context/AuthContext.tsx         # state autentikasi
+│   ├── lib/
+│   │   ├── api.tsx                      # REST API client dan tipe data
+│   │   ├── analytics-metrics.json       # salinan definisi metrik
+│   │   ├── analytics-selection.ts       # pemilihan/filter analitik
+│   │   ├── export-pdf.ts                # ekspor laporan PDF
+│   │   ├── smart-search.ts              # utilitas pencarian
+│   │   ├── db.ts                        # database browser
+│   │   └── utils.ts                     # utilitas umum
+│   ├── scripts/test-export-pdf.mjs     # pemeriksaan ekspor PDF
+│   ├── types/jspdf.d.ts                # deklarasi tipe jsPDF
+│   └── public/                         # aset statis
+├── backend/
+│   ├── server.js                       # Express, middleware, REST, Socket.IO
+│   ├── src/
+│   │   ├── config/
+│   │   │   ├── database/               # koneksi dan runner migrasi
+│   │   │   └── analytics-metrics.json  # sumber definisi/ambang metrik
+│   │   ├── controllers/                # auth, sesi, peserta, poll, jawaban,
+│   │   │                               # pertanyaan, wordcloud, analitik
+│   │   ├── db/migrations/              # 001–004: skema dan perubahan skema
+│   │   ├── middlewares/                # autentikasi dan pembatasan role
+│   │   └── routes/                     # auth, sesi, poll, jawaban, Q&A,
+│   │                                   # wordcloud, analitik
+│   └── scripts/                        # seed, sinkronisasi, dan verifikasi metrik
+├── docs/
+│   ├── ANALYTICS_METRICS.md            # rumus, cakupan, ambang, dan audit metrik
+│   └── images/                         # gambar dokumentasi
+├── postman/globals/workspace.globals.yaml # variabel global workspace Postman
+├── package.json                        # skrip development gabungan
+└── README.md
 ```
+
+File konfigurasi project seperti `frontend/package.json`, `frontend/next.config.ts`, `backend/package.json`, dan `backend/.env` berada di masing-masing direktori aplikasi. Salinan definisi metrik frontend berada di `frontend/lib/analytics-metrics.json` dan diperbarui dari konfigurasi backend.
 
 <p align="right">(<a href="#readme-top">kembali ke atas</a>)</p>
 
@@ -208,16 +305,15 @@ Qurio_App/
 - [x] Analitik per kelas, sesi, dan murid dengan penjelasan cara menghitung
 - [x] Ekspor laporan PDF
 - [x] Deploy: Vercel + Railway + Neon
-- [ ] Penyempurnaan ekspor PDF agar sama persis dengan tampilan layar
-- [ ] Tes otomatis untuk perhitungan analitik
-- [ ] Domain kustom
-- [ ] Mode gelap penuh
+- [ ] Integrasi AI buat analitik dan pembuatan soal otomatis(Segera Hadir)
+- [ ] Dashboard Siswa
+- [ ] Professional domain
 
 <p align="right">(<a href="#readme-top">kembali ke atas</a>)</p>
 
 ## Kontak
 
-Yugata - [Gmail](yugata.dv@gmail.com) - <!-- GANTI --> [LinkedIn](www.linkedin.com/in/yugata-halimawan-82a612400)
+Yugata - Gmail: yugata.dv@gmail.com - <!-- GANTI --> LinkedIn: www.linkedin.com/in/yugata-halimawan-82a612400
 
 Tautan proyek: https://github.com/yugata-dev/Qurio_App
 
