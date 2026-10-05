@@ -159,16 +159,19 @@ export interface AttendanceBreakdownItem {
   classSize: number;
   joined: number;
   rate: number;
+  overCapacity: boolean;
 }
 
 export interface AnalyticsSummary {
   totalStudents: number;
   averageScore: number;
-  participationRate: number;
+  scoreCorrectAnswers: number;
+  scoreGradedAnswers: number;
   attendanceRate: number;
   totalSessions: number;
-  sessionsWithClassSize: number;
   attendanceBreakdown: AttendanceBreakdownItem[];
+  rangeStart: string | null;
+  rangeEnd: string | null;
 }
 
 export interface StudentScore {
@@ -188,6 +191,10 @@ export interface StudentParticipation {
   sessionsJoined: number;
   questionsAsked: number;
   responsesSubmitted: number;
+  averageScore: number | null;
+  scoreSessions: number;
+  attendanceRate: number | null;
+  needsAttention: boolean;
 }
 
 export interface TopTopic {
@@ -196,6 +203,7 @@ export interface TopTopic {
   sessionTitle: string;
   incorrectRate: number;
   totalAnswers: number;
+  incorrectAnswers: number;
 }
 
 export interface ScoreBySessionPoint {
@@ -204,6 +212,7 @@ export interface ScoreBySessionPoint {
   createdAt: string;
   avgScore: number;
   totalAnswers: number;
+  correctAnswers: number;
 }
 
 const API_URL = (
@@ -858,9 +867,13 @@ export const getAnalyticsTopics = (
   );
 
 export const getAnalyticsScoreBySession = (
+  period: AnalyticsPeriod = "7d",
   token?: string,
 ): Promise<ScoreBySessionPoint[]> =>
-  fetchAnalyticsData<ScoreBySessionPoint[]>("score-by-session", token);
+  fetchAnalyticsData<ScoreBySessionPoint[]>(
+    `score-by-session?period=${encodeURIComponent(period)}`,
+    token,
+  );
 
 export {
   fetchUserLogin,

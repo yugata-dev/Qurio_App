@@ -38,7 +38,7 @@ export default function AnalyticsLayout({
 
             <nav
                 aria-label="Halaman analitik"
-                className="mb-6 flex gap-1 border-b border-border"
+                className="mb-6 grid grid-cols-2 gap-1 border-b border-border sm:flex"
             >
                 {tabs.map((tab) => {
                     const active =
@@ -50,13 +50,13 @@ export default function AnalyticsLayout({
                             href={tab.href}
                             aria-current={active ? "page" : undefined}
                             className={cn(
-                                "-mb-px flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors",
+                                "-mb-px flex min-h-14 min-w-0 items-center justify-center gap-2 border-b-2 px-2 py-3 text-center text-xs font-semibold leading-tight transition-colors sm:min-h-0 sm:justify-start sm:px-4 sm:text-sm",
                                 active
                                     ? "border-primary text-foreground"
                                     : "border-transparent text-muted-foreground hover:text-foreground",
                             )}
                         >
-                            <tab.Icon aria-hidden="true" className="size-4" />
+                            <tab.Icon aria-hidden="true" className="hidden size-4 shrink-0 sm:block" />
                             <span>{tab.label}</span>
                         </Link>
                     );

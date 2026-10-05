@@ -1,0 +1,99 @@
+{
+  "scope": {
+    "mode": "quiz",
+    "minimumScoredAnswersPerSession": 1,
+    "description": "Hanya sesi mode Quiz yang memiliki setidaknya satu jawaban dengan status benar atau salah."
+  },
+  "thresholds": {
+    "passingScore": 70,
+    "lowScore": 60,
+    "lowAttendancePercent": 50,
+    "minimumStudentSessions": 3,
+    "monitoringMaximumSessions": 2,
+    "minimumAnswersForChart": 5,
+    "highAttendanceColor": 80,
+    "mediumAttendanceColor": 60,
+    "excellentScore": 80,
+    "highErrorColor": 70,
+    "mediumErrorColor": 50,
+    "veryActiveResponses": 40,
+    "activeResponses": 25,
+    "someActivityResponses": 10,
+    "minimumAnswersToAnalyzeSession": 1,
+    "maximumTopicsDisplayed": 5
+  },
+  "metrics": {
+    "students": {
+      "title": "Total Siswa",
+      "how": "Jumlah nama siswa unik yang mengirim jawaban kuis yang dinilai pada sesi yang dianalisis.",
+      "filters": "Hanya sesi Quiz dengan minimal satu jawaban dinilai. Nama kosong dikecualikan. Identitas saat ini memakai nama yang dinormalisasi; nama sama dapat tergabung dan perubahan nama dapat terpisah. Perbaikan lanjutan yang diusulkan: gabungkan identitas dengan nomor absen.",
+      "threshold": "Tidak ada ambang tambahan."
+    },
+    "averageScore": {
+      "title": "Rata-rata Skor Kuis",
+      "how": "Jumlah jawaban benar dibagi jumlah jawaban kuis yang dinilai, dari seluruh sesi yang dianalisis.",
+      "filters": "Hanya sesi Quiz dengan minimal satu jawaban dinilai. Jawaban tanpa status benar/salah dikecualikan; jawaban anonim tetap masuk skor keseluruhan.",
+      "threshold": "KKM {{passingScore}}%; ambang status rendah {{lowScore}}%."
+    },
+    "attendance": {
+      "title": "Tingkat Kehadiran",
+      "how": "Hitung responden unik yang menjawab minimal satu soal Quiz dinilai, dibagi kapasitas kelas untuk tiap sesi, lalu rata-ratakan persentase semua sesi. Nilai tiap sesi dibatasi maksimal 100%.",
+      "filters": "“Hadir” berarti menjawab minimal satu soal kuis yang dinilai. Responden dihitung dari nama ternormalisasi; sesi Quiz tanpa jawaban dinilai tidak masuk. Jika responden unik melebihi class_size, persentase dibatasi 100% dan ditampilkan peringatan.",
+      "threshold": "Kehadiran rendah di bawah {{lowAttendancePercent}}%; kondisi ini dinilai jika total sesi kelas yang dianalisis minimal {{minimumStudentSessions}}."
+    },
+    "sessions": {
+      "title": "Sesi Dianalisis",
+      "how": "Jumlah sesi mode Quiz yang memiliki minimal satu jawaban yang dinilai.",
+      "filters": "Sesi aktif maupun selesai dapat dihitung; sesi kosong dan sesi hanya interaktif tidak masuk.",
+      "threshold": "Minimal 1 jawaban dinilai per sesi."
+    },
+    "classSummary": {
+      "title": "Ringkasan Kelas",
+      "how": "Ringkasan deterministik memakai metrik pada cakupan sesi Quiz yang sama. Siswa tertinggi hanya disebut bila memiliki skor dari minimal {{minimumStudentSessions}} sesi.",
+      "filters": "Hanya sesi Quiz dengan minimal satu jawaban dinilai. Ringkasan tidak menampilkan nama pada penjelasan cara hitung.",
+      "threshold": "KKM {{passingScore}}%; skor rendah di bawah {{lowScore}}%; minimum {{minimumStudentSessions}} sesi untuk menyebut siswa tertinggi."
+    },
+    "attendanceBySession": {
+      "title": "Kehadiran per Sesi",
+      "how": "Responden unik yang menjawab minimal satu soal Quiz dinilai dibagi class_size sesi tersebut; persentase dibatasi maksimal 100%.",
+      "filters": "Hanya sesi Quiz dengan minimal satu jawaban dinilai. Jika responden unik melebihi class_size, tampil peringatan dan rate tetap maksimal 100%.",
+      "threshold": "Warna memakai ambang yang sama dengan definisi kehadiran di atas."
+    },
+    "scoreBySession": {
+      "title": "Skor Rata-rata per Sesi",
+      "how": "Jumlah jawaban benar dibagi jumlah jawaban yang dinilai dalam sesi tersebut.",
+      "filters": "Sesi Quiz dalam periode terpilih; sesi pada grafik memerlukan minimal {{minimumAnswersForChart}} jawaban dinilai.",
+      "threshold": "Minimal {{minimumAnswersForChart}} jawaban dinilai untuk masuk grafik; KKM {{passingScore}}%."
+    },
+    "hardestTopics": {
+      "title": "Topik Paling Sulit",
+      "how": "Jumlah jawaban salah dibagi seluruh jawaban yang dinilai untuk setiap soal Quiz.",
+      "filters": "Sesi Quiz dalam periode terpilih; soal memerlukan minimal {{minimumAnswersForChart}} jawaban dinilai; maksimal {{maximumTopicsDisplayed}} soal ditampilkan.",
+      "threshold": "Minimal {{minimumAnswersForChart}} jawaban dinilai per soal."
+    },
+    "activeStudents": {
+      "title": "Siswa Paling Aktif",
+      "how": "Aktivitas dihitung dari sesi Quiz yang diikuti, pertanyaan yang diajukan, dan jawaban Quiz yang dikirim.",
+      "filters": "Data dibatasi pada sesi Quiz yang dianalisis; identitas siswa berbasis nama ternormalisasi.",
+      "threshold": "Label aktivitas menghitung jumlah jawaban: {{someActivityResponses}}, {{activeResponses}}, dan {{veryActiveResponses}}."
+    },
+    "topStudents": {
+      "title": "Siswa dengan Nilai Terbaik",
+      "how": "Rata-rata skor jawaban pada setiap sesi Quiz, lalu dirata-ratakan antar sesi untuk tiap nama siswa.",
+      "filters": "Hanya jawaban Quiz bernama dengan status benar/salah pada sesi yang dianalisis. Identitas berbasis nama ternormalisasi.",
+      "threshold": "Minimal {{minimumStudentSessions}} sesi data untuk disebut siswa dengan nilai tertinggi; KKM {{passingScore}}%."
+    },
+    "studentsNeedingAttention": {
+      "title": "Siswa yang Perlu Perhatian",
+      "how": "Seorang siswa perlu perhatian jika skor rata-rata di bawah {{lowScore}}% setelah memiliki minimal {{minimumStudentSessions}} sesi data, ATAU jika hadir di bawah {{lowAttendancePercent}}% dari sesi Quiz yang dianalisis saat kelas memiliki minimal {{minimumStudentSessions}} sesi. Kriteria kehadiran tetap berlaku untuk siswa dengan data skor terbatas.",
+      "filters": "Kondisi skor: skor rata-rata di bawah {{lowScore}}% dan data siswa minimal {{minimumStudentSessions}} sesi Quiz. Kondisi hadir: sesi kelas minimal {{minimumStudentSessions}}; jumlah sesi siswa yang menjawab kuis dinilai dibagi total sesi kelas. Kedua kondisi digabung dengan OR.",
+      "threshold": "Skor <{{lowScore}}% dengan minimal {{minimumStudentSessions}} sesi data siswa; ATAU kehadiran <{{lowAttendancePercent}}% jika total sesi kelas >= {{minimumStudentSessions}}."
+    },
+    "studentsToMonitor": {
+      "title": "Siswa yang Perlu Dipantau (data terbatas)",
+      "how": "Daftar ini berisi siswa dengan skor rata-rata di bawah {{lowScore}}% dari 1 sampai {{monitoringMaximumSessions}} sesi data. Siswa dikeluarkan dari daftar ini jika memenuhi kriteria Perlu Perhatian, termasuk kriteria kehadiran.",
+      "filters": "Hanya skor jawaban Quiz dinilai pada sesi yang dianalisis. Setiap siswa hanya muncul di satu daftar: Perlu Perhatian lebih diutamakan bila kriteria skor atau kehadiran terpenuhi.",
+      "threshold": "Skor <{{lowScore}}%; data siswa minimal 1 dan maksimal {{monitoringMaximumSessions}} sesi, tanpa memenuhi kriteria Perlu Perhatian."
+    }
+  }
+}

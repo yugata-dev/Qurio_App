@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon server.js",
     "migrate": "node src/config/database/migrate.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "sync:analytics-metrics": "node scripts/sync-analytics-metrics.js"
   },
   "keywords": [],
   "author": "",
@@ -27,5 +28,8 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
