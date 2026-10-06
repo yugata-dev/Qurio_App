@@ -37,18 +37,18 @@
     <li><a href="#fitur-utama">Fitur Utama</a></li>
     <li><a href="#demo">Demo</a></li>
     <li><a href="#arsitektur">Arsitektur</a></li>
+    <li><a href="#keputusan-teknis">Keputusan Teknis</a></li>
     <li><a href="#teknologi">Teknologi</a></li>
     <li><a href="#menjalankan-secara-lokal">Menjalankan Secara Lokal</a></li>
     <li><a href="#deployment">Deployment</a></li>
     <li><a href="#struktur-proyek">Struktur Proyek</a></li>
+    <li><a href="#batasan-yang-diketahui">Batasan yang Diketahui</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#kontak">Kontak</a></li>
   </ol>
 </details>
 
 ## Tentang Proyek
-
-<!-- GANTI: screenshot utama (landing atau dashboard) -->
 
 ![Tampilan Qurio](docs/images/screenshot-hero.png)
 
@@ -92,9 +92,9 @@ Murid bergabung tanpa akun, cukup memasukkan kode sesi.
 - **Akun guru demo:** `guru@qurio.test` / `password123`
 - Murid: buka halaman utama, lalu masukkan kode sesi yang dibuat guru.
 
-> Backend berjalan di layanan gratis. Permintaan pertama setelah lama tidak dipakai bisa terasa lambat.
+Data demo berisi 30 siswa, 4 sesi Quiz, dan 4 sesi interaktif (polling, word cloud, tanya jawab). Beberapa siswa sengaja dibuat berpola berbeda (nilai rendah, jarang hadir, baru bergabung) supaya daftar **Perlu Perhatian** dan **Perlu Dipantau** langsung terlihat di dashboard analitik.
 
-<!-- GANTI: tambahkan 2-4 screenshot / GIF -->
+> Backend berjalan di layanan gratis. Permintaan pertama setelah lama tidak dipakai bisa terasa lambat.
 
 | Dashboard analitik                                | Sesi live                                   |
 | ------------------------------------------------- | ------------------------------------------- |
@@ -155,6 +155,20 @@ flowchart LR
 
 <p align="right">(<a href="#readme-top">kembali ke atas</a>)</p>
 
+## Keputusan Teknis
+
+**Analitik yang bisa dipertanggungjawabkan.** Setiap angka punya definisi tertulis (rumus, cakupan data, ambang batas) di satu berkas konfigurasi, `backend/src/config/analytics-metrics.json`. Backend, UI popover "Cara menghitung", dan ekspor PDF memakai definisi yang sama. Skrip `verify:metrics` menghitung ulang angka langsung dari PostgreSQL, membandingkannya dengan hasil API, dan memastikan selisihnya nol. Dokumentasi lengkap: [`docs/ANALYTICS_METRICS.md`](docs/ANALYTICS_METRICS.md).
+
+**Real-time lewat Socket.IO.** Client masuk ke ruang `session:<id>` (murid dan guru) atau `teacher:<id>` (notifikasi guru). Controller menyimpan perubahan ke database lebih dulu, baru memancarkan event (`poll_vote_updated`, `question_created`, `wordcloud_updated`, `session_ended`, dan lainnya), sehingga tampilan tidak pernah menampilkan data yang belum tersimpan.
+
+**Konsistensi data di level database.** Perubahan status aktivitas memakai transaksi dan `SELECT ... FOR UPDATE`, sehingga dalam satu sesi hanya satu aktivitas yang berstatus _published_ pada satu waktu. Indeks unik mencegah satu peserta menjawab dua kali pada aktivitas yang sama.
+
+**Murid tanpa akun.** Identitas murid dibatasi pada satu sesi: kode sesi, nama, dan nomor absen. ID peserta disimpan di browser, sehingga murid yang terputus dan masuk kembali dari perangkat yang sama dikenali sebagai peserta yang sama. Nomor absen yang sudah dipakai peserta lain di sesi itu ditolak.
+
+**Data demo yang dapat diulang.** `npm run seed` membuat data demo secara deterministik (seed acak tetap), terpisah per mode sesi: sesi Quiz hanya berisi soal bernilai, sesi interaktif hanya berisi aktivitas tanpa nilai.
+
+<p align="right">(<a href="#readme-top">kembali ke atas</a>)</p>
+
 ## Teknologi
 
 | Lapisan  | Teknologi                                                                |
@@ -205,12 +219,18 @@ flowchart LR
    ```sh
    npm run migrate --prefix backend
    ```
-5. Jalankan backend dan frontend (dua terminal)
+5. (Opsional) Isi data demo dan periksa angka analitik
+   ```sh
+   npm run seed --prefix backend
+   npm run verify:metrics --prefix backend
+   ```
+   Perintah `seed` memakai akun guru `guru@qurio.test` / `password123`. Gunakan `npm run seed:reset --prefix backend` untuk **mengosongkan semua tabel** lalu mengisi ulang, dan variabel `QUIZ_SESSIONS=4` atau `8` untuk memilih jumlah sesi Quiz.
+6. Jalankan backend dan frontend (dua terminal)
    ```sh
    npm run dev --prefix backend
    npm run dev --prefix frontend
    ```
-6. Buka http://localhost:3000
+7. Buka http://localhost:3000
 
 <p align="right">(<a href="#readme-top">kembali ke atas</a>)</p>
 
@@ -290,12 +310,21 @@ Qurio_App/
 ├── docs/
 │   ├── ANALYTICS_METRICS.md            # rumus, cakupan, ambang, dan audit metrik
 │   └── images/                         # gambar dokumentasi
-├── postman/globals/workspace.globals.yaml # variabel global workspace Postman
 ├── package.json                        # skrip development gabungan
 └── README.md
 ```
 
 File konfigurasi project seperti `frontend/package.json`, `frontend/next.config.ts`, `backend/package.json`, dan `backend/.env` berada di masing-masing direktori aplikasi. Salinan definisi metrik frontend berada di `frontend/lib/analytics-metrics.json` dan diperbarui dari konfigurasi backend.
+
+<p align="right">(<a href="#readme-top">kembali ke atas</a>)</p>
+
+## Batasan yang Diketahui
+
+- Identitas murid berbasis nama dan nomor absen per sesi, bukan akun. Karena itu, analitik per murid memakai nama yang dinormalisasi; dua murid dengan nama sama dapat tergabung.
+- "Kehadiran" berarti murid menjawab minimal satu soal Quiz yang dinilai, bukan daftar hadir manual.
+- Nilai dan status perhatian per murid hanya tersedia untuk sesi Quiz. Sesi interaktif tidak memiliki nilai.
+- Backend memakai paket gratis, jadi permintaan pertama setelah lama menganggur bisa lambat.
+- Pengujian otomatis baru mencakup verifikasi metrik analitik dan ekspor PDF.
 
 <p align="right">(<a href="#readme-top">kembali ke atas</a>)</p>
 
@@ -305,15 +334,15 @@ File konfigurasi project seperti `frontend/package.json`, `frontend/next.config.
 - [x] Analitik per kelas, sesi, dan murid dengan penjelasan cara menghitung
 - [x] Ekspor laporan PDF
 - [x] Deploy: Vercel + Railway + Neon
-- [ ] Integrasi AI buat analitik dan pembuatan soal otomatis(Segera Hadir)
+- [ ] Integrasi AI untuk analitik dan pembuatan soal otomatis (rencana)
 - [ ] Dashboard Siswa
-- [ ] Professional domain
+- [ ] Domain profesional
 
 <p align="right">(<a href="#readme-top">kembali ke atas</a>)</p>
 
 ## Kontak
 
-Yugata - Gmail: yugata.dv@gmail.com - <!-- GANTI --> LinkedIn: www.linkedin.com/in/yugata-halimawan-82a612400
+Yugata Halimawan - [yugata.dv@gmail.com](mailto:yugata.dv@gmail.com) - [LinkedIn](https://www.linkedin.com/in/yugata-halimawan-82a612400)
 
 Tautan proyek: https://github.com/yugata-dev/Qurio_App
 

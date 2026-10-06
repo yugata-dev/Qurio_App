@@ -456,27 +456,27 @@ export default function App() {
           </div>
         </div>
         <nav
-            id="mobile-main-navigation"
-            aria-label="Navigasi utama"
-            aria-hidden={!mobileMenuOpen}
-            inert={!mobileMenuOpen}
-            className={cn("absolute inset-x-0 top-full overflow-hidden border-b border-border bg-background/95 px-4 shadow-lg backdrop-blur-xl transition-[max-height,opacity,padding] duration-200 ease-out motion-reduce:transition-none md:hidden", mobileMenuOpen ? "max-h-[24rem] py-3 opacity-100" : "pointer-events-none max-h-0 py-0 opacity-0")}
-          >
-            {[["Fitur", "#features"], ["Cara Kerja", "#modes"], ["FAQ", "#faq"], ["Untuk Guru", "#daftar-guru"]].map(([label, href]) => (
-              <a
-                key={href}
-                href={href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-brand-50 hover:text-brand-800 focus-visible:outline-2 focus-visible:outline-brand-500"
-              >
-                {label}
-              </a>
-            ))}
-            <div className="mt-2 grid gap-2 border-t border-border pt-3">
-              <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border px-4 text-sm font-semibold text-foreground hover:bg-muted">Masuk</Link>
-              <Link href="/register" onClick={() => setMobileMenuOpen(false)} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-500 px-4 text-sm font-bold text-white hover:bg-brand-600">Daftar Gratis</Link>
-            </div>
-          </nav>
+          id="mobile-main-navigation"
+          aria-label="Navigasi utama"
+          aria-hidden={!mobileMenuOpen}
+          inert={!mobileMenuOpen}
+          className={cn("absolute inset-x-0 top-full overflow-hidden border-b border-border bg-background/95 px-4 shadow-lg backdrop-blur-xl transition-[max-height,opacity,padding] duration-200 ease-out motion-reduce:transition-none md:hidden", mobileMenuOpen ? "max-h-[24rem] py-3 opacity-100" : "pointer-events-none max-h-0 py-0 opacity-0")}
+        >
+          {[["Fitur", "#features"], ["Cara Kerja", "#modes"], ["FAQ", "#faq"], ["Untuk Guru", "#daftar-guru"]].map(([label, href]) => (
+            <a
+              key={href}
+              href={href}
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-brand-50 hover:text-brand-800 focus-visible:outline-2 focus-visible:outline-brand-500"
+            >
+              {label}
+            </a>
+          ))}
+          <div className="mt-2 grid gap-2 border-t border-border pt-3">
+            <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border px-4 text-sm font-semibold text-foreground hover:bg-muted">Masuk</Link>
+            <Link href="/register" onClick={() => setMobileMenuOpen(false)} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-500 px-4 text-sm font-bold text-white hover:bg-brand-600">Daftar Gratis</Link>
+          </div>
+        </nav>
       </header>
 
       <div className="flex min-h-[calc(100svh-4rem)] flex-col sm:min-h-[calc(100svh-5rem)]">

@@ -257,23 +257,35 @@ export const upvoteQuestion = async (req, res) => {
             })
         }
 
-        await pool.query("BEGIN")
-
-        await pool.query(
-            `INSERT INTO question_votes (question_id, student_id)
-             VALUES ($1, $2)`,
-            [id, student_id]
-        )
-
-        const updatedQuestion = await pool.query(
-            `UPDATE questions
-             SET upvotes = upvotes + 1
-             WHERE id = $1
-             RETURNING *`,
-            [id]
-        )
-
-        await pool.query("COMMIT")
+        const client = await pool.connect()
+        let updatedQuestion
+        try {
+            await client.query("BEGIN")
+            await client.query(
+                `INSERT INTO question_votes (question_id, student_id)
+                 VALUES ($1, $2)`,
+                [id, student_id]
+            )
+            updatedQuestion = await client.query(
+                `UPDATE questions
+                 SET upvotes = upvotes + 1
+                 WHERE id = $1
+                 RETURNING *`,
+                [id]
+            )
+            await client.query("COMMIT")
+        } catch (txError) {
+            await client.query("ROLLBACK").catch(() => { })
+            if (txError.code === "23505") {
+                return res.status(409).json({
+                    success: false,
+                    message: "Kamu sudah memberikan upvote pada pertanyaan ini."
+                })
+            }
+            throw txError
+        } finally {
+            client.release()
+        }
 
         const finalQuestion = updatedQuestion.rows[0]
 
@@ -288,7 +300,6 @@ export const upvoteQuestion = async (req, res) => {
             message: "Upvote berhasil ditambahkan."
         })
     } catch (error) {
-        await pool.query("ROLLBACK").catch(() => { })
         console.error("Upvote question error:", error.message)
         return res.status(500).json({
             success: false,
