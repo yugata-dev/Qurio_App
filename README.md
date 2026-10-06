@@ -98,7 +98,7 @@ Murid bergabung tanpa akun, cukup memasukkan kode sesi.
 
 | Dashboard analitik                                | Sesi live                                   |
 | ------------------------------------------------- | ------------------------------------------- |
-| ![Analitik](docs/images/screenshot-analytics.png) | ![Sesi](docs/images/screenshotsession.png) |
+| ![Analitik](docs/images/screenshot-analytics.png) | ![Sesi](docs/images/screenshot-session.png) |
 
 <p align="right">(<a href="#readme-top">kembali ke atas</a>)</p>
 
