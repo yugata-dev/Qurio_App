@@ -192,7 +192,7 @@ export default function CreatePollPage() {
 
                         <div className="space-y-3">
                             {options.map((option, index) => (
-                                <div key={`${index}-${option}`} className="flex items-center gap-3">
+                                <div key={index} className="flex items-center gap-3">
                                     <input
                                         value={option}
                                         onChange={(event) => updateOption(index, event.target.value)}

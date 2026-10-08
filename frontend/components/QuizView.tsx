@@ -4,6 +4,7 @@ import { io } from "socket.io-client"
 import { useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { IconCircleCheck, IconCircleCheckFilled, IconClock, IconSchool } from "@tabler/icons-react"
+import { toast } from "@/components/ui/toast"
 import {
     fetchCurrentPoll,
     fetchQuestionPoll,
@@ -201,11 +202,21 @@ export default function QuizView({ sessionId, onInvalidParticipant }: QuizViewPr
 
             writeSubmitted(poll.id)
             setIsSubmitted(true)
+            toast.add({
+                title: "Jawaban terkirim",
+                description: "Jawabanmu sudah tercatat. Tunggu soal berikutnya dari guru.",
+                type: "success",
+            })
         } catch (err) {
             const status = (err as { status?: number }).status
             if (status === 409) { // server bilang sudah pernah menjawab (mis. storage terhapus)
                 writeSubmitted(poll.id)
                 setIsSubmitted(true)
+                toast.add({
+                    title: "Jawaban terkirim",
+                    description: "Jawabanmu sudah tercatat. Tunggu soal berikutnya dari guru.",
+                    type: "success",
+                })
                 return
             }
             if (status === 403) { // participant_id bukan milik sesi ini
@@ -235,8 +246,8 @@ export default function QuizView({ sessionId, onInvalidParticipant }: QuizViewPr
                         <div className="flex size-16 items-center justify-center rounded-full bg-emerald-500/10">
                             <IconCircleCheck className="size-8 text-emerald-600" />
                         </div>
-                        <p className="text-xl font-semibold text-foreground">Terima kasih!</p>
-                        <p className="text-sm text-muted-foreground">Jawabanmu sudah tercatat.</p>
+                        <p className="text-xl font-semibold text-foreground">Jawaban terkirim!</p>
+                        <p className="text-sm text-muted-foreground">Jawabanmu sudah tercatat. Silakan tunggu soal berikutnya dari guru; soal baru akan muncul otomatis.</p>
                     </div>
                 ) : (
                     <div className="bg-white rounded-2xl border border-zinc-200 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
