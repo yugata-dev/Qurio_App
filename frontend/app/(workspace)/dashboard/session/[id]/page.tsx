@@ -1,8 +1,15 @@
 "use client";
 
-import { IconChartBar, IconMessages, IconCheck } from "@tabler/icons-react";
+import {
+  IconChartBar,
+  IconCheck,
+  IconMessages,
+  IconPlayerPlay,
+  IconPlayerStop,
+} from "@tabler/icons-react";
 
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { io } from "socket.io-client";
 import { useAuth } from "@/context/AuthContext";
@@ -17,6 +24,8 @@ import {
 } from "@/lib/api";
 import { CopyButton } from "@/components/CopyButton";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export interface SessionData {
   id: string;
@@ -132,43 +141,51 @@ const PollCard = memo(function PollCard({
   );
 
   return (
-    <div className="bg-white border rounded-xl p-4">
-      <div className="flex justify-between items-start gap-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <p className="text-xs text-gray-500">
+    <Card className="rounded-[20px] border-border py-0 shadow-[0_8px_24px_rgb(15_23_42/0.05)] dark:shadow-none">
+      <CardContent className="p-5 sm:p-6">
+        <div className="min-w-0">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <p className="text-xs font-medium text-muted-foreground">
               #{index + 1} • {poll.type === "qa" ? "TANYA JAWAB" : poll.type.toUpperCase()}
             </p>
-            <span
-              className={`text-xs px-2 py-0.5 rounded-full ${poll.status === "published"
-                ? "bg-green-100 text-green-700"
-                : poll.status === "closed"
-                  ? "bg-red-100 text-red-700"
-                  : "bg-gray-100 text-gray-600"
-                }`}
+            <Badge
+              variant="outline"
+              className={
+                poll.status === "published"
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                  : poll.status === "closed"
+                    ? "border-border bg-muted text-muted-foreground"
+                    : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+              }
             >
-              {poll.status}
-            </span>
+              {poll.status === "published"
+                ? "Dipublikasikan"
+                : poll.status === "closed"
+                  ? "Ditutup"
+                  : "Draf"}
+            </Badge>
 
             {poll.type === "quiz" && isQuizStats && (
-              <div className="flex items-center gap-2 ml-2">
-                <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full border border-green-200">
+              <div className="flex items-center gap-2">
+                <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-700 dark:text-emerald-400">
                   Benar: {stats.correct_count}
                 </span>
-                <span className="text-xs bg-red-50 text-red-700 px-2 py-0.5 rounded-full border border-red-200">
+                <span className="rounded-full border border-destructive/20 bg-destructive/10 px-2 py-0.5 text-xs text-destructive">
                   Salah: {stats.incorrect_count}
                 </span>
               </div>
             )}
 
             {poll.type === "polling" && isPollingStats && (
-              <div className="ml-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+              <div className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-xs text-primary">
                 {stats.totalVotes} suara
               </div>
             )}
           </div>
 
-          <p className="font-medium text-gray-900">{poll.question}</p>
+          <p className="text-sm font-semibold leading-6 text-foreground">
+            {poll.question}
+          </p>
 
           {(poll.type === "quiz" || poll.type === "polling") &&
             sortedOptions.length > 0 && (
@@ -176,14 +193,14 @@ const PollCard = memo(function PollCard({
                 {sortedOptions.map((opt, optionIndex) => (
                   <div
                     key={opt.id}
-                    className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700"
+                    className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2.5 text-sm text-foreground"
                   >
-                    <span className="font-mono text-xs text-gray-500">
+                    <span className="font-mono text-xs text-muted-foreground">
                       {String.fromCharCode(65 + optionIndex)}.
                     </span>
                     <span>{opt.option_text}</span>
                     {poll.type === "quiz" && opt.is_correct && (
-                      <span className="ml-auto text-xs font-semibold text-emerald-600">
+                      <span className="ml-auto text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                         <IconCheck className="mr-1 inline size-3" />Benar
                       </span>
                     )}
@@ -200,36 +217,43 @@ const PollCard = memo(function PollCard({
           )}
 
           {poll.type === "quiz" && isQuizStats && stats.total_count === 0 && (
-            <p className="text-xs text-gray-400 mt-2">Belum ada jawaban masuk</p>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Belum ada jawaban masuk
+            </p>
           )}
         </div>
-      </div>
-
-      <div className="flex gap-2 mt-4">
-        <button
-          onClick={() => onUpdate(poll.id, "published")}
-          disabled={poll.status === "published"}
-          className="text-xs px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
-        >
-          Publish
-        </button>
-        <button
-          onClick={() => onUpdate(poll.id, "closed")}
-          disabled={poll.status === "closed"}
-          className="text-xs px-3 py-1.5 rounded-lg bg-white border text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-        >
-          Tutup
-        </button>
-        {(poll.type === "qa" || poll.type === "wordcloud") && (
-          <button
-            onClick={() => onOpenDetail(poll)}
-            className="text-xs px-3 py-1.5 rounded-lg bg-gray-900 text-white hover:bg-black ml-auto"
+        <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-border pt-4">
+          <Button
+            type="button"
+            onClick={() => onUpdate(poll.id, "published")}
+            disabled={poll.status === "published"}
+            size="sm"
           >
-            Lihat detail
-          </button>
-        )}
-      </div>
-    </div>
+            Publish
+          </Button>
+          <Button
+            type="button"
+            onClick={() => onUpdate(poll.id, "closed")}
+            disabled={poll.status === "closed"}
+            variant="outline"
+            size="sm"
+          >
+            Tutup
+          </Button>
+          {(poll.type === "qa" || poll.type === "wordcloud") && (
+            <Button
+              type="button"
+              onClick={() => onOpenDetail(poll)}
+              variant="secondary"
+              size="sm"
+              className="sm:ml-auto"
+            >
+              Lihat detail
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 });
 
@@ -428,56 +452,69 @@ function SessionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6 text-foreground">
-      <div className="max-w-3xl mx-auto space-y-6">
-        <div className="rounded-xl border border-border bg-card p-5">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="mb-2 text-xl font-semibold">
-                {session?.title}
+    <section className="mx-auto w-full max-w-[1180px] p-6 lg:p-8">
+      <div className="space-y-6">
+        <header>
+          <Link href="/sessions" className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+            ← Semua sesi
+          </Link>
+          <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold tracking-[-0.5px] text-foreground">
+                {session?.title ?? "Detail sesi"}
                 {session && (
                   <Badge
-                    variant={session.mode === "quiz" ? "default" : "secondary"}
+                    variant="outline"
                     className="ml-2 align-middle"
                   >
                     {session.mode === "quiz" ? <><IconChartBar className="mr-1 inline size-3" />Sesi Quiz</> : <><IconMessages className="mr-1 inline size-3" />Sesi Interaktif</>}
                   </Badge>
                 )}
               </h1>
-              <p className="text-sm text-gray-500 mt-1">
-                Kode:{" "}
-                <span className="font-mono font-semibold bg-gray-100 px-2 py-0.5 rounded">
+              <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                <span>Kode akses</span>
+                <span className="rounded-md bg-muted px-2 py-1 font-mono font-semibold tracking-wider text-foreground">
                   {session?.access_code}
                 </span>
                 <CopyButton text={session?.access_code || ""} />
               </p>
             </div>
-            <span
-              className={`text-xs font-medium px-2.5 py-1 rounded-full ${session?.status === "active"
-                ? "bg-green-100 text-green-700"
-                : "bg-gray-200 text-gray-600"
-                }`}
-            >
-              {session?.status === "ended" ? "Selesai" : "Aktif"}
-            </span>
+            {session && (
+              <Badge variant="outline" className={session.status === "active" ? "w-fit border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "w-fit border-border bg-muted text-muted-foreground"}>
+                <span className={`mr-1.5 size-1.5 rounded-full ${session.status === "active" ? "bg-emerald-500" : "bg-muted-foreground/50"}`} />
+                {session.status === "ended" ? "Selesai" : "Aktif"}
+              </Badge>
+            )}
           </div>
 
-          <div className="flex gap-2 mt-4">
-            <button
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap gap-2">
+              <Button
+              type="button"
               onClick={() => void toggleSessionStatus("active")}
               disabled={session?.status === "active"}
-              className="text-sm px-4 py-2 rounded-lg bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Aktifkan
-            </button>
-            <button
+              variant="outline"
+              size="sm"
+                className="border-emerald-600 bg-transparent text-emerald-600 hover:border-emerald-600 hover:bg-transparent hover:text-emerald-700 dark:border-emerald-500 dark:text-emerald-400 dark:hover:border-emerald-500 dark:hover:bg-transparent dark:hover:text-emerald-300"
+              >
+                <IconPlayerPlay className="size-4" aria-hidden="true" />
+                Aktifkan
+              </Button>
+              <Button
+              type="button"
               onClick={() => void toggleSessionStatus("ended")}
               disabled={session?.status === "ended"}
-              className="text-sm px-4 py-2 rounded-lg bg-gray-900 text-white hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Akhiri Sesi
-            </button>
-            <button
+              variant="outline"
+              size="sm"
+                className="border-red-600 bg-transparent text-red-600 hover:border-red-600 hover:bg-transparent hover:text-red-700 dark:border-red-500 dark:text-red-400 dark:hover:border-red-500 dark:hover:bg-transparent dark:hover:text-red-300"
+              >
+                <IconPlayerStop className="size-4" aria-hidden="true" />
+                Akhiri Sesi
+              </Button>
+            </div>
+            <div className="flex sm:justify-end">
+              <Button
+              type="button"
               onClick={() => {
                 if (session?.mode === "quiz") {
                   router.push(`/dashboard/session/${sessionId}/create-poll?type=quiz`);
@@ -485,48 +522,57 @@ function SessionPage() {
                   router.push(`/dashboard/session/${sessionId}/create-poll`);
                 }
               }}
-              className="text-sm px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 ml-auto"
+              size="sm"
+                className="w-full sm:w-auto"
             >
               {session?.mode === "quiz" ? "+ Buat Soal Quiz" : "+ Buat Aktivitas"}
-            </button>
+              </Button>
+            </div>
           </div>
-        </div>
+        </header>
 
         {errorMessage && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm p-3 rounded-lg">
+          <div role="alert" className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
             {errorMessage}
           </div>
         )}
         {successMessage && (
-          <div className="bg-green-50 border border-green-200 text-green-700 text-sm p-3 rounded-lg">
+          <div role="status" className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-emerald-700 dark:text-emerald-400">
             {successMessage}
           </div>
         )}
 
-        <h2 className="font-semibold text-gray-800 mb-3">
-          Daftar Pertanyaan ({polls?.length || 0})
-        </h2>
-
-        {!polls || polls.length === 0 ? (
-          <div className="bg-white border border-dashed rounded-xl p-10 text-center text-gray-500 text-sm">
-            Belum ada pertanyaan di sesi ini.
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {polls.map((poll, index) => (
-              <PollCard
-                key={poll.id}
-                poll={poll}
-                index={index}
-                stats={stats[poll.id] ?? EMPTY_STATS}
-                onUpdate={onUpdateSingle}
-                onOpenDetail={onOpenDetail}
-              />
-            ))}
-          </div>
-        )}
+        <Card className="rounded-[20px] border-border py-0 shadow-[0_8px_24px_rgb(15_23_42/0.05)] dark:shadow-none">
+          <CardHeader className="p-5 pb-0 sm:p-6 sm:pb-0">
+            <CardTitle className="text-base font-semibold">Aktivitas sesi</CardTitle>
+            <p className="text-xs text-muted-foreground">
+              {polls ? `${polls.length} aktivitas` : "Memuat aktivitas..."}
+            </p>
+          </CardHeader>
+          <CardContent className="p-5 sm:p-6">
+            {!polls || polls.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border bg-muted/20 px-5 py-10 text-center">
+                <p className="text-sm font-medium text-foreground">Belum ada aktivitas di sesi ini</p>
+                <p className="mt-1 text-xs text-muted-foreground">Buat aktivitas pertama untuk mulai melibatkan siswa.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {polls.map((poll, index) => (
+                  <PollCard
+                    key={poll.id}
+                    poll={poll}
+                    index={index}
+                    stats={stats[poll.id] ?? EMPTY_STATS}
+                    onUpdate={onUpdateSingle}
+                    onOpenDetail={onOpenDetail}
+                  />
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </section>
   );
 }
 

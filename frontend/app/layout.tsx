@@ -28,7 +28,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html
-      lang="en"
+      lang="id"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
       className={cn(
