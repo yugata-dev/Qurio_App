@@ -398,16 +398,6 @@ export default function App() {
             <a href="#faq">FAQ</a>
             <a href="#daftar-guru">Untuk Guru</a>
           </nav>
-          <button
-            type="button"
-            className="grid size-11 shrink-0 place-items-center rounded-xl border border-border text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 md:hidden"
-            aria-label={mobileMenuOpen ? "Tutup menu navigasi" : "Buka menu navigasi"}
-            aria-expanded={mobileMenuOpen}
-            aria-controls="mobile-main-navigation"
-            onClick={() => setMobileMenuOpen((open) => !open)}
-          >
-            {mobileMenuOpen ? <IconX className="size-5" /> : <IconMenu2 className="size-5" />}
-          </button>
           <div className="flex items-center gap-1 sm:gap-2">
             <Link
               className="inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-2 text-sm font-semibold text-foreground transition-colors hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 sm:px-3"
@@ -421,6 +411,16 @@ export default function App() {
             >
               <span>Daftar Gratis</span>
             </Link>
+            <button
+              type="button"
+              className="grid size-11 shrink-0 place-items-center rounded-xl border-0 bg-transparent text-foreground transition-colors hover:bg-transparent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 md:hidden"
+              aria-label={mobileMenuOpen ? "Tutup menu navigasi" : "Buka menu navigasi"}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-main-navigation"
+              onClick={() => setMobileMenuOpen((open) => !open)}
+            >
+              {mobileMenuOpen ? <IconX className="size-5" /> : <IconMenu2 className="size-5" />}
+            </button>
           </div>
         </div>
         {mobileMenuOpen && (
@@ -980,7 +980,7 @@ export default function App() {
               aria-hidden="true"
             />
 
-            <div className="relative flex max-w-xl flex-col items-center lg:items-start">
+            <div className="relative mx-auto flex max-w-xl flex-col items-center justify-center text-center lg:mx-0 lg:items-start lg:justify-start lg:text-left">
               <span className="mb-4 inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-bold tracking-[0.12em] text-white">
                 UNTUK GURU
               </span>
