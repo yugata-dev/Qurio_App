@@ -303,7 +303,6 @@ function CreateSessionsPage() {
                 {...register("title", {
                   required: "Isi judul yang diinginkan...",
                 })}
-                className="h-11 rounded-xl"
                 type="text"
                 placeholder="Contoh: Kuis Bab 3 - Fotosintesis"
               />
@@ -326,15 +325,12 @@ function CreateSessionsPage() {
                 {...register("class_size", {
                   required: "Jumlah siswa di kelas wajib diisi.",
                   setValueAs: (value) =>
-                    value === "" || value == null
-                      ? null
-                      : Number(value),
+                    value === "" || value == null ? null : Number(value),
                   validate: (value) =>
                     value == null ||
                     (Number.isInteger(value) && value >= 1 && value <= 500) ||
                     "Jumlah siswa harus antara 1 dan 500.",
                 })}
-                className="h-11 rounded-xl"
                 type="number"
                 min={1}
                 max={500}
@@ -379,7 +375,7 @@ function CreateSessionsPage() {
                     items={questionTypeItems}
                   >
                     <SelectTrigger
-                      className="h-11 w-full rounded-xl"
+                      className="w-full"
                       aria-invalid={!!errors.type}
                     >
                       <SelectValue placeholder="Pilih Tipe Soal" />
@@ -421,7 +417,7 @@ function CreateSessionsPage() {
                 {...register("question", {
                   required: "Pertanyaan wajib diisi",
                 })}
-                className="min-h-28 resize-none rounded-xl"
+                className="min-h-28 resize-none"
                 placeholder="Contoh: Apa organel tumbuhan yang berperan dalam fotosintesis?"
               />
               {errors.question && (
@@ -444,10 +440,7 @@ function CreateSessionsPage() {
 
                 <div className="flex flex-col gap-2">
                   {fields.map((field, index) => (
-                    <div
-                      key={field.id}
-                      className="flex items-center gap-2 rounded-xl border border-border bg-background p-2 pl-3"
-                    >
+                    <div key={field.id} className="flex items-center gap-2">
                       <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-muted text-xs font-bold text-muted-foreground">
                         {index + 1}
                       </span>
@@ -456,7 +449,7 @@ function CreateSessionsPage() {
                           required: "Opsi wajib diisi",
                         })}
                         placeholder={`Opsi ${index + 1}`}
-                        className="h-9 flex-1 border-0 bg-transparent px-1 shadow-none focus-visible:ring-0"
+                        className="flex-1"
                       />
                       {selectedType === "quiz" && (
                         <Input
