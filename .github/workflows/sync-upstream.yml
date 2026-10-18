@@ -1,0 +1,28 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: frontendDev
+          fetch-depth: 0
+
+      - name: Sync upstream
+        env:
+          UPSTREAM_TOKEN: ${{ secrets.UPSTREAM_TOKEN }}
+        run: |
+          git remote add upstream "https://x-access-token:${UPSTREAM_TOKEN}@github.com/yugata-dev/Qurio_App.git"
+          git fetch --prune upstream
+          git push --force --prune origin 'refs/remotes/upstream/*:refs/heads/*'
